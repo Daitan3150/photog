@@ -14,7 +14,7 @@ export async function backupToR2(
 
     try {
         const fd = new FormData();
-        fd.append('file', new Blob([buffer], { type: contentType }), filename);
+        fd.append('file', new Blob([new Uint8Array(buffer)], { type: contentType }), filename);
         fd.append('key', key);
 
         const res = await fetch(`${workerUrl}/api/r2/upload`, {

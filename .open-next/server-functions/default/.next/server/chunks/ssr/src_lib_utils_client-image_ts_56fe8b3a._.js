@@ -1,3 +1,0 @@
-module.exports=[8995,a=>{"use strict";async function b(a,c=2500,d=2500,e=.8){return new Promise((b,f)=>{let g=new FileReader;g.readAsDataURL(a),g.onload=a=>{let g=new Image;g.src=a.target?.result,g.onload=()=>{let a=document.createElement("canvas"),h=g.width,i=g.height;h>i?h>c&&(i=Math.round(i*c/h),h=c):i>d&&(h=Math.round(h*d/i),i=d),a.width=h,a.height=i;let j=a.getContext("2d");j?(j.drawImage(g,0,0,h,i),a.toBlob(a=>{a?b(a):f(Error("Canvas to Blob conversion failed"))},"image/jpeg",e)):f(Error("Failed to get canvas context"))},g.onerror=a=>f(a)},g.onerror=a=>f(a)})}a.s(["resizeImageClient",()=>b])}];
-
-//# sourceMappingURL=src_lib_utils_client-image_ts_56fe8b3a._.js.map
