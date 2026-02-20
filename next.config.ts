@@ -10,6 +10,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  env: {
+    // Cloudinary
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
+    // Worker
+    NEXT_PUBLIC_WORKER_URL: 'https://worker.daitan-portfolio.workers.dev',
+    // App URL
+    NEXT_PUBLIC_VERCEL_URL: 'https://next-portfolio-lime-one.vercel.app',
+  },
   serverExternalPackages: ['sharp', 'jose', 'jwks-rsa'],
 };
 

@@ -12,6 +12,13 @@ interface PageProps {
     searchParams: Promise<{ category?: string }>;
 }
 
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "Portfolio",
+    description: "Browse clear and artistic photography collections by category.",
+};
+
 export default async function PortfolioPage({ searchParams }: PageProps) {
     const params = await searchParams;
     let currentCategory = params.category;

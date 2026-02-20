@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/admin/AuthProvider';
-import { getPhotos, deletePhoto, bulkDeletePhotos, bulkUpdateCategory } from '@/lib/actions/photos';
+import { getPhotos, deletePhoto, bulkDeletePhotos, bulkUpdateCategory, refreshPhotoMetadata } from '@/lib/actions/photos';
 import { getCategories, Category } from '@/lib/actions/categories';
-import { Trash2, ExternalLink, CheckSquare, Square, X, Check, Tag } from 'lucide-react';
+import { Trash2, ExternalLink, CheckSquare, Square, X, Check, Tag, Edit, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import BulkEditModal from '@/components/admin/BulkEditModal';
+import cloudinaryLoader from '@/lib/cloudinary-loader';
 
 // 日付フォーマット（撮影日 or 追加日）
 const formatDate = (dateString: string | null | undefined, fallback = '') => {
@@ -32,33 +34,71 @@ export default function PhotosPage() {
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [bulkCategoryId, setBulkCategoryId] = useState('');
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+    const [isExifSyncing, setIsExifSyncing] = useState(false);
+    const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
+    const [nextCursor, setNextCursor] = useState<string | null>(null);
+    const [hasMore, setHasMore] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     useEffect(() => {
         if (user) {
-            fetchPhotos();
+            fetchPhotos(true);
             getCategories().then(res => {
                 if (res.success) setCategories(res.data);
             });
         }
     }, [user]);
 
-    const fetchPhotos = async () => {
+    const fetchPhotos = async (reset = false) => {
         if (!user) return;
-        const token = await user.getIdToken();
-        const data = await getPhotos(token);
-        setPhotos(data);
-        setLoading(false);
+        try {
+            if (reset) setLoading(true);
+            else setLoadingMore(true);
+
+            const token = await user.getIdToken();
+            const currentCursor = reset ? undefined : (nextCursor || undefined);
+            const result = await getPhotos(token, { limit: 50, cursor: currentCursor });
+
+            if (reset) {
+                setPhotos(result.photos);
+            } else {
+                setPhotos(prev => [...prev, ...result.photos]);
+            }
+
+            setNextCursor(result.nextCursor);
+            setHasMore(!!result.nextCursor);
+        } catch (err) {
+            console.error('fetchPhotos error:', err);
+        } finally {
+            if (reset) setLoading(false);
+            else setLoadingMore(false);
+        }
+    };
+
+    const handleLoadMore = () => {
+        if (!loadingMore) fetchPhotos(false);
+    };
+
+    // リストの完全リロード（一括操作後など）
+    const reloadList = () => {
+        setSelectedIds(new Set());
+        setIsSelectionMode(false);
+        fetchPhotos(true);
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm('本当にこの写真を削除しますか？この操作は取り消せません。')) return;
         if (!user) return;
+
+        // Optimistic UI update
+        const prevPhotos = [...photos];
+        setPhotos(photos.filter(p => p.id !== id));
+
         const token = await user.getIdToken();
         const result = await deletePhoto(id, token);
-        if (result.success) {
-            fetchPhotos();
-        } else {
+        if (!result.success) {
             alert('削除に失敗しました: ' + result.error);
+            setPhotos(prevPhotos); // Revert
         }
     };
 
@@ -85,14 +125,14 @@ export default function PhotosPage() {
         const count = selectedIds.size;
         if (!confirm(`${count}枚の写真を一括削除しますか？\nこの操作は取り消せません。`)) return;
         if (!user) return;
-        setLoading(true);
+
+        // Optimistic UI Update not easily done for bulk, show loading
+        setLoading(true); // Re-use main loader or bulk loader
         const token = await user.getIdToken();
         const result = await bulkDeletePhotos(Array.from(selectedIds), token);
         if (result.success) {
-            setSelectedIds(new Set());
-            setIsSelectionMode(false);
-            await fetchPhotos();
             alert(`${result.success}枚の写真を削除しました。`);
+            reloadList();
         } else {
             alert('一括削除に失敗しました: ' + result.error);
             setLoading(false);
@@ -111,15 +151,37 @@ export default function PhotosPage() {
         const token = await user.getIdToken();
         const result = await bulkUpdateCategory(Array.from(selectedIds), bulkCategoryId, token);
         if (result.success) {
-            setSelectedIds(new Set());
-            setIsSelectionMode(false);
-            setBulkCategoryId('');
-            await fetchPhotos();
             alert(`${result.count}枚のカテゴリーを更新しました。`);
+            reloadList();
+            setBulkCategoryId('');
         } else {
             alert('一括更新に失敗しました: ' + result.error);
         }
         setIsBulkUpdating(false);
+    };
+
+    const handleBulkExifSync = async () => {
+        if (!user) return;
+        const count = selectedIds.size;
+        if (!confirm(`${count}枚の写真のEXIF情報をCloudinaryから再取得しますか？\n既存のEXIF情報は上書きされます。`)) return;
+
+        setIsExifSyncing(true);
+        const token = await user.getIdToken();
+        const ids = Array.from(selectedIds);
+
+        let successCount = 0;
+        let failCount = 0;
+
+        // Process sequentially to avoid rate limits
+        for (const id of ids) {
+            const result = await refreshPhotoMetadata(id, token);
+            if (result.success) successCount++;
+            else failCount++;
+        }
+
+        alert(`EXIF同期完了: 成功 ${successCount}件 / 失敗 ${failCount}件`);
+        reloadList();
+        setIsExifSyncing(false);
     };
 
     // カテゴリー名を ID から取得
@@ -217,8 +279,9 @@ export default function PhotosPage() {
 
                                     <div className="relative aspect-[3/2] bg-gray-100">
                                         <Image
+                                            loader={cloudinaryLoader}
                                             src={photo.url}
-                                            alt={photo.title}
+                                            alt={photo.title || 'Untitled'}
                                             fill
                                             className="object-cover"
                                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -282,6 +345,18 @@ export default function PhotosPage() {
                             );
                         })}
                     </div>
+                    {hasMore && (
+                        <div className="mt-8 text-center pb-8">
+                            <button
+                                onClick={handleLoadMore}
+                                disabled={loadingMore}
+                                className="px-6 py-3 bg-white border border-gray-200 rounded-full shadow-sm text-gray-600 font-bold hover:bg-gray-50 hover:shadow-md transition-all flex items-center gap-2 mx-auto disabled:opacity-50"
+                            >
+                                {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+                                {loadingMore ? '読み込み中...' : 'もっと見る'}
+                            </button>
+                        </div>
+                    )}
                 </>
             )}
 
@@ -317,6 +392,26 @@ export default function PhotosPage() {
                             </button>
                         </div>
 
+                        {/* EXIF Sync Button */}
+                        <button
+                            onClick={handleBulkExifSync}
+                            disabled={isExifSyncing}
+                            className="bg-neutral-700 hover:bg-neutral-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                            title="CloudinaryからEXIF情報を再取得"
+                        >
+                            <span className="text-xs">EXIF同期</span>
+                        </button>
+
+                        {/* Bulk Edit Button */}
+                        <button
+                            onClick={() => setIsBulkEditModalOpen(true)}
+                            className="bg-neutral-700 hover:bg-neutral-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
+                            title="一括編集 (モデル名・場所など)"
+                        >
+                            <Edit className="w-4 h-4" />
+                            <span className="text-xs hidden sm:inline">編集</span>
+                        </button>
+
                         {/* 一括削除 */}
                         <div className="flex gap-3 items-center">
                             <button
@@ -336,6 +431,16 @@ export default function PhotosPage() {
                     </div>
                 </div>
             )}
+            {/* Bulk Edit Modal */}
+            <BulkEditModal
+                isOpen={isBulkEditModalOpen}
+                onClose={() => setIsBulkEditModalOpen(false)}
+                selectedIds={selectedIds}
+                onUpdateComplete={() => {
+                    reloadList();
+                    setIsBulkEditModalOpen(false);
+                }}
+            />
         </div>
     );
 }

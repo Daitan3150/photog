@@ -5,17 +5,19 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Share2, Camera, MapPin, Tag, User, Calendar, Grid } from 'lucide-react';
 import { getRelatedPhotos } from '@/lib/algolia';
+import LikeButton from '@/components/gallery/LikeButton';
+
 
 interface Props {
     params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata(
-    { params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ fp?: string }> },
+    props: { params: Promise<{ id: string }>; searchParams: Promise<{ fp?: string }> },
     parent: ResolvingMetadata
 ): Promise<Metadata> {
-    const { id } = await params;
-    const { fp } = await searchParams;
+    const { id } = await props.params;
+    const { fp } = await props.searchParams;
     const photo = await getPhotoPublic(id);
 
     if (!photo) return {};
@@ -96,8 +98,8 @@ export default async function PhotoPage({ params }: Props) {
 
     const formatShutterSpeed = (exposureTime: number) => {
         if (!exposureTime) return null;
-        if (exposureTime >= 1) return `${exposureTime}s`;
-        return `1/${Math.round(1 / exposureTime)}s`;
+        if (exposureTime >= 1) return `${Math.round(exposureTime)}s`;
+        return `1/${Math.round(1 / exposureTime)}`;
     };
 
     return (
@@ -147,7 +149,7 @@ export default async function PhotoPage({ params }: Props) {
                         <div>
                             <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-bold mb-4">Details</p>
                             <h2 className="text-3xl md:text-4xl font-light tracking-tight mb-2">
-                                {photo.displayMode === 'character' ? photo.characterName : photo.title}
+                                {photo.displayMode === 'character' ? photo.characterName : (photo.title || '無題')}
                             </h2>
                             {photo.displayMode === 'character' && photo.title && (
                                 <p className="text-white/60 text-lg font-light italic">{photo.title}</p>
@@ -236,46 +238,54 @@ export default async function PhotoPage({ params }: Props) {
                                 </a>
                             </div>
                         )}
+
+                        <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                            <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-bold">Feedback</p>
+                            <LikeButton photoId={id} />
+                        </div>
+
                     </div>
                 </div>
 
                 {/* Related Photos Section */}
-                {relatedPhotos.length > 0 && (
-                    <div className="mt-32 w-full max-w-6xl border-t border-white/10 pt-20">
-                        <div className="flex flex-col items-center mb-12">
-                            <Grid className="w-5 h-5 text-white/30 mb-4" />
-                            <h2 className="text-2xl font-serif font-light tracking-[0.2em] uppercase">Related Works</h2>
-                            <p className="text-[10px] text-white/40 tracking-[0.4em] uppercase mt-2">Discover more</p>
-                        </div>
+                {
+                    relatedPhotos.length > 0 && (
+                        <div className="mt-32 w-full max-w-6xl border-t border-white/10 pt-20">
+                            <div className="flex flex-col items-center mb-12">
+                                <Grid className="w-5 h-5 text-white/30 mb-4" />
+                                <h2 className="text-2xl font-serif font-light tracking-[0.2em] uppercase">Related Works</h2>
+                                <p className="text-[10px] text-white/40 tracking-[0.4em] uppercase mt-2">Discover more</p>
+                            </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                            {relatedPhotos.map((item: any) => (
-                                <Link
-                                    key={item.objectID}
-                                    href={`/photo/${item.objectID}`}
-                                    className="group block space-y-3"
-                                >
-                                    <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-white/5">
-                                        <Image
-                                            src={getOptimizedUrl(item.url, 800)}
-                                            alt={item.title}
-                                            fill
-                                            className="object-cover transition-transform duration-1000 group-hover:scale-110"
-                                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 15vw"
-                                        />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
-                                            <span className="text-[9px] uppercase tracking-[0.3em] font-bold border border-white/40 px-3 py-1.5 backdrop-blur-sm">View Work</span>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                                {relatedPhotos.map((item: any) => (
+                                    <Link
+                                        key={item.objectID}
+                                        href={`/photo/${item.objectID}`}
+                                        className="group block space-y-3"
+                                    >
+                                        <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-white/5">
+                                            <Image
+                                                src={getOptimizedUrl(item.url, 800)}
+                                                alt={item.title}
+                                                fill
+                                                className="object-cover transition-transform duration-1000 group-hover:scale-110"
+                                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 15vw"
+                                            />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
+                                                <span className="text-[9px] uppercase tracking-[0.3em] font-bold border border-white/40 px-3 py-1.5 backdrop-blur-sm">View Work</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="px-1 text-center md:text-left">
-                                        <p className="text-[9px] text-white/40 uppercase tracking-widest truncate">{item.category}</p>
-                                        <h3 className="text-[11px] font-medium tracking-wider truncate mt-1 group-hover:text-white transition-colors">{item.title}</h3>
-                                    </div>
-                                </Link>
-                            ))}
+                                        <div className="px-1 text-center md:text-left">
+                                            <p className="text-[9px] text-white/40 uppercase tracking-widest truncate">{item.category}</p>
+                                            <h3 className="text-[11px] font-medium tracking-wider truncate mt-1 group-hover:text-white transition-colors">{item.title}</h3>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 <div className="mt-24 pb-12">
                     <Link
@@ -285,7 +295,7 @@ export default async function PhotoPage({ params }: Props) {
                         Explore All Works
                     </Link>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }

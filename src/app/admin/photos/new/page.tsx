@@ -8,6 +8,7 @@ import { getSubjects, Subject } from '@/lib/actions/subjects';
 import CloudinaryScript from '@/components/admin/CloudinaryScript';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import exifr from 'exifr';
 
 // ✅ ファイル検証定数
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
@@ -44,32 +45,7 @@ async function computeFileHash(file: File): Promise<string> {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
 }
 
-// ✅ WebP変換（Canvas経由）
-async function convertToWebP(file: File, quality = 0.85): Promise<File> {
-    if (file.type === 'image/webp') return file;
-    return new Promise((resolve, reject) => {
-        const img = document.createElement('img');
-        const url = URL.createObjectURL(file);
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) { resolve(file); return; }
-            ctx.drawImage(img, 0, 0);
-            canvas.toBlob(blob => {
-                URL.revokeObjectURL(url);
-                if (blob) {
-                    resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' }));
-                } else {
-                    resolve(file);
-                }
-            }, 'image/webp', quality);
-        };
-        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-        img.src = url;
-    });
-}
+
 
 // ✅ XHRアップロード（リアルタイム進捗付き）
 function xhrUpload(
@@ -149,11 +125,59 @@ export default function NewPhotoPage() {
     const [history, setHistory] = useState<HistoryEntry[]>([]);
     const [showHistory, setShowHistory] = useState(false);
 
-    // ✅ 新機能: WebP変換オプション
-    const [convertWebP, setConvertWebP] = useState(true);
+    // ✅ 新機能: クライアント側EXIF保持
+    const [fileExifMap, setFileExifMap] = useState<Map<string, any>>(new Map());
 
     // ✅ 新機能: AI自動タグ
     const [useAiTags, setUseAiTags] = useState(true);
+
+    // ✅ 署名取得
+    const fetchSignature = async (params: Record<string, any>) => {
+        const idToken = await user?.getIdToken();
+        const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL;
+        const res = await fetch(`${workerUrl}/api/sign-upload`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify({ params })
+        });
+        if (!res.ok) throw new Error('Signature fetch failed');
+        return await res.json() as { signature: string; timestamp: number; apiKey: string };
+    };
+
+    const reflectExifToForm = (mergedExif: any) => {
+        // ⚠️ [FIX] Do NOT auto-fill "Common Settings" (shutter, aperture, etc.) from individual files.
+        // This prevents the "Last File Overwrite" bug where the last uploaded photo's settings
+        // become the enforced settings for the entire batch.
+
+        // We ONLY update the Lens History for convenience, but do NOT set the 'lens' or 'camera' state
+        // unless you want to enforce it for ALL photos.
+
+        if (mergedExif.LensModel) {
+            let newLens = mergedExif.LensModel as string;
+            const TARGET_LENS_PATTERN = /voigtlander|nokton|40mm/i;
+            const CORRECT_LENS_NAME = 'voigtlander NOKTON classic 40mm F1.4 SC';
+
+            if (TARGET_LENS_PATTERN.test(newLens) && newLens.includes('40mm')) {
+                newLens = CORRECT_LENS_NAME;
+            } else {
+                const lowerNew = newLens.trim().toLowerCase();
+                const matchedMaster = exifSuggestions.lensModels.find(m => m.toLowerCase() === lowerNew);
+                if (matchedMaster) {
+                    newLens = matchedMaster;
+                }
+            }
+
+            // Only update history, don't auto-fill the "Common Lens" input
+            setLensHistory(prevHistory => {
+                const updated = [newLens, ...prevHistory.filter(l => l !== newLens)].slice(0, 30);
+                try { localStorage.setItem(LENS_HISTORY_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+                return updated;
+            });
+        }
+    };
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -294,31 +318,63 @@ export default function NewPhotoPage() {
 
                 for (let attempt = 1; attempt <= MAX_RETRY; attempt++) {
                     try {
+                        // ✅ EXIF解析 (クライアント側)
+                        updateStatus('processing', 5);
+                        let clientExif: any = null;
+                        try {
+                            clientExif = await exifr.parse(file, {
+                                tiff: true,
+                                xmp: true,
+                                exif: true,
+                                gps: true,
+                            });
+                            if (clientExif) {
+                                setFileExifMap(prev => new Map(prev).set(fileHash, clientExif));
+
+                                // ✅ クライアント側で解析できたら即座にフォームに反映
+                                reflectExifToForm(clientExif);
+                            }
+                        } catch (e) {
+                            console.warn('EXIF parse failed:', e);
+                        }
+
                         // ✅ リサイズ
-                        updateStatus('resizing', 10);
+                        updateStatus('resizing', 20);
                         let fileToUpload: File | Blob = file;
                         try {
                             fileToUpload = await resizeImageClient(file, 2500, 2500, 0.85);
                         } catch { /* リサイズ失敗時はオリジナルを使用 */ }
 
-                        // ✅ WebP変換
-                        if (convertWebP && file.type !== 'image/webp') {
-                            updateStatus('converting', 20);
-                            try {
-                                fileToUpload = await convertToWebP(fileToUpload as File, 0.88);
-                            } catch { /* 変換失敗時はそのまま */ }
-                        }
+                        // WebP変換は削除 (Cloudinary f_auto に任せる + EXIF保持のため)
 
                         updateStatus('uploading', 30);
 
-                        // ✅ Cloudinary アップロード（XHR + AI タグ）
+                        // ✅ Cloudinary 署名付きアップロード（XHR + AI タグ）
+                        const timestamp = Math.round(new Date().getTime() / 1000);
+                        const uploadParams: Record<string, any> = {
+                            timestamp,
+                            folder: 'portfolio',
+                            upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'next-portfolio',
+                        };
+
+                        if (useAiTags) {
+                            uploadParams.auto_tagging = '0.6';
+                        }
+
+                        const { signature, apiKey } = await fetchSignature(uploadParams);
+
                         const formData = new FormData();
                         formData.append('file', fileToUpload);
-                        formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'next-portfolio');
-                        formData.append('folder', 'portfolio');
-                        if (useAiTags) {
-                            formData.append('auto_tagging', '0.6'); // 信頼度60%以上のタグを自動付与
-                        }
+                        formData.append('signature', signature);
+                        formData.append('api_key', apiKey);
+                        formData.append('timestamp', String(timestamp));
+
+                        Object.entries(uploadParams).forEach(([key, value]) => {
+                            if (key !== 'timestamp') {
+                                formData.append(key, String(value));
+                            }
+                        });
+
 
                         // ✅ XHR でリアルタイム進捗取得
                         const result = await xhrUpload(
@@ -332,7 +388,7 @@ export default function NewPhotoPage() {
                         const newFile: UploadedFile = {
                             url: result.secure_url as string,
                             publicId: result.public_id as string,
-                            exif: result.exif as Record<string, unknown>,
+                            exif: result.exif as Record<string, unknown>, // Cloudinary's parsed EXIF
                             tags: result.tags as string[],
                             fileName: file.name,
                             fileSize: file.size,
@@ -340,80 +396,9 @@ export default function NewPhotoPage() {
                         };
                         setUploadedFiles(prev => [...prev, newFile]);
 
-                        // ✅ EXIF自動入力
-                        if (result.exif) {
-                            const exif = result.exif as Record<string, unknown>;
-                            setCamera(prev => prev || (exif.Model as string) || '');
-
-                            const rawLensVal = (exif.LensModel as string) || '';
-                            setLens(prev => {
-                                let newLens = prev || rawLensVal;
-                                if (newLens) {
-                                    const TARGET_LENS_PATTERN = /voigtlander|nokton|40mm/i;
-                                    const CORRECT_LENS_NAME = 'voigtlander NOKTON classic 40mm F1.4 SC';
-
-                                    // 1. 特定のレンズの強制補正
-                                    if (TARGET_LENS_PATTERN.test(newLens) && newLens.includes('40mm')) {
-                                        newLens = CORRECT_LENS_NAME;
-                                    } else {
-                                        // 2. マスターリストとの Fuzzy Match (大文字小文字無視)
-                                        const lowerNew = newLens.trim().toLowerCase();
-                                        const matchedMaster = exifSuggestions.lensModels.find(m => m.toLowerCase() === lowerNew);
-                                        if (matchedMaster) {
-                                            newLens = matchedMaster;
-                                        }
-                                    }
-
-                                    // ✅ レンズ型番を履歴に保存
-                                    setLensHistory(prevHistory => {
-                                        const updated = [newLens, ...prevHistory.filter(l => l !== newLens)].slice(0, 30);
-                                        try { localStorage.setItem(LENS_HISTORY_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
-                                        return updated;
-                                    });
-                                }
-                                return newLens;
-                            });
-
-                            // ✅ シャッタースピード（分数形式で取得）
-                            if (exif.ExposureTime) {
-                                const et = exif.ExposureTime as number;
-                                if (et < 1) {
-                                    // 例: 0.004 → "1/250"
-                                    const denom = Math.round(1 / et);
-                                    setShutter(prev => prev || `1/${denom}`);
-                                } else {
-                                    setShutter(prev => prev || `${et}s`);
-                                }
-                            } else if (exif.ShutterSpeedValue) {
-                                setShutter(prev => prev || String(exif.ShutterSpeedValue));
-                            }
-
-                            // ✅ 絞り値
-                            if (exif.FNumber) {
-                                setAperture(prev => prev || `f/${exif.FNumber}`);
-                            } else if (exif.ApertureValue) {
-                                setAperture(prev => prev || `f/${exif.ApertureValue}`);
-                            }
-
-                            // ✅ ISO
-                            if (exif.ISOSpeedRatings) {
-                                setIso(prev => prev || String(exif.ISOSpeedRatings));
-                            } else if (exif.ISO) {
-                                setIso(prev => prev || String(exif.ISO));
-                            }
-
-                            if (!shotAt) {
-                                const rawDate = (exif.DateTimeOriginal || exif.DateTime) as string | undefined;
-                                if (rawDate) {
-                                    const formatted = rawDate.substring(0, 10).replace(/:/g, '-');
-                                    if (/^\d{4}-\d{2}-\d{2}$/.test(formatted)) {
-                                        setShotAt(formatted);
-                                        setShotAtEnabled(true);
-                                    }
-                                }
-                            }
-                        }
-
+                        // ✅ アップロード後も最新のEXIF（Cloudinary提供分含む）を反映
+                        const mergedExif = { ...(clientExif || {}), ...(result.exif || {}) };
+                        reflectExifToForm(mergedExif);
 
                         // ✅ アップロード履歴に追加
                         const entry: HistoryEntry = {
@@ -423,7 +408,7 @@ export default function NewPhotoPage() {
                             uploadedAt: new Date().toISOString(),
                         };
                         setHistory(prev => {
-                            const updated = [entry, ...prev].slice(0, 50); // 最大50件
+                            const updated = [entry, ...prev].slice(0, 50);
                             try { localStorage.setItem(HISTORY_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
                             return updated;
                         });
@@ -522,6 +507,10 @@ export default function NewPhotoPage() {
                     }
                 }
 
+                // ✅ 最終的なデータ構築: Cloudinary EXIF と Client EXIF をマージ
+                const clientExif = fileExifMap.get(file.fileHash || '') || {};
+                const mergedExif = { ...clientExif, ...(file.exif || {}) };
+
                 return {
                     url: file.url,
                     publicId: file.publicId,
@@ -533,8 +522,9 @@ export default function NewPhotoPage() {
                     snsUrl,
                     categoryId,
                     displayMode,
+
                     exif: {
-                        ...file.exif,
+                        ...mergedExif,
                         ...(camera ? { Model: camera } : {}),
                         ...(lens ? { LensModel: lens } : {}),
                         ...(shutter ? { ExposureTime: shutter } : {}),
@@ -545,7 +535,27 @@ export default function NewPhotoPage() {
                 };
             });
 
-            const result = await savePhotosBulk(dataList, idToken);
+            // [MODIFIED] Worker API Call (Hybrid Architecture)
+            // const result = await savePhotosBulk(dataList, idToken);
+
+            const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL;
+            if (!workerUrl) throw new Error('Worker URL not configured');
+
+            const res = await fetch(`${workerUrl}/api/save-photos`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ photos: dataList })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json() as { error?: string };
+                throw new Error(errData.error || 'Worker API error');
+            }
+
+            const result = await res.json() as { success: boolean; count?: number; error?: string };
 
             if (result.success) {
                 setMessage(`✅ ${uploadedFiles.length}枚の写真を保存しました！一覧ページに移動します...`);
@@ -553,8 +563,9 @@ export default function NewPhotoPage() {
             } else {
                 setErrorMsg(result.error || '保存中にエラーが発生しました。');
             }
-        } catch (error) {
-            setErrorMsg('エラーが発生しました。');
+        } catch (error: any) {
+            console.error('Upload Error:', error);
+            setErrorMsg(error.message || 'エラーが発生しました。');
         }
         setLoading(false);
     };
@@ -563,7 +574,7 @@ export default function NewPhotoPage() {
         switch (status) {
             case 'queued': return '待機中...';
             case 'resizing': return 'リサイズ中...';
-            case 'converting': return 'WebP変換中...';
+
             case 'uploading': return 'アップロード中...';
             case 'processing': return 'AI解析中...';
             case 'done': return '✅ 完了';
@@ -639,6 +650,8 @@ export default function NewPhotoPage() {
                 </div>
             )}
 
+
+
             <div className="flex flex-col md:flex-row gap-8">
                 {/* Left: Image Upload & Previews */}
                 <div className="w-full md:w-1/2">
@@ -648,6 +661,9 @@ export default function NewPhotoPage() {
                             <div className="flex gap-2 items-center">
                                 <div className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
                                     🚀 Turboモード
+                                </div>
+                                <div className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                                    ℹ️ EXIF保持
                                 </div>
                                 {(uploadedFiles.length > 0 || uploadQueue.length > 0) && (
                                     <button
@@ -662,15 +678,6 @@ export default function NewPhotoPage() {
 
                         {/* ✅ オプション設定 */}
                         <div className="mb-4 flex gap-4 text-xs text-gray-600">
-                            <label className="flex items-center gap-1.5 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={convertWebP}
-                                    onChange={e => setConvertWebP(e.target.checked)}
-                                    className="rounded"
-                                />
-                                <span>WebP変換（推奨）</span>
-                            </label>
                             <label className="flex items-center gap-1.5 cursor-pointer">
                                 <input
                                     type="checkbox"
@@ -1056,6 +1063,6 @@ export default function NewPhotoPage() {
                     </form>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

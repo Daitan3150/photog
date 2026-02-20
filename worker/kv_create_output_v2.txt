@@ -1,0 +1,17 @@
+
+ ⛅️ wrangler 4.66.0
+───────────────────
+Resource location: remote 
+
+🌀 Creating namespace with title "PORTFOLIO_CACHE"
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mA KV namespace with the title "PORTFOLIO_CACHE" already exists.[0m
+
+  
+  You can list existing namespaces with their IDs by running:
+    wrangler kv namespace list
+  
+  Or choose a different namespace name.
+
+
+🪵  Logs were written to "/Users/daitan/Library/Preferences/.wrangler/logs/wrangler-2026-02-18_17-02-23_823.log"

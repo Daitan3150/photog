@@ -14,21 +14,28 @@ const notoSerifJP = Noto_Serif_JP({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://next-portfolio-lime-one.vercel.app"),
-  title: "Portfolio | Photographer",
-  description: "Photography portfolio featuring landscapes, portraits, and urban scenes.",
+  metadataBase: new URL("https://next-portfolio-eosin-eight.vercel.app"),
+  title: {
+    template: "%s | DAITAN",
+    default: "DAITAN | Portrait & Snapshot Photographer",
+  },
+  description: "Portfolio of Daitan, a photographer based in Otaru, Hokkaido. featuring portraits, snapshots, and conceptual photography.",
   openGraph: {
-    title: "Portfolio | Photographer",
-    description: "Photography portfolio featuring landscapes, portraits, and urban scenes.",
-    url: "https://next-portfolio-lime-one.vercel.app",
-    siteName: "Photographer Portfolio",
+    title: "DAITAN | Portrait & Snapshot Photographer",
+    description: "Capture the moment. Portfolio of Daitan.",
+    url: "https://next-portfolio-eosin-eight.vercel.app",
+    siteName: "DAITAN Portfolio",
     locale: "ja_JP",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Portfolio | Photographer",
-    description: "Photography portfolio featuring landscapes, portraits, and urban scenes.",
+    title: "DAITAN | Photographer",
+    creator: "@daitan_photo", // Replace with actual Twitter handle if known, or remove
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

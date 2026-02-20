@@ -1,0 +1,33 @@
+name = "worker"
+main = "src/index.ts"
+compatibility_date = "2024-02-19"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "portfolio-db"
+database_id = "e678740d-a893-4874-8756-b5ce1cda3e24"
+
+[[kv_namespaces]] 
+binding = "PORTFOLIO_CACHE"
+id = "67612c49683e41038df0bb5fe9c900f4"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "photo-temp-storage"
+
+
+[[durable_objects.bindings]]
+name = "PHOTO_COUNTER"
+class_name = "PhotoCounter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PhotoCounter"]
+
+[vars]
+ALLOWED_ORIGIN = "https://next-portfolio-lime-one.vercel.app"
+# Other vars (FIREBASE_*, ALGOLIA_*) should be set via `wrangler secret put`
+
+[observability]
+enabled = true

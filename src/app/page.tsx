@@ -3,6 +3,13 @@ import PhotoGrid from "@/components/gallery/PhotoGrid";
 import { getRecentPhotos } from "@/lib/actions/photos";
 import { Suspense } from "react";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Home",
+  description: "Gallery of recent works and featured collections.",
+};
+
 export default async function Home() {
   const photos = await getRecentPhotos(6);
 

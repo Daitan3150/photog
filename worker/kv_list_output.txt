@@ -1,0 +1,12 @@
+[
+  {
+    "id": "341e3a1d712e4afabb120840d7744910",
+    "title": "CACHE_KV",
+    "supports_url_encoding": true
+  },
+  {
+    "id": "67612c49683e41038df0bb5fe9c900f4",
+    "title": "PORTFOLIO_CACHE",
+    "supports_url_encoding": true
+  }
+]

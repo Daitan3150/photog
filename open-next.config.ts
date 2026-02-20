@@ -8,20 +8,15 @@ export default {
             tagCache: "dummy",
             queue: "dummy",
         },
-        /*
-        install: {
-            packageManager: "npm",
-            externals: ["sharp", "jose", "jwks-rsa"],
-        },
-        */
+    },
+    edgeExternals: ["node:crypto", "jose"],
+    middleware: {
+        external: true,
         // esbuild で sharp（ハッシュ付き含む）を external に
         esbuildConfig: {
             external: ["sharp", "sharp-*"],
+            minify: true,
         },
-    },
-    edgeExternals: ["node:crypto", "jose", "sharp"],
-    middleware: {
-        external: true,
         override: {
             wrapper: "cloudflare-edge",
             converter: "edge",

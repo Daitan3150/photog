@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import cloudinaryLoader from "@/lib/cloudinary-loader";
 import { X, ChevronLeft, ChevronRight, MapPin, User, Instagram, Twitter, Globe, ExternalLink, Share2, Copy, Check, Facebook } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -33,7 +34,7 @@ const getSnsInfo = (url: string) => {
 
 const formatShutterSpeed = (exposure: number) => {
     if (!exposure) return '';
-    if (exposure >= 1) return `${Math.round(exposure * 10) / 10}s`;
+    if (exposure >= 1) return `${Math.round(exposure)}s`;
     return `1/${Math.round(1 / exposure)}`;
 };
 
@@ -122,9 +123,8 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                         }}
                     >
                         <Image
-                            src={photo.url.includes('res.cloudinary.com')
-                                ? photo.url.replace('/upload/', '/upload/f_auto,q_auto,w_1920/')
-                                : photo.url}
+                            loader={cloudinaryLoader}
+                            src={photo.url}
                             alt={photo.title || "Photography"}
                             fill
                             className="object-contain pointer-events-none"

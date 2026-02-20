@@ -259,13 +259,12 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
     }
 }
 
-export async function getPhotos(idToken: string) {
+export async function getPhotos(idToken: string, options: { limit?: number; cursor?: string } = {}) {
     try {
         const { getAdminAuth, getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const auth = getAdminAuth();
         const decodedToken = await auth.verifyIdToken(idToken);
         const uid = decodedToken.uid;
-        const email = decodedToken.email;
 
         const db = getAdminFirestore();
 
@@ -274,18 +273,28 @@ export async function getPhotos(idToken: string) {
         const userData = userDoc.data();
         const isAdmin = userData?.role === 'admin';
 
-        // Use string or any to avoid 'admin' namespace issue on client
-        let query: any = db.collection('photos');
+        let query: any = db.collection('photos').orderBy('createdAt', 'desc');
 
         if (!isAdmin) {
             query = query.where('uploaderId', '==', uid);
         }
 
-        const snapshot = await query.orderBy('createdAt', 'desc').get();
+        // Pagination: Start After Cursor
+        if (options.cursor) {
+            const cursorDoc = await db.collection('photos').doc(options.cursor).get();
+            if (cursorDoc.exists) {
+                query = query.startAfter(cursorDoc);
+            }
+        }
 
-        return snapshot.docs.map((doc: any) => {
+        // Limit
+        const limit = options.limit || 50;
+        query = query.limit(limit);
+
+        const snapshot = await query.get();
+
+        const photos = snapshot.docs.map((doc: any) => {
             const data = doc.data();
-            // EXIFにFirestore Timestamp等が含まれる場合シリアライズ不可のためJSONで変換
             let safeExif: Record<string, any> | null = null;
             if (data.exif) {
                 try {
@@ -306,9 +315,18 @@ export async function getPhotos(idToken: string) {
                 updatedAt: data.updatedAt?.toDate().toISOString(),
             };
         });
+
+        // Determine next cursor
+        const nextCursor = photos.length === limit ? photos[photos.length - 1].id : null;
+
+        return {
+            photos,
+            nextCursor
+        };
+
     } catch (error) {
         console.error('Error fetching photos:', error);
-        return [];
+        return { photos: [], nextCursor: null };
     }
 }
 
@@ -993,26 +1011,13 @@ export async function getPublicPhotoById(photoId: string): Promise<any> {
 
         // [MODIFIED] Relaxed check: Allow untitled if category exists
         const hasCategory = data?.categoryId && data.categoryId.trim() !== '';
+        // const hasTitle = data?.title && data.title.trim() !== ''; // Removed strict title check
 
         if (!hasCategory) return null;
-
-        // EXIFにFirestore Timestamp等が含まれる場合シリアライズ不可のためJSONで変換
-        let safeExif: Record<string, any> | null = null;
-        if (data?.exif) {
-            try {
-                safeExif = JSON.parse(JSON.stringify(data.exif, (_, v) => {
-                    if (v && typeof v === 'object' && '_seconds' in v) {
-                        return new Date(v._seconds * 1000).toISOString();
-                    }
-                    return v;
-                }));
-            } catch { safeExif = null; }
-        }
 
         return {
             id: photoDoc.id,
             ...data,
-            exif: safeExif,
             shotAt: data?.shotAt?.toDate().toISOString(),
             createdAt: data?.createdAt?.toDate().toISOString(),
             updatedAt: data?.updatedAt?.toDate().toISOString(),
@@ -1095,23 +1100,9 @@ export async function getPhotoPublic(photoId: string): Promise<any> {
 
         const catId = data?.categoryId || '';
 
-        // EXIFにFirestore Timestamp等が含まれる場合シリアライズ不可のためJSONで変換
-        let safeExif: Record<string, any> | null = null;
-        if (data?.exif) {
-            try {
-                safeExif = JSON.parse(JSON.stringify(data.exif, (_, v) => {
-                    if (v && typeof v === 'object' && '_seconds' in v) {
-                        return new Date(v._seconds * 1000).toISOString();
-                    }
-                    return v;
-                }));
-            } catch { safeExif = null; }
-        }
-
         return {
             id: photoDoc.id,
             ...data,
-            exif: safeExif,
             category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
             shotAt: data?.shotAt?.toDate().toISOString(),
             createdAt: data?.createdAt?.toDate().toISOString(),

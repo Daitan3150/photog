@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/admin/AuthProvider';
-import { getPhotoById, updatePhoto, getExifSuggestions } from '@/lib/actions/photos';
+import { getPhotoById, updatePhoto, getExifSuggestions, refreshPhotoMetadata } from '@/lib/actions/photos';
 import { getCategories, Category } from '@/lib/actions/categories';
 import { getSubjects, Subject } from '@/lib/actions/subjects';
 import Image from 'next/image';
@@ -11,6 +11,54 @@ import Link from 'next/link';
 import { ArrowLeft, Save, Calendar, User, MapPin, Tag, Link2 } from 'lucide-react';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import exifr from 'exifr';
+
+// ✅ 署名取得
+const fetchSignature = async (params: Record<string, any>, token: string) => {
+    const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL;
+    const res = await fetch(`${workerUrl}/api/sign-upload`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ params })
+    });
+    if (!res.ok) throw new Error('Signature fetch failed');
+    return await res.json() as { signature: string; timestamp: number; apiKey: string };
+};
+
+// ✅ XHRアップロード
+function xhrUpload(
+    url: string,
+    formData: FormData,
+    onProgress: (pct: number) => void
+): Promise<Record<string, unknown>> {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                onProgress(Math.round((e.loaded / e.total) * 100));
+            }
+        };
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(JSON.parse(xhr.responseText));
+            } else {
+                try {
+                    const err = JSON.parse(xhr.responseText);
+                    reject(new Error(err?.error?.message || 'Upload failed'));
+                } catch {
+                    reject(new Error('Upload failed with status ' + xhr.status));
+                }
+            }
+        };
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(formData);
+    });
+}
+
 
 export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: photoId } = use(params);
@@ -41,6 +89,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const [replacing, setReplacing] = useState(false);
     const [shotAtEnabled, setShotAtEnabled] = useState(true); // false = 撮影日なし
     const [exifSuggestions, setExifSuggestions] = useState<{ models: string[], lensModels: string[] }>({ models: [], lensModels: [] });
+    const [refreshingExif, setRefreshingExif] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -85,71 +134,108 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         setLoading(false);
     };
 
+
+
     const handleFileSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !user) return;
 
         setReplacing(true);
         try {
-            let result: any;
+            const { resizeImageClient } = await import('@/lib/utils/client-image');
+            const token = await user.getIdToken();
 
-            // [ENHANCED] Support for large files (>3MB) during replacement
-            if (file.size > 3 * 1024 * 1024) {
-                // 1. Upload to Firebase Storage
-                const fileName = `${Date.now()}_${file.name}`;
-                const storagePath = `temp_uploads/${user?.uid}/${fileName}`;
-                const storageRef = ref(storage, storagePath);
-
-                await uploadBytes(storageRef, file);
-                const downloadUrl = await getDownloadURL(storageRef);
-
-                // 2. Process/Resize on Server
-                const processResponse = await fetch('/api/upload/resize-remote', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        url: downloadUrl,
-                        publicId: storagePath,
-                        fileName: file.name
-                    })
+            // 1. Client-side EXIF Parsing
+            let clientExif: any = {};
+            try {
+                clientExif = await exifr.parse(file, {
+                    tiff: true,
+                    xmp: true,
+                    exif: true,
+                    gps: true,
                 });
-
-                if (!processResponse.ok) {
-                    throw new Error('Server-side processing failed');
-                }
-
-                result = await processResponse.json();
-            } else {
-                const formDataUpload = new FormData();
-                formDataUpload.append('file', file);
-
-                const response = await fetch('/api/upload/resize', {
-                    method: 'POST',
-                    body: formDataUpload,
-                });
-
-                if (!response.ok) {
-                    throw new Error('Upload failed');
-                }
-
-                result = await response.json();
+            } catch (e) {
+                console.warn('EXIF parse failed:', e);
             }
 
-            setFormData(prev => ({
-                ...prev,
-                url: result.url,
-                publicId: result.publicId,
-                exif: result.exif || prev.exif, // Inherit new EXIF if available
-                tags: result.tags || prev.tags  // Inherit new AI tags if available
-            }));
+            // 2. Client-side Resize
+            let fileToUpload: File | Blob = file;
+            try {
+                // Resize to max 2500px, quality 0.85
+                fileToUpload = await resizeImageClient(file, 2500, 2500, 0.85);
+            } catch { /* Fallback to original */ }
 
-            // Also update originalPhoto to show the new preview immediately
+            // 3. Prepare Signed Upload
+            const timestamp = Math.round(new Date().getTime() / 1000);
+            const uploadParams: Record<string, any> = {
+                timestamp,
+                folder: 'portfolio',
+                upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'next-portfolio',
+                auto_tagging: '0.6' // Enable AI tagging
+            };
+
+            const { signature, apiKey } = await fetchSignature(uploadParams, token);
+
+            const formDataUpload = new FormData();
+            formDataUpload.append('file', fileToUpload);
+            formDataUpload.append('signature', signature);
+            formDataUpload.append('api_key', apiKey);
+            formDataUpload.append('timestamp', String(timestamp));
+            Object.entries(uploadParams).forEach(([key, value]) => {
+                if (key !== 'timestamp') formDataUpload.append(key, String(value));
+            });
+
+            // 4. Upload with Progress (could add progress state if needed, mostly fast for one photo)
+            const result: any = await xhrUpload(
+                `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                formDataUpload,
+                (pct) => { /* console.log(pct) */ }
+            );
+
+            // 5. Merge EXIF & Update Form
+            const mergedExif = { ...clientExif, ...(result.exif || {}) };
+
+            setFormData(prev => {
+                const newData = {
+                    ...prev,
+                    url: result.secure_url,
+                    publicId: result.public_id,
+                    exif: { ...prev.exif, ...mergedExif },
+                    tags: [...new Set([...prev.tags, ...(result.tags || [])])]
+                };
+
+                // Auto-fill form fields from new EXIF (Since this is single edit, we WANT to overwrite)
+                if (mergedExif.Model) newData.exif.Model = mergedExif.Model;
+                if (mergedExif.LensModel) newData.exif.LensModel = mergedExif.LensModel;
+                if (mergedExif.FNumber) newData.exif.FNumber = mergedExif.FNumber;
+                if (mergedExif.ExposureTime) newData.exif.ExposureTime = mergedExif.ExposureTime;
+                if (mergedExif.ISOSpeedRatings || mergedExif.ISO) newData.exif.ISO = mergedExif.ISOSpeedRatings || mergedExif.ISO;
+
+                // Update shotAt if available
+                const rawDate = mergedExif.DateTimeOriginal || mergedExif.DateTime;
+                if (rawDate) {
+                    try {
+                        const d = new Date(rawDate);
+                        if (!isNaN(d.getTime())) {
+                            newData.shotAt = d.toISOString().split('T')[0];
+                        }
+                    } catch { }
+                }
+
+                return newData;
+            });
+
+            // Update Preview
             setOriginalPhoto((prev: any) => ({
                 ...prev,
-                url: result.url,
-                publicId: result.publicId
+                url: result.secure_url,
+                publicId: result.public_id
             }));
 
+            alert('写真を差し替えました。保存ボタンで確定してください。');
+
         } catch (err: any) {
+            console.error('Replacement failed:', err);
             alert('アップロードに失敗しました: ' + err.message);
         } finally {
             setReplacing(false);
@@ -174,6 +260,32 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
             alert('更新に失敗しました: ' + result.error);
         }
         setSaving(false);
+    };
+
+    const handleRefreshExif = async () => {
+        if (!user || !photoId) return;
+        if (!confirm('CloudinaryからEXIF情報を再取得し、現在の入力内容を上書きしますか？')) return;
+
+        setRefreshingExif(true);
+        try {
+            const token = await user.getIdToken();
+            const result = await refreshPhotoMetadata(photoId, token);
+            if (result.success) {
+                await fetchPhoto(); // Reload data
+
+                // [DEBUG] Show what was found
+                const debugInfo = result.debug ?
+                    `\n\n[Debug Info]\nPublic ID: ${result.debug.publicId}\nModel: ${result.debug.foundModel}\nLens: ${result.debug.foundLens}` : '';
+
+                alert('EXIF情報を更新しました' + debugInfo);
+            } else {
+                alert('EXIF更新に失敗しました: ' + result.error);
+            }
+        } catch (error: any) {
+            alert('エラーが発生しました: ' + error.message);
+        } finally {
+            setRefreshingExif(false);
+        }
     };
 
     if (loading) return <div className="flex items-center justify-center min-h-screen">読み込み中...</div>;
@@ -403,11 +515,24 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                         <ArrowLeft className="w-4 h-4 mr-2 text-gray-400 rotate-90" />
                                         機材・撮影情報 (EXIF)
                                     </label>
-                                    {originalPhoto.exifRequest && (
-                                        <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
-                                            モデルから設定の依頼があります
-                                        </span>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleRefreshExif}
+                                            disabled={refreshingExif}
+                                            className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 font-bold border border-gray-200 flex items-center gap-1"
+                                        >
+                                            {refreshingExif ? (
+                                                <span className="animate-spin text-gray-400">⚡</span>
+                                            ) : '↻'}
+                                            {refreshingExif ? '取得中...' : '再取得'}
+                                        </button>
+                                        {originalPhoto.exifRequest && (
+                                            <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                                                依頼あり
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="col-span-2">

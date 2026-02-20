@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/upload/resize": {
+      "maxDuration": 60
+    },
+    "/api/upload/resize-async": {
+      "maxDuration": 60
+    },
+    "/api/upload/resize-remote": {
+      "maxDuration": 60
+    },
+    "/opengraph-image": {},
+    "/photo/[id]/opengraph-image": {}
+  }
+}

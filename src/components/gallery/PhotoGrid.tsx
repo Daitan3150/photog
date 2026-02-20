@@ -7,14 +7,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { getSnsUrl } from "@/lib/utils/sns";
 import { Instagram, Twitter, ExternalLink, Globe, Share2 } from "lucide-react";
 import Lightbox from "./Lightbox";
-import { useState, useEffect } from "react";
-
-// Cloudinary optimization helper
-const getOptimizedUrl = (url: string, width: number = 800) => {
-    if (!url.includes('res.cloudinary.com')) return url;
-    // Add f_auto,q_auto and specific width
-    return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
-};
+import cloudinaryLoader from "@/lib/cloudinary-loader";
 
 // SNS Service detection helper
 const getSnsIcon = (url: string) => {
@@ -101,13 +94,14 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                         <div className="flex flex-col">
                             <Link href={photo.href || `/portfolio?img=${photo.id}`} className="block overflow-hidden relative rounded-sm shadow-sm">
                                 <Image
-                                    src={getOptimizedUrl(photo.url, 800)}
+                                    loader={cloudinaryLoader}
+                                    src={photo.url}
                                     alt={photo.title}
                                     width={800}
                                     height={photo.aspectRatio === "portrait" ? 1200 : 600}
                                     className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                    loading="lazy"
+                                    priority={index < 4}
                                 />
 
                                 {/* Metadata Overlay (Inside Image) */}
@@ -147,10 +141,11 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                                 </div>
                                             )}
 
+
                                             <h3 className="text-[11px] md:text-sm font-serif tracking-[0.1em] mt-2 border-t border-white/10 pt-2 line-clamp-1">
                                                 {photo.displayMode === 'character' && photo.characterName
                                                     ? photo.characterName
-                                                    : photo.title}
+                                                    : (photo.title || '無題')}
                                             </h3>
                                         </div>
                                     </motion.div>

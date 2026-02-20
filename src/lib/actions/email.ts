@@ -22,16 +22,16 @@ export async function sendBackupEmail(email: string) {
             
             <h2 style="color: #555;">🌍 閲覧者用 (Public)</h2>
             <p style="font-size: 16px;">
-                <a href="https://next-portfolio-lime-one.vercel.app" style="color: #0070f3; text-decoration: none;">
-                    https://next-portfolio-lime-one.vercel.app
+                <a href="https://next-portfolio-9nb.pages.dev" style="color: #0070f3; text-decoration: none;">
+                    https://next-portfolio-9nb.pages.dev
                 </a>
             </p>
             <p style="color: #777; font-size: 14px;">誰でもアクセス可能な公開URLです。</p>
             
             <h2 style="color: #555;">🔐 管理者用 (Admin Dashboard)</h2>
             <p style="font-size: 16px;">
-                <a href="https://next-portfolio-lime-one.vercel.app/admin" style="color: #0070f3; text-decoration: none;">
-                    https://next-portfolio-lime-one.vercel.app/admin
+                <a href="https://next-portfolio-9nb.pages.dev/admin" style="color: #0070f3; text-decoration: none;">
+                    https://next-portfolio-9nb.pages.dev/admin
                 </a>
             </p>
              <p style="color: #777; font-size: 14px;">写真投稿・管理を行うための専用URLです（要ログイン）。</p>
@@ -40,7 +40,7 @@ export async function sendBackupEmail(email: string) {
             
             <h3 style="color: #666;">使用サービス一覧</h3>
             <ul style="color: #555;">
-                <li><strong>Vercel</strong>: ホスティング</li>
+                <li><strong>Cloudflare Pages</strong>: ホスティング</li>
                 <li><strong>MicroCMS</strong>: ブログ管理</li>
                 <li><strong>Cloudinary</strong>: 画像管理</li>
                 <li><strong>Firebase</strong>: データベース・認証</li>
