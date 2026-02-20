@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is super admin
+    function isSuperAdmin() {
+      return request.auth != null && 
+             request.auth.token.email == 'daitan10618@icloud.com';
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(ownerId) {
+      return request.auth != null && request.auth.uid == ownerId;
+    }
+    
+    // Helper function to validate Cloudinary URL
+    function isValidCloudinaryUrl(url) {
+      return url.matches('https://res\\.cloudinary\\.com/.*');
+    }
+    
+    // Photos collection
+    match /photos/{photoId} {
+      // Read: Everyone (for public gallery)
+      allow read: if true;
+      
+      // Create: Authenticated users only with strict validation
+      allow create: if request.auth != null 
+                    && request.resource.data.uploaderId == request.auth.uid
+                    && request.resource.data.keys().hasAll(['uploaderId', 'url', 'publicId', 'createdAt'])
+                    // 🔒 High Priority: URL validation (Cloudinary only)
+                    && isValidCloudinaryUrl(request.resource.data.url)
+                    // 🔒 High Priority: Timestamp validation (prevent backdating, within 5 minutes)
+                    && request.time > request.resource.data.createdAt.toMillis() - duration.value(5, 'm').seconds() * 1000
+                    && request.time < request.resource.data.createdAt.toMillis() + duration.value(5, 'm').seconds() * 1000
+                    // 🟡 Medium Priority: Data size limits
+                    && request.resource.data.size() < 100
+                    && (!request.resource.data.keys().hasAny(['title']) || request.resource.data.title.size() < 200)
+                    && (!request.resource.data.keys().hasAny(['location']) || request.resource.data.location.size() < 100)
+                    && (!request.resource.data.keys().hasAny(['subjectName']) || request.resource.data.subjectName.size() < 100)
+                    // 🟡 Medium Priority: Admin-only fields (featured, priority)
+                    && (!request.resource.data.keys().hasAny(['featured', 'priority', 'highlighted']) || isSuperAdmin());
+      
+      // Update: Owner or Super Admin only
+      allow update: if request.auth != null 
+                    && (isOwner(resource.data.uploaderId) || isSuperAdmin())
+                    // 🔒 High Priority: Protect critical fields from modification
+                    && request.resource.data.uploaderId == resource.data.uploaderId
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.publicId == resource.data.publicId
+                    // URL can only be changed by super admin
+                    && (request.resource.data.url == resource.data.url || isSuperAdmin())
+                    // Validate data size on update
+                    && request.resource.data.size() < 100
+                    && (!request.resource.data.keys().hasAny(['title']) || request.resource.data.title.size() < 200)
+                    && (!request.resource.data.keys().hasAny(['location']) || request.resource.data.location.size() < 100)
+                    && (!request.resource.data.keys().hasAny(['subjectName']) || request.resource.data.subjectName.size() < 100)
+                    // 🟡 Admin-only fields can only be changed by super admin
+                    && (!('featured' in request.resource.data.diff(resource.data).affectedKeys()) || isSuperAdmin())
+                    && (!('priority' in request.resource.data.diff(resource.data).affectedKeys()) || isSuperAdmin())
+                    && (!('highlighted' in request.resource.data.diff(resource.data).affectedKeys()) || isSuperAdmin())
+                    // 🟢 Low Priority: Soft delete - regular users can only mark for deletion
+                    && (request.resource.data.status != 'deleted' || isSuperAdmin());
+      
+      // 🟢 Low Priority: Delete - Physical deletion only by super admin
+      // Regular users should use soft delete (status: 'delete_requested')
+      allow delete: if isSuperAdmin();
+    }
+    
+    // Settings collection (profile, etc.)
+    match /settings/{document} {
+      // Read: Everyone (for public profile display)
+      allow read: if true;
+      
+      // Write: Super Admin only
+      allow write: if isSuperAdmin()
+                   // Validate profile image URL if present
+                   && (!request.resource.data.keys().hasAny(['imageUrl']) 
+                       || request.resource.data.imageUrl == '' 
+                       || isValidCloudinaryUrl(request.resource.data.imageUrl))
+                   // Data size limit
+                   && request.resource.data.size() < 50
+                   // Text field length limits
+                   && (!request.resource.data.keys().hasAny(['bio']) || request.resource.data.bio.size() < 1000)
+                   && (!request.resource.data.keys().hasAny(['name']) || request.resource.data.name.size() < 100)
+                   && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role.size() < 100)
+                   && (!request.resource.data.keys().hasAny(['location']) || request.resource.data.location.size() < 100);
+    }
+    
+    // Categories collection
+    match /categories/{categoryId} {
+      // Read: Everyone
+      allow read: if true;
+      
+      // Write: Super Admin only
+      allow write: if isSuperAdmin()
+                   && request.resource.data.size() < 20
+                   && (!request.resource.data.keys().hasAny(['name']) || request.resource.data.name.size() < 100)
+                   && (!request.resource.data.keys().hasAny(['description']) || request.resource.data.description.size() < 500);
+    }
+    
+    // Users collection (if needed in future)
+    match /users/{userId} {
+      // Read: Owner or Super Admin
+      allow read: if isOwner(userId) || isSuperAdmin();
+      
+      // Create: User can only create their own document
+      allow create: if request.auth != null
+                    && userId == request.auth.uid
+                    && request.resource.data.size() < 50
+                    // Timestamp validation
+                    && request.time > request.resource.data.createdAt.toMillis() - duration.value(5, 'm').seconds() * 1000
+                    && request.time < request.resource.data.createdAt.toMillis() + duration.value(5, 'm').seconds() * 1000;
+      
+      // Update: Owner or Super Admin
+      allow update: if (isOwner(userId) || isSuperAdmin())
+                    && request.resource.data.size() < 50
+                    // Protect createdAt from modification
+                    && request.resource.data.createdAt == resource.data.createdAt;
+      
+      // Delete: Super Admin only
+      allow delete: if isSuperAdmin();
+    }
+    
+    // Request logs collection (for audit trail, if implemented)
+    match /logs/{logId} {
+      // Read: Super Admin only
+      allow read: if isSuperAdmin();
+      
+      // Write: System only (no direct writes allowed)
+      allow write: if false;
+    }
+  }
+}
