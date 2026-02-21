@@ -680,9 +680,11 @@ const CATEGORY_MAP: Record<string, string> = {
 
 export async function searchPhotos(query: string) {
     try {
-        const { getFirebaseAdmin } = await import('../firebaseAdmin');
-        const admin = await getFirebaseAdmin();
-        const db = admin.firestore();
+        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const db = getAdminFirestore();
+
+        // Safety check for DB connection
+        if (!db) throw new Error('Failed to initialize Firestore');
 
         if (!query) {
             const cachedPublic = await getCachedData<any[]>('public_photos');
@@ -1002,9 +1004,8 @@ export async function getPhotoById(photoId: string, idToken: string): Promise<an
 
 export async function getPublicPhotoById(photoId: string): Promise<any> {
     try {
-        const { getFirebaseAdmin } = await import('../firebaseAdmin');
-        const admin = await getFirebaseAdmin();
-        const db = admin.firestore();
+        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const db = getAdminFirestore();
 
         const doc = await db.collection('photos').doc(photoId).get();
         if (!doc.exists) return null;
@@ -1030,9 +1031,8 @@ export async function getPublicPhotoById(photoId: string): Promise<any> {
 
 export async function getRecentPhotos(limit: number = 6) {
     try {
-        const { getFirebaseAdmin } = await import('../firebaseAdmin');
-        const admin = await getFirebaseAdmin();
-        const db = admin.firestore();
+        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const db = getAdminFirestore();
 
         const snapshot = await db.collection('photos')
             .orderBy('createdAt', 'desc')
