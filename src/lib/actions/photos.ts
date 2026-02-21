@@ -1154,9 +1154,9 @@ export async function getPublicPhotoById(photoId: string): Promise<any> {
             id: photoId,
             ...data,
             category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
-            shotAt: data?.shotAt instanceof (admin as any).firestore.Timestamp ? data.shotAt.toDate().toISOString() : data?.shotAt,
-            createdAt: data?.createdAt instanceof (admin as any).firestore.Timestamp ? data.createdAt.toDate().toISOString() : data?.createdAt,
-            updatedAt: data?.updatedAt instanceof (admin as any).firestore.Timestamp ? data.updatedAt.toDate().toISOString() : data?.updatedAt,
+            shotAt: serializeData(data?.shotAt),
+            createdAt: serializeData(data?.createdAt),
+            updatedAt: serializeData(data?.updatedAt),
         };
 
         return serializeData(photo);
@@ -1229,9 +1229,9 @@ export async function getRecentPhotos(limit: number = 6) {
                         id: doc.id,
                         ...data,
                         category: CATEGORY_MAP[String(catId)] || String(catId).toUpperCase() || 'OTHER',
-                        shotAt: data.shotAt instanceof (admin as any).firestore.Timestamp ? data.shotAt.toDate().toISOString() : data.shotAt,
-                        createdAt: data.createdAt instanceof (admin as any).firestore.Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
-                        updatedAt: data.updatedAt instanceof (admin as any).firestore.Timestamp ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+                        shotAt: serializeData(data.shotAt),
+                        createdAt: serializeData(data.createdAt),
+                        updatedAt: serializeData(data.updatedAt),
                     };
                 })
                 .filter((p: any) => p.categoryId && String(p.categoryId).trim() !== '');

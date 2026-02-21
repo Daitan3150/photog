@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
         return () => unsubscribe();
-    }, [router, pathname, loading]);
+    }, [router, pathname]);
 
     return (
         <AuthContext.Provider value={{ user, role, loading }}>
