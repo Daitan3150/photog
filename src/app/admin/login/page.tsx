@@ -6,6 +6,7 @@ import { auth } from '@/lib/firebase';
 import { getUserRole } from '@/lib/firebase/user';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AdminLoginPage() {
@@ -77,8 +78,9 @@ export default function AdminLoginPage() {
                 </form>
                 <div className="mt-4 text-center text-sm space-y-2">
                     <div>
-                        <Link href="/admin/reset-password" className="text-gray-500 hover:text-gray-800 underline">
-                            パスワードをお忘れの方はこちら
+                        <Link href="/admin/help" className="text-gray-500 hover:text-blue-600 font-bold flex items-center justify-center gap-1 transition-colors">
+                            <HelpCircle size={16} />
+                            ID・パスワードをお忘れの方はこちら
                         </Link>
                     </div>
                     <div className="pt-4 border-t">
