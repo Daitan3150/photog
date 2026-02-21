@@ -1,15 +1,6 @@
 "use client";
 
-import {
-    Configure,
-    RefinementList,
-    useHits,
-    useSearchBox,
-    Pagination,
-    CurrentRefinements,
-    ClearRefinements,
-    useInstantSearch
-} from "react-instantsearch";
+import { Configure, RefinementList, useHits, useSearchBox, Pagination, CurrentRefinements, ClearRefinements, useInstantSearch } from "react-instantsearch";
 import { InstantSearchNext } from "react-instantsearch-nextjs";
 import { getSearchClient } from "@/lib/algolia";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,15 +9,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { Filter, X, Search as SearchIcon, Tag, MapPin, Grid } from "lucide-react";
 import { clsx } from "clsx";
+import cloudinaryLoader from "@/lib/cloudinary-loader";
 
 const searchClient = getSearchClient();
 
 function Hit({ hit }: { hit: any }) {
-    const getOptimizedUrl = (url: string, width: number = 800) => {
-        if (!url.includes('res.cloudinary.com')) return url;
-        return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
-    };
-
     return (
         <motion.div
             layout
@@ -37,7 +24,8 @@ function Hit({ hit }: { hit: any }) {
         >
             <Link href={`/portfolio?img=${hit.objectID}`} className="block overflow-hidden relative rounded-sm shadow-sm group">
                 <Image
-                    src={getOptimizedUrl(hit.url, 1200)}
+                    loader={cloudinaryLoader}
+                    src={hit.url}
                     alt={hit.title}
                     width={800}
                     height={1000}

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
 const CATEGORIES = [
+    { id: 'all', name: 'ALL', nameJa: '全て' },
     { id: 'cosplay', name: 'COSPLAY', nameJa: 'コスプレ' },
     { id: 'portrait', name: 'PORTRAIT', nameJa: 'ポートレート' },
     { id: 'snapshot', name: 'SNAPSHOT', nameJa: 'スナップ' },

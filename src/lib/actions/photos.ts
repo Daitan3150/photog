@@ -2,11 +2,16 @@
 
 // Removed top-level admin/firebaseAdmin imports to prevent client-side leak
 import { PhotoFormData, Photo as PhotoType } from '@/types/photo';
-import { revalidatePath } from 'next/cache';
+import { db } from '../db';
+import { photos as photoTable, subjects as subjectTable, tags as tagTable, photoTags as photoTagsTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
+import { serializeData } from '../utils/serialization';
 import { getCoordinates } from '../utils/location';
 import { getCachedData, setCachedData } from '../worker-cache';
 import { syncPhotoToAlgolia } from '../algolia';
 import { appendToMetadataRegistry } from './metadata';
+import { revalidatePath } from 'next/cache';
+import { checkAndTriggerSync } from '../db/sync';
 
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'daitan10618@icloud.com';
 
@@ -104,7 +109,8 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
         }
 
         const photoRef = db.collection('photos').doc();
-        await photoRef.set({
+        const photoId = photoRef.id;
+        const photoDataToSave = {
             uploaderId,
             modelId, // Link photo to Model ID
             url: data.url,
@@ -126,7 +132,55 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             tags: data.tags || [],
             createdAt: new Date(),
             updatedAt: new Date(),
-        });
+        };
+
+        await photoRef.set(photoDataToSave);
+
+        // --- 🐘 Neon (PostgreSQL) Sync ---
+        try {
+            const { db: pgDb } = await import('../db');
+            await pgDb.insert(photoTable).values({
+                id: photoId,
+                ...photoDataToSave,
+                shotAt: photoDataToSave.shotAt || null,
+                exif: photoDataToSave.exif || null,
+                focalPoint: photoDataToSave.focalPoint || null,
+            }).onConflictDoUpdate({
+                target: [photoTable.id],
+                set: { updatedAt: new Date() }
+            });
+
+            // Sync Tags
+            if (data.tags && data.tags.length > 0) {
+                for (const tagName of data.tags) {
+                    const tagResult = await pgDb.insert(tagTable).values({ name: tagName })
+                        .onConflictDoUpdate({ target: [tagTable.name], set: { name: tagName } })
+                        .returning({ id: tagTable.id });
+
+                    if (tagResult.length > 0) {
+                        await pgDb.insert(photoTagsTable).values({
+                            photoId: photoId,
+                            tagId: tagResult[0].id
+                        }).onConflictDoNothing();
+                    }
+                }
+            }
+
+            // Sync Subject
+            if (data.subjectName) {
+                await pgDb.insert(subjectTable).values({
+                    name: data.subjectName,
+                    snsUrl: data.snsUrl || null,
+                    autoRegistered: true
+                }).onConflictDoUpdate({
+                    target: [subjectTable.name],
+                    set: { snsUrl: data.snsUrl || null }
+                });
+            }
+        } catch (pgError) {
+            console.error('Failed to sync to Neon:', pgError);
+            // Don't fail the whole action if PG sync fails, Sentry will catch it
+        }
 
         revalidatePath('/');
         revalidatePath('/portfolio');
@@ -238,15 +292,70 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
         await setCachedData('public_photos', null);
         await setCachedData('public_photos_for_search', null);
 
-        // --- 💪 筋肉 (Muscle): 検索インデックス同期 (Algolia) ---
-        for (let i = 0; i < dataList.length; i++) {
-            await syncPhotoToAlgolia({
+        // --- 🐘 Neon (PostgreSQL) Bulk Sync ---
+        try {
+            const { db: pgDb } = await import('../db');
+
+            // Insert photos in bulk
+            await pgDb.insert(photoTable).values(dataList.map((data, i) => ({
                 id: photoIds[i],
-                ...dataList[i],
-                category: dataList[i].categoryId,
+                uploaderId,
+                modelId,
+                url: data.url,
+                publicId: data.publicId,
+                title: data.title || null,
+                subjectName: data.subjectName || null,
+                characterName: data.characterName || null,
+                location: data.location || null,
+                latitude: null, // Simplified for bulk for now
+                longitude: null,
+                shotAt: (data.shotAt && !isNaN(new Date(String(data.shotAt).replace(/:/g, '-')).getTime()))
+                    ? new Date(String(data.shotAt).replace(/:/g, '-'))
+                    : null,
+                snsUrl: data.snsUrl || null,
+                categoryId: data.categoryId || null,
+                displayMode: data.displayMode,
+                exif: data.exif || null,
                 createdAt: new Date(),
-                shotAt: dataList[i].shotAt ? new Date(dataList[i].shotAt) : null
+                updatedAt: new Date(),
+            } as any))).onConflictDoUpdate({
+                target: [photoTable.id],
+                set: { updatedAt: new Date() }
             });
+
+            // Sync Subjects and Tags
+            for (let i = 0; i < dataList.length; i++) {
+                const data = dataList[i];
+                const photoId = photoIds[i];
+
+                if (data.subjectName) {
+                    await pgDb.insert(subjectTable).values({
+                        name: data.subjectName,
+                        snsUrl: data.snsUrl || null,
+                        autoRegistered: true
+                    }).onConflictDoUpdate({
+                        target: [subjectTable.name],
+                        set: { snsUrl: data.snsUrl || null }
+                    });
+                }
+
+                if (data.tags && data.tags.length > 0) {
+                    for (const tagName of data.tags) {
+                        const tagResult = await pgDb.insert(tagTable).values({ name: tagName })
+                            .onConflictDoUpdate({ target: [tagTable.name], set: { name: tagName } })
+                            .returning({ id: tagTable.id });
+
+                        if (tagResult.length > 0) {
+                            await pgDb.insert(photoTagsTable).values({
+                                photoId: photoId,
+                                tagId: tagResult[0].id
+                            }).onConflictDoNothing();
+                        }
+                    }
+                }
+            }
+        } catch (pgError) {
+            console.error('Failed to sync bulk photos to Neon:', pgError);
         }
 
         // --- 💾 記録: ローカル管理ファイルへの書き出し ---
@@ -291,28 +400,38 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
         const limit = options.limit || 50;
         query = query.limit(limit);
 
+        console.log(`[getPhotos] Fetching up to ${limit} photos for UID: ${uid}`);
         const snapshot = await query.get();
+        console.log(`[getPhotos] Found ${snapshot.size} photos.`);
 
         const photos = snapshot.docs.map((doc: any) => {
             const data = doc.data();
-            let safeExif: Record<string, any> | null = null;
-            if (data.exif) {
-                try {
-                    safeExif = JSON.parse(JSON.stringify(data.exif, (_, v) => {
-                        if (v && typeof v === 'object' && '_seconds' in v) {
-                            return new Date(v._seconds * 1000).toISOString();
-                        }
-                        return v;
-                    }));
-                } catch { safeExif = null; }
-            }
+
+            // EXIFのサニタイズ
+            const safeExif = serializeData(data.exif);
+
+            const catId = String(data.categoryId || '');
+
+            // 重要: 非シリアライザブルなオブジェクト（Timestamp等）がクライアントに渡らないよう各フィールドを明示的に指定
             return {
                 id: doc.id,
-                ...data,
+                url: data.url || '',
+                title: data.title || '',
+                subjectName: data.subjectName || '',
+                characterName: data.characterName || '',
+                location: data.location || '',
+                categoryId: data.categoryId || null,
+                category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
+                snsUrl: data.snsUrl || '',
+                displayMode: data.displayMode || 'title',
+                focalPoint: data.focalPoint || null,
+                aspectRatio: data.aspectRatio || 1.5,
+                tags: data.tags || [],
                 exif: safeExif,
-                shotAt: data.shotAt?.toDate().toISOString(),
-                createdAt: data.createdAt?.toDate().toISOString(),
-                updatedAt: data.updatedAt?.toDate().toISOString(),
+                // 日付関連は必ず文字列に変換
+                shotAt: serializeData(data.shotAt),
+                createdAt: serializeData(data.createdAt) || new Date().toISOString(),
+                updatedAt: serializeData(data.updatedAt) || new Date().toISOString(),
             };
         });
 
@@ -673,43 +792,59 @@ const CATEGORY_MAP: Record<string, string> = {
 
 export async function searchPhotos(query: string) {
     try {
-        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
-        const db = getAdminFirestore();
+        const { getFirebaseAdmin } = await import('../firebaseAdmin');
+        const admin = await getFirebaseAdmin();
+        const db = admin.firestore();
+
+        // --- 🐘 Neon Auto-Sync Trigger ---
+        // 初回アクセス時にバックグラウンドで同期を開始します
+        checkAndTriggerSync();
 
         // --- 🧠 記憶 (Memory): KV Cache (No query case) ---
         if (!query) {
             const cachedPublic = await getCachedData<any[]>('public_photos');
             if (cachedPublic) return cachedPublic;
 
-            // Fetch all and cache
-            const snapshot = await db.collection('photos')
-                .select('title', 'url', 'categoryId', 'subjectName', 'location', 'characterName', 'displayMode', 'snsUrl', 'aspectRatio', 'createdAt', 'latitude', 'longitude', 'exif')
-                .orderBy('createdAt', 'desc')
-                .get();
+            // Fetch from Neon instead of Firestore
+            try {
+                const { db: pgDb } = await import('../db');
+                if (pgDb) {
+                    const results = await pgDb.query.photos.findMany({
+                        limit: 12,
+                        orderBy: (photos: any, { desc }: any) => [desc(photos.createdAt)],
+                    });
 
-            const allPhotos = snapshot.docs.map((doc: any) => {
-                const data = doc.data();
-                const catId = data.categoryId || '';
-                return {
-                    id: doc.id,
-                    ...data,
-                    category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
-                    createdAt: data.createdAt?.toDate().toISOString(),
-                };
-            });
+                    if (results && results.length > 0) {
+                        console.log(`Fetched ${results.length} photos from Neon (Query: empty)`);
+                        const data = serializeData(results);
+                        return data.map((p: any) => ({
+                            ...p,
+                            category: p.categoryId,
+                        }));
+                    }
+                }
+            } catch (pgError) {
+                console.error('Neon fetch failed, falling back to Firestore:', pgError);
+                const snapshot = await db.collection('photos')
+                    .orderBy('createdAt', 'desc')
+                    .limit(100)
+                    .get();
 
-            const publicPhotos = allPhotos.filter((photo: any) => {
-                const hasCategory = photo.categoryId && String(photo.categoryId).trim() !== '';
-                // [MODIFIED] Allow untitled photos as per user request
-                // const hasTitle = photo.title && String(photo.title).trim() !== '';
-                // const isCosplay = photo.categoryId === 'cosplay';
-                // const hasCharacter = photo.characterName && String(photo.characterName).trim() !== '';
-                // return hasCategory && (hasTitle || (isCosplay && hasCharacter));
-                return hasCategory;
-            });
+                const photos = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    const catId = String(data.categoryId || '');
+                    return {
+                        id: doc.id,
+                        ...data,
+                        categoryId: catId,
+                        category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
+                    };
+                }).filter(p => p.categoryId && String(p.categoryId).trim() !== '');
 
-            await setCachedData('public_photos', publicPhotos);
-            return publicPhotos;
+                const serialized = serializeData(photos);
+                await setCachedData('public_photos', serialized);
+                return serialized;
+            }
         }
 
         // --- 💪 筋肉 (Muscle): Algolia Search ---
@@ -721,7 +856,7 @@ export async function searchPhotos(query: string) {
                 {
                     indexName: 'photos',
                     query: query,
-                    hitsPerPage: 100, // Limit for search page
+                    hitsPerPage: 100,
                 }
             ]
         });
@@ -731,27 +866,28 @@ export async function searchPhotos(query: string) {
 
         if (photoIds.length === 0) return [];
 
-        // Fetch the actual documents to ensure up-to-date data and proper formatting
-        // (Alternatively, we could trust Algolia metadata, but Firestore is the source of truth)
+        // Fetch docs from Firestore via SDK
         const photoDocs = await Promise.all(
-            photoIds.map((id: string) => db.collection('photos').doc(id).get())
+            photoIds.map(async (id: string) => {
+                const doc = await db.collection('photos').doc(id).get();
+                return doc.exists ? { id: doc.id, ...doc.data() } : null;
+            })
         );
 
-        return photoDocs
-            .filter(doc => doc.exists)
-            .map(doc => {
-                const data = doc.data();
-                const catId = data.categoryId || '';
+        const results_data = photoDocs
+            .filter(Boolean)
+            .map((data: any) => {
+                const catId = String(data.categoryId || '');
                 return {
-                    id: doc.id,
                     ...data,
-                    category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
-                    createdAt: data.createdAt?.toDate().toISOString(),
+                    category: CATEGORY_MAP[catId] || CATEGORY_MAP[catId.toLowerCase()] || catId.toUpperCase() || 'LANDSCAPE',
                 };
             });
 
+        return serializeData(results_data);
+
     } catch (error) {
-        console.error('Error searching photos with Algolia:', error);
+        console.error('Error searching photos:', error);
         return [];
     }
 }
@@ -985,13 +1121,16 @@ export async function getPhotoById(photoId: string, idToken: string): Promise<an
             return null;
         }
 
+        const safeExif = serializeData(data?.exif);
+
         return {
             id: photoDoc.id,
             ...data,
-            category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER', // Map ID to Name
-            shotAt: data?.shotAt?.toDate().toISOString(),
-            createdAt: data?.createdAt?.toDate().toISOString(),
-            updatedAt: data?.updatedAt?.toDate().toISOString(),
+            exif: safeExif,
+            category: CATEGORY_MAP[String(catId)] || String(catId).toUpperCase() || 'OTHER',
+            shotAt: serializeData(data?.shotAt),
+            createdAt: serializeData(data?.createdAt) || new Date().toISOString(),
+            updatedAt: serializeData(data?.updatedAt) || new Date().toISOString(),
         };
     } catch (error) {
         console.error('Error fetching photo by ID:', error);
@@ -1001,27 +1140,26 @@ export async function getPhotoById(photoId: string, idToken: string): Promise<an
 
 export async function getPublicPhotoById(photoId: string): Promise<any> {
     try {
-        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
-        const db = getAdminFirestore();
-        const photoDoc = await db.collection('photos').doc(photoId).get();
+        const { getFirebaseAdmin } = await import('../firebaseAdmin');
+        const admin = await getFirebaseAdmin();
+        const db = admin.firestore();
 
-        if (!photoDoc.exists) return null;
+        const doc = await db.collection('photos').doc(photoId).get();
+        if (!doc.exists) return null;
 
-        const data = photoDoc.data();
+        const data = doc.data();
+        const catId = String(data?.categoryId || '');
 
-        // [MODIFIED] Relaxed check: Allow untitled if category exists
-        const hasCategory = data?.categoryId && data.categoryId.trim() !== '';
-        // const hasTitle = data?.title && data.title.trim() !== ''; // Removed strict title check
-
-        if (!hasCategory) return null;
-
-        return {
-            id: photoDoc.id,
+        const photo = {
+            id: photoId,
             ...data,
-            shotAt: data?.shotAt?.toDate().toISOString(),
-            createdAt: data?.createdAt?.toDate().toISOString(),
-            updatedAt: data?.updatedAt?.toDate().toISOString(),
+            category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
+            shotAt: data?.shotAt instanceof (admin as any).firestore.Timestamp ? data.shotAt.toDate().toISOString() : data?.shotAt,
+            createdAt: data?.createdAt instanceof (admin as any).firestore.Timestamp ? data.createdAt.toDate().toISOString() : data?.createdAt,
+            updatedAt: data?.updatedAt instanceof (admin as any).firestore.Timestamp ? data.updatedAt.toDate().toISOString() : data?.updatedAt,
         };
+
+        return serializeData(photo);
     } catch (error) {
         console.error('Error fetching public photo by ID:', error);
         return null;
@@ -1029,54 +1167,90 @@ export async function getPublicPhotoById(photoId: string): Promise<any> {
 }
 
 export async function getRecentPhotos(limit: number = 6) {
+    let photos: any[] = [];
+
     try {
-        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
-        const db = getAdminFirestore();
+        // --- 🐘 Neon (PostgreSQL) Fetch ---
+        try {
+            const { db: pgDb } = await import('../db');
+            if (pgDb) {
+                const results = await pgDb.query.photos.findMany({
+                    limit: limit + 10,
+                    orderBy: (photoTable: any, { desc }: any) => [desc(photoTable.createdAt)],
+                });
 
-        // Fetch latest photos. We filter for "public" (has title and category) in memory.
-        const snapshot = await db.collection('photos')
-            .orderBy('createdAt', 'desc')
-            .limit(20)
-            .get();
+                if (results && results.length > 0) {
+                    const processed = results.map((data: any) => {
+                        const catId = String(data.categoryId || '');
+                        return {
+                            ...data,
+                            categoryId: catId,
+                            category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
+                        };
+                    }).filter((p: any) => p.categoryId && String(p.categoryId).trim() !== '');
 
-        const photos = snapshot.docs
-            .map((doc: any) => {
-                const data = doc.data();
-                const catId = data.categoryId || '';
-                // EXIFにFirestore Timestamp等が含まれる場合、シリアライズ不可のためJSONで変換
-                let safeExif: Record<string, any> | null = null;
-                if (data.exif) {
-                    try {
-                        safeExif = JSON.parse(JSON.stringify(data.exif, (_, v) => {
-                            if (v && typeof v === 'object' && '_seconds' in v) {
-                                return new Date(v._seconds * 1000).toISOString();
-                            }
-                            return v;
-                        }));
-                    } catch {
-                        safeExif = null;
+                    if (processed.length > 0) {
+                        const featuredGenres = ['portrait', 'snapshot'];
+                        processed.sort((a: any, b: any) => {
+                            const aCat = String(a.categoryId).toLowerCase();
+                            const bCat = String(b.categoryId).toLowerCase();
+                            const aIsFeatured = featuredGenres.includes(aCat);
+                            const bIsFeatured = featuredGenres.includes(bCat);
+
+                            if (aIsFeatured && !bIsFeatured) return -1;
+                            if (!aIsFeatured && bIsFeatured) return 1;
+                            return 0;
+                        });
+                        photos = processed.slice(0, limit);
                     }
                 }
-                return {
-                    id: doc.id,
-                    ...data,
-                    exif: safeExif,
-                    category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
-                    shotAt: data.shotAt?.toDate().toISOString(),
-                    createdAt: data.createdAt?.toDate().toISOString(),
-                    updatedAt: data.updatedAt?.toDate().toISOString(),
-                };
-            })
-            // Filter: Must have categoryId. Title check relaxed.
-            .filter((p: any) => {
-                const hasCategory = p.categoryId && p.categoryId.trim() !== '';
-                // const hasTitle = p.title && p.title.trim() !== ''; 
-                // Allow untitled photos to be displayed
-                return hasCategory;
-            })
-            .slice(0, limit);
+            }
+        } catch (pgError) {
+            console.error('Neon recent photos fetch failed:', pgError);
+            // Fall through to Firestore
+        }
 
-        return photos;
+        // --- 🔥 Firestore Fallback (if Neon results are empty) ---
+        if (photos.length === 0) {
+            const { getFirebaseAdmin } = await import('../firebaseAdmin');
+            const admin = await getFirebaseAdmin();
+            const db = admin.firestore();
+
+            const snapshot = await db.collection('photos')
+                .orderBy('createdAt', 'desc')
+                .limit(limit + 10)
+                .get();
+
+            photos = snapshot.docs
+                .map(doc => {
+                    const data = doc.data();
+                    const catId = data.categoryId || '';
+                    return {
+                        id: doc.id,
+                        ...data,
+                        category: CATEGORY_MAP[String(catId)] || String(catId).toUpperCase() || 'OTHER',
+                        shotAt: data.shotAt instanceof (admin as any).firestore.Timestamp ? data.shotAt.toDate().toISOString() : data.shotAt,
+                        createdAt: data.createdAt instanceof (admin as any).firestore.Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+                        updatedAt: data.updatedAt instanceof (admin as any).firestore.Timestamp ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+                    };
+                })
+                .filter((p: any) => p.categoryId && String(p.categoryId).trim() !== '');
+
+            // Apply featured genres sort to Firestore results before slicing
+            const featuredGenres = ['portrait', 'snapshot'];
+            photos.sort((a: any, b: any) => {
+                const aCat = String(a.categoryId).toLowerCase();
+                const bCat = String(b.categoryId).toLowerCase();
+                const aIsFeatured = featuredGenres.includes(aCat);
+                const bIsFeatured = featuredGenres.includes(bCat);
+
+                if (aIsFeatured && !bIsFeatured) return -1;
+                if (!aIsFeatured && bIsFeatured) return 1;
+                return 0;
+            });
+
+            return serializeData(photos.slice(0, limit));
+        }
     } catch (error) {
         console.error('Error fetching recent photos:', error);
         return [];
@@ -1094,19 +1268,22 @@ export async function getPhotoPublic(photoId: string): Promise<any> {
         const data = photoDoc.data();
 
         // Reverted to simpler check: Must have categoryId.
-        const hasCategory = data?.categoryId && data.categoryId.trim() !== '';
+        const hasCategory = data?.categoryId && String(data.categoryId).trim() !== '';
 
         if (!hasCategory) return null;
 
-        const catId = data?.categoryId || '';
+        const catId = String(data?.categoryId || '');
+
+        const safeExif = serializeData(data.exif);
 
         return {
             id: photoDoc.id,
             ...data,
+            exif: safeExif,
             category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
-            shotAt: data?.shotAt?.toDate().toISOString(),
-            createdAt: data?.createdAt?.toDate().toISOString(),
-            updatedAt: data?.updatedAt?.toDate().toISOString(),
+            shotAt: serializeData(data.shotAt),
+            createdAt: serializeData(data.createdAt) || new Date().toISOString(),
+            updatedAt: serializeData(data.updatedAt) || new Date().toISOString(),
         };
     } catch (error) {
         console.error('Error fetching public photo by ID:', error);

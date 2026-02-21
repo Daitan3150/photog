@@ -1,0 +1,52 @@
+{
+  "version": 3,
+  "middleware": {},
+  "sortedMiddleware": [],
+  "functions": {
+    "/opengraph-image/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "required-server-files.js",
+        "server/server-reference-manifest.js",
+        "server/app/opengraph-image/route_client-reference-manifest.js",
+        "server/edge/chunks/_next-internal_server_app_opengraph-image_route_actions_238d033d.js",
+        "server/edge/chunks/[root-of-the-server]__b82fd95d._.js",
+        "server/edge/chunks/[root-of-the-server]__cdfde4d8._.js",
+        "server/edge/chunks/node_modules_next_dist_compiled_@vercel_og_16be1ace._.js",
+        "server/edge/chunks/turbopack-node_modules_next_dist_esm_build_templates_edge-wrapper_90b1c88d.js"
+      ],
+      "name": "app/opengraph-image/route",
+      "page": "/opengraph-image/route",
+      "matchers": [
+        {
+          "regexp": "^/opengraph-image(?:/)?$",
+          "originalSource": "/opengraph-image"
+        }
+      ],
+      "wasm": [
+        {
+          "name": "wasm_fdb56e4cc5936d29",
+          "filePath": "server/edge/chunks/node_modules_next_dist_compiled_@vercel_og_resvg_23ace1ce.wasm"
+        },
+        {
+          "name": "wasm_1ccdc983b1fd9f87",
+          "filePath": "server/edge/chunks/node_modules_next_dist_compiled_@vercel_og_yoga_23ace1ce.wasm"
+        }
+      ],
+      "assets": [
+        {
+          "name": "server/edge/assets/noto-sans-v27-latin-regular.bdfa676c.ttf",
+          "filePath": "server/edge/assets/noto-sans-v27-latin-regular.bdfa676c.ttf"
+        }
+      ],
+      "env": {
+        "__NEXT_BUILD_ID": "wDtdeu55hWYsomNaN_VlH",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "11VpYjk2BRCGW/8IB46ksi1QNw9tP4fTFFXEybomKHc=",
+        "__NEXT_PREVIEW_MODE_ID": "545fd7759f2fd3536e6631673b86be31",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "a83a8787700e9fa707c7a2a65cfe86948ca75905309d74ae20f339e0f46a3da8",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "a18178b4801bd0a7f346475ba7db41687fe6b0e480fabe9e9a1efd121ae0ddb1"
+      }
+    }
+  }
+}

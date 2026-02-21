@@ -35,13 +35,19 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
     }
 
     // Default fallback
-    if (!currentCategory) currentCategory = 'cosplay';
+    if (!currentCategory) currentCategory = 'all';
 
-    const filteredPhotos = allPhotos.filter((p: any) =>
-        p.categoryId === currentCategory ||
-        p.category === currentCategory ||
-        (currentCategory === 'snapshot' && p.categoryId === 'snap')
-    );
+    const filteredPhotos = allPhotos.filter((p: any) => {
+        if (currentCategory === 'all') return true;
+
+        const pCatId = String(p.categoryId || '').toLowerCase();
+        const pCatName = String(p.category || '').toLowerCase();
+        const targetCat = currentCategory.toLowerCase();
+
+        return pCatId === targetCat ||
+            pCatName === targetCat ||
+            (targetCat === 'snapshot' && pCatId === 'snap');
+    });
 
     return (
         <main className="min-h-screen pt-32 pb-20 bg-white">

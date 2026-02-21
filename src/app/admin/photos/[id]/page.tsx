@@ -12,17 +12,17 @@ import { ArrowLeft, Save, Calendar, User, MapPin, Tag, Link2 } from 'lucide-reac
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import exifr from 'exifr';
+import { formatShutterSpeed, validateShutterSpeed, STANDARD_APERTURES, getMinApertureFromLens } from '@/lib/utils/exif';
 
 // ✅ 署名取得
-const fetchSignature = async (params: Record<string, any>, token: string) => {
-    const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL;
-    const res = await fetch(`${workerUrl}/api/sign-upload`, {
+const fetchSignature = async (paramsToSign: Record<string, any>, token: string) => {
+    const res = await fetch(`/api/upload/sign`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ params })
+        body: JSON.stringify({ paramsToSign })
     });
     if (!res.ok) throw new Error('Signature fetch failed');
     return await res.json() as { signature: string; timestamp: number; apiKey: string };
@@ -125,7 +125,11 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 displayMode: data.displayMode || 'title',
                 url: data.url,
                 publicId: data.publicId,
-                exif: data.exif || {},
+                exif: {
+                    ...data.exif,
+                    // ✅ 初期表示時にシャッタースピードを分数形式に変換
+                    ExposureTime: data.exif?.ExposureTime ? formatShutterSpeed(data.exif.ExposureTime) : ''
+                },
                 exifRequest: data.exifRequest || false,
                 tags: data.tags || [],
                 focalPoint: data.focalPoint || undefined
@@ -208,7 +212,8 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 if (mergedExif.Model) newData.exif.Model = mergedExif.Model;
                 if (mergedExif.LensModel) newData.exif.LensModel = mergedExif.LensModel;
                 if (mergedExif.FNumber) newData.exif.FNumber = mergedExif.FNumber;
-                if (mergedExif.ExposureTime) newData.exif.ExposureTime = mergedExif.ExposureTime;
+                // ✅ 写真差し替え時も分数形式に変換
+                if (mergedExif.ExposureTime) newData.exif.ExposureTime = formatShutterSpeed(mergedExif.ExposureTime);
                 if (mergedExif.ISOSpeedRatings || mergedExif.ISO) newData.exif.ISO = mergedExif.ISOSpeedRatings || mergedExif.ISO;
 
                 // Update shotAt if available
@@ -245,6 +250,13 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
+
+        // ✅ バリデーション
+        const shutter = formData.exif?.ExposureTime;
+        if (shutter && !validateShutterSpeed(String(shutter))) {
+            alert('シャッタースピードは "1/250" のような分数、または "1" のような整数で入力してください。');
+            return;
+        }
 
         setSaving(true);
         const token = await user.getIdToken();
@@ -566,22 +578,30 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                     <div>
                                         <p className="text-[10px] text-gray-400 mb-1">絞り値 (F)</p>
                                         <input
-                                            type="number"
-                                            step="0.1"
+                                            type="text"
+                                            list="aperture-list"
                                             value={formData.exif?.FNumber || ''}
-                                            onChange={(e) => setFormData({ ...formData, exif: { ...formData.exif, FNumber: parseFloat(e.target.value) } })}
+                                            onChange={(e) => setFormData({ ...formData, exif: { ...formData.exif, FNumber: e.target.value } })}
                                             className="w-full border-gray-100 border bg-gray-50/50 rounded-lg p-2 text-xs outline-none focus:ring-1 focus:ring-blue-300"
                                             placeholder="1.4"
                                         />
+                                        <datalist id="aperture-list">
+                                            {STANDARD_APERTURES
+                                                .filter(val => parseFloat(val) >= getMinApertureFromLens(formData.exif?.LensModel))
+                                                .map(val => (
+                                                    <option key={val} value={val}>f/{val}</option>
+                                                ))
+                                            }
+                                        </datalist>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] text-gray-400 mb-1">SS (秒)</p>
+                                        <p className="text-[10px] text-gray-400 mb-1">SS (分数/整数)</p>
                                         <input
                                             type="text"
                                             value={formData.exif?.ExposureTime || ''}
-                                            onChange={(e) => setFormData({ ...formData, exif: { ...formData.exif, ExposureTime: parseFloat(e.target.value) } })}
-                                            className="w-full border-gray-100 border bg-gray-50/50 rounded-lg p-2 text-xs outline-none focus:ring-1 focus:ring-blue-300"
-                                            placeholder="0.005"
+                                            onChange={(e) => setFormData({ ...formData, exif: { ...formData.exif, ExposureTime: e.target.value } })}
+                                            className={`w-full border p-2 text-xs outline-none focus:ring-1 rounded-lg ${formData.exif?.ExposureTime && !validateShutterSpeed(String(formData.exif.ExposureTime)) ? 'border-red-500 bg-red-50 focus:ring-red-300' : 'border-gray-100 bg-gray-50/50 focus:ring-blue-300'}`}
+                                            placeholder="例: 1/250"
                                         />
                                     </div>
                                     <div>

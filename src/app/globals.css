@@ -70,3 +70,13 @@ h1, h2, h3, h4, h5, h6 {
 .blog-content code {
   @apply bg-gray-100 px-1 py-0.5 rounded text-sm font-mono;
 }
+
+/* Custom Utilities */
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: black;
+  color: white;
+}

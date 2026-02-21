@@ -21,9 +21,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // In a real large architecture, this might need pagination or a dedicated sitemap generation script
     const photos = await getRecentPhotos(100);
 
-    const photoRoutes = photos.map((photo) => ({
+    const photoRoutes = photos.map((photo: any) => ({
         url: `${baseUrl}/photo/${photo.id}`,
-        lastModified: new Date(photo.createdAt), // Assuming createdAt exists and is compatible
+        lastModified: photo.createdAt ? new Date(photo.createdAt) : new Date(),
         changeFrequency: 'weekly' as const,
         priority: 0.8,
     }));

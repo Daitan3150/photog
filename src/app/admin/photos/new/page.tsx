@@ -9,6 +9,7 @@ import CloudinaryScript from '@/components/admin/CloudinaryScript';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import exifr from 'exifr';
+import { formatShutterSpeed, validateShutterSpeed, STANDARD_APERTURES, getMinApertureFromLens } from '@/lib/utils/exif';
 
 // ✅ ファイル検証定数
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
@@ -132,16 +133,15 @@ export default function NewPhotoPage() {
     const [useAiTags, setUseAiTags] = useState(true);
 
     // ✅ 署名取得
-    const fetchSignature = async (params: Record<string, any>) => {
+    const fetchSignature = async (paramsToSign: Record<string, any>) => {
         const idToken = await user?.getIdToken();
-        const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL;
-        const res = await fetch(`${workerUrl}/api/sign-upload`, {
+        const res = await fetch(`/api/upload/sign`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${idToken}`
             },
-            body: JSON.stringify({ params })
+            body: JSON.stringify({ paramsToSign })
         });
         if (!res.ok) throw new Error('Signature fetch failed');
         return await res.json() as { signature: string; timestamp: number; apiKey: string };
@@ -176,6 +176,18 @@ export default function NewPhotoPage() {
                 try { localStorage.setItem(LENS_HISTORY_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
                 return updated;
             });
+        }
+
+        // ✅ [NEW] 自動取得したシャッタースピードを分数/整数形式に変換してセット
+        if (mergedExif.ExposureTime) {
+            const formatted = formatShutterSpeed(mergedExif.ExposureTime);
+            if (formatted) setShutter(formatted);
+        }
+        if (mergedExif.FNumber) {
+            setAperture(`f/${mergedExif.FNumber}`);
+        }
+        if (mergedExif.ISOSpeedRatings || mergedExif.ISO) {
+            setIso(String(mergedExif.ISOSpeedRatings || mergedExif.ISO));
         }
     };
 
@@ -483,6 +495,13 @@ export default function NewPhotoPage() {
 
         setLoading(true);
         setErrorMsg('');
+
+        // ✅ シャッタースピードのバリデーション
+        if (shutter && !validateShutterSpeed(shutter)) {
+            setErrorMsg('シャッタースピードは "1/250" のような分数、または "1" のような整数で入力してください。');
+            setLoading(false);
+            return;
+        }
 
         try {
             const idToken = await user.getIdToken();
@@ -952,21 +971,32 @@ export default function NewPhotoPage() {
                                     type="text"
                                     value={shutter}
                                     onChange={e => setShutter(e.target.value)}
-                                    className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                    className={`w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500 text-sm ${shutter && !validateShutterSpeed(shutter) ? 'border-red-500 bg-red-50' : ''}`}
                                     placeholder="1/250"
                                 />
-                                <p className="text-[10px] text-gray-400">例: 1/250, 1/60, 2s</p>
+                                <p className={`text-[10px] ${shutter && !validateShutterSpeed(shutter) ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                                    形式: A/B または A (整数)
+                                </p>
                             </div>
                             <div className="space-y-1">
                                 <label className="block text-xs font-bold text-gray-600">絞り値</label>
                                 <input
                                     type="text"
+                                    list="aperture-list"
                                     value={aperture}
                                     onChange={e => setAperture(e.target.value)}
                                     className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                     placeholder="f/1.4"
                                 />
-                                <p className="text-[10px] text-gray-400">例: f/1.4, f/2.8</p>
+                                <datalist id="aperture-list">
+                                    {STANDARD_APERTURES
+                                        .filter(val => parseFloat(val) >= getMinApertureFromLens(lens))
+                                        .map(val => (
+                                            <option key={val} value={val}>f/{val}</option>
+                                        ))
+                                    }
+                                </datalist>
+                                <p className="text-[10px] text-gray-400">例: 1.4, 2.8</p>
                             </div>
                             <div className="space-y-1">
                                 <label className="block text-xs font-bold text-gray-600">ISO</label>

@@ -9,7 +9,12 @@ interface FirebaseAdminConfig {
 }
 
 function formatPrivateKey(key: string) {
-    return key.replace(/\\n/g, "\n");
+    if (!key) return '';
+    let formattedKey = key;
+    if (formattedKey.startsWith('"') && formattedKey.endsWith('"')) {
+        formattedKey = formattedKey.slice(1, -1);
+    }
+    return formattedKey.replace(/\\n/g, "\n");
 }
 
 export function createFirebaseAdminApp(config: FirebaseAdminConfig) {
@@ -83,3 +88,14 @@ export function getAdminStorage() {
 
     return admin.storage(app);
 }
+// Export as getFirebaseAdmin for dynamic imports in server actions
+export const getFirebaseAdmin = async () => {
+    if (!process.env.FIREBASE_PRIVATE_KEY) {
+        throw new Error("FIREBASE_PRIVATE_KEY is not defined");
+    }
+    return createFirebaseAdminApp({
+        projectId: process.env.FIREBASE_PROJECT_ID!,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY!,
+    });
+};

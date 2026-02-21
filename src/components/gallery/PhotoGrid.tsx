@@ -39,6 +39,8 @@ interface Photo {
         ISO?: number;
         FocalLength?: number;
     };
+    nextPhotoUrl?: string | null;
+    prevPhotoUrl?: string | null;
 }
 
 interface PhotoGridProps {
@@ -53,7 +55,16 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
     const selectedId = searchParams.get('img');
 
     const selectedPhotoIndex = photos.findIndex(p => p.id === selectedId);
-    const selectedPhoto = selectedPhotoIndex !== -1 ? photos[selectedPhotoIndex] : null;
+    let selectedPhoto = selectedPhotoIndex !== -1 ? photos[selectedPhotoIndex] : null;
+
+    // ✅ プリフェッチ用に隣接写真のURLを追加 (安全なアクセス)
+    if (selectedPhoto && Array.isArray(photos)) {
+        selectedPhoto = {
+            ...selectedPhoto,
+            nextPhotoUrl: selectedPhotoIndex < photos.length - 1 ? photos[selectedPhotoIndex + 1]?.url || null : null,
+            prevPhotoUrl: selectedPhotoIndex > 0 ? photos[selectedPhotoIndex - 1]?.url || null : null
+        };
+    }
 
     const closeLightbox = () => {
         const params = new URLSearchParams(searchParams.toString());
@@ -99,7 +110,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                     alt={photo.title}
                                     width={800}
                                     height={photo.aspectRatio === "portrait" ? 1200 : 600}
-                                    className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                                    className="w-full h-auto object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110"
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                     priority={index < 4}
                                 />

@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Share2, Camera, MapPin, Tag, User, Calendar, Grid } from 'lucide-react';
 import { getRelatedPhotos } from '@/lib/algolia';
 import LikeButton from '@/components/gallery/LikeButton';
+import cloudinaryLoader from '@/lib/cloudinary-loader';
 
 
 interface Props {
@@ -91,10 +92,7 @@ export default async function PhotoPage({ params }: Props) {
         limit: 4
     });
 
-    const getOptimizedUrl = (url: string, width: number = 800) => {
-        if (!url.includes('res.cloudinary.com')) return url;
-        return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
-    };
+    // URL optimization is handled by cloudinaryLoader
 
     const formatShutterSpeed = (exposureTime: number) => {
         if (!exposureTime) return null;
@@ -132,13 +130,15 @@ export default async function PhotoPage({ params }: Props) {
 
             <main className="container mx-auto px-4 py-24 md:py-32 flex flex-col items-center">
                 {/* Photo Stage */}
-                <div className="relative w-full max-w-5xl aspect-[2/3] md:aspect-auto md:h-[80vh] group">
+                <div className="relative w-full max-w-5xl aspect-[2/3] md:aspect-[3/2] overflow-hidden group">
                     <Image
+                        loader={cloudinaryLoader as any}
                         src={photo.url}
                         alt={photo.title || 'Portfolio Photography'}
                         fill
                         priority
-                        className="object-contain shadow-2xl"
+                        className="object-contain shadow-2xl transition-transform duration-700 group-hover:scale-[1.02]"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
                     />
                 </div>
 
@@ -266,7 +266,8 @@ export default async function PhotoPage({ params }: Props) {
                                     >
                                         <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-white/5">
                                             <Image
-                                                src={getOptimizedUrl(item.url, 800)}
+                                                loader={cloudinaryLoader}
+                                                src={item.url}
                                                 alt={item.title}
                                                 fill
                                                 className="object-cover transition-transform duration-1000 group-hover:scale-110"

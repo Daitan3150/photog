@@ -46,6 +46,7 @@ import AnalyticsProvider from "@/components/AnalyticsProvider";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import SecurityProvider from "@/components/SecurityProvider";
 import MaintenanceOverlay from "@/components/MaintenanceOverlay";
+import JsonLd from "@/components/seo/JsonLd";
 
 export default function RootLayout({
   children,
@@ -59,6 +60,8 @@ export default function RootLayout({
           <LanguageProvider>
             <SecurityProvider>
               <MaintenanceOverlay />
+              <JsonLd type="Photographer" />
+              <JsonLd type="WebSite" />
               <Header />
               {children}
               <Footer />

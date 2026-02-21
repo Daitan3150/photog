@@ -38,7 +38,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
     let bgUrl = photo.url;
     if (bgUrl.includes('res.cloudinary.com')) {
         let transform = 'c_fill,w_1200,h_630,q_auto,f_auto';
-        if (photo.focalPoint) {
+        if (photo.focalPoint && photo.focalPoint.x !== undefined && photo.focalPoint.y !== undefined) {
             transform += `,g_xy_center,x_${photo.focalPoint.x},y_${photo.focalPoint.y},fl_relative`;
         } else {
             transform += ',g_auto';

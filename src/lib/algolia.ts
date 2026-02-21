@@ -8,15 +8,12 @@ const getAdminKey = () => process.env.ALGOLIA_ADMIN_KEY || '';
 
 const INDEX_NAME = 'photos';
 
-// Lazy client initialization to avoid timing issues with .env loading
+// Lazy client initialization
 let _searchClient: Algoliasearch | null = null;
 export const getSearchClient = (): Algoliasearch => {
     if (!_searchClient) {
         const appId = getAppId();
         const searchKey = getSearchKey();
-        if (!appId || !searchKey) {
-            console.error('Algolia Search Key missing');
-        }
         _searchClient = algoliasearch(appId, searchKey);
     }
     return _searchClient;
@@ -28,7 +25,7 @@ export const getIndexClient = (): Algoliasearch => {
         const appId = getAppId();
         const adminKey = getAdminKey();
         if (!appId || !adminKey) {
-            throw new Error('Algolia Admin Key missing. Ensure ALGOLIA_ADMIN_KEY is set.');
+            throw new Error('Algolia Admin Key missing');
         }
         _indexClient = algoliasearch(appId, adminKey);
     }
@@ -50,7 +47,6 @@ export interface AlgoliaPhoto {
 
 /**
  * Synchronize a photo to Algolia
- * Using Algolia v5 API (direct client mothods)
  */
 export async function syncPhotoToAlgolia(
     photo: any,
@@ -90,7 +86,6 @@ export async function syncPhotoToAlgolia(
                         : photo.createdAt || 0,
         };
 
-        // v5 uses saveObject on the client directly
         await client.saveObject({
             indexName: INDEX_NAME,
             body: algoliaData
@@ -103,7 +98,7 @@ export async function syncPhotoToAlgolia(
 }
 
 /**
- * Fetch related photos from Algolia based on tags and category
+ * Fetch related photos from Algolia
  */
 export async function getRelatedPhotos(params: {
     photoId: string;
@@ -115,26 +110,16 @@ export async function getRelatedPhotos(params: {
 
     try {
         const client = getSearchClient();
-
-        // Build query components
         const filters = `NOT objectID:${photoId}`;
         const optionalFilters = [];
-
-        // Boost same category
-        if (category) {
-            optionalFilters.push(`category:${category}`);
-        }
-
-        // Boost same tags
-        tags.forEach(tag => {
-            optionalFilters.push(`tags:${tag}`);
-        });
+        if (category) optionalFilters.push(`category:${category}`);
+        tags.forEach(tag => optionalFilters.push(`tags:${tag}`));
 
         const { results } = await client.search({
             requests: [
                 {
                     indexName: INDEX_NAME,
-                    query: '', // We want discovery, not literal text match
+                    query: '',
                     filters: filters,
                     optionalFilters: optionalFilters,
                     hitsPerPage: limit,

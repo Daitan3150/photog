@@ -11,8 +11,14 @@ function GearSection({ profile }: { profile: any }) {
     if (!hasGear) return null;
 
     return (
-        <section className="pt-16 border-t border-gray-100">
-            <h2 className="text-[10px] font-bold tracking-[0.6em] mb-12 uppercase text-gray-400">Equipments</h2>
+        <section className="pt-20 border-t border-gray-100">
+            <motion.h2
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                className="text-[10px] font-bold tracking-[0.6em] mb-12 uppercase text-gray-400"
+            >
+                Equipments
+            </motion.h2>
             <div className="flex flex-col gap-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20">
                     <div className="space-y-10">
@@ -95,6 +101,8 @@ export default function AboutContent({ profile }: { profile: any }) {
     const bio = isJa ? (profile?.bioJa || profile?.bio || "") : (profile?.bioEn || "");
     const imageUrl = profile?.imageUrl || "/images/portrait.png";
 
+    const { t } = useLanguage();
+
     return (
         <main className="min-h-screen pt-32 px-6 pb-24 bg-white selection:bg-black selection:text-white">
             <div className="max-w-5xl mx-auto flex flex-col lg:flex-row gap-20 lg:gap-24 items-center lg:items-start">
@@ -137,19 +145,19 @@ export default function AboutContent({ profile }: { profile: any }) {
                                 transition={{ delay: 0.5 }}
                                 className="text-7xl md:text-9xl font-serif tracking-tighter text-gray-900 leading-none"
                             >
-                                ABOUT
+                                {t.about.title}
                             </motion.h1>
                         </div>
 
-                        <div className="space-y-6">
-                            <h2 className="text-4xl md:text-5xl font-serif text-gray-900">{name}</h2>
-                            <div className="flex flex-col gap-3">
-                                <p className="text-gray-900 font-bold tracking-[0.4em] text-sm uppercase">
+                        <div className="space-y-8">
+                            <h2 className="text-5xl md:text-7xl font-serif text-gray-900 tracking-tight">{name}</h2>
+                            <div className="flex flex-col gap-4">
+                                <p className="text-gray-900 font-bold tracking-[0.5em] text-xs md:text-sm uppercase">
                                     {role}
                                 </p>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-[1px] bg-gray-300" />
-                                    <p className="text-gray-500 text-xs tracking-[0.2em] uppercase font-medium">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-[1px] bg-gray-200" />
+                                    <p className="text-gray-400 text-[10px] md:text-xs tracking-[0.3em] uppercase font-medium">
                                         BASED IN {location}
                                     </p>
                                 </div>
@@ -157,14 +165,41 @@ export default function AboutContent({ profile }: { profile: any }) {
                         </div>
                     </header>
 
+                    {/* Brand Concept & Vision */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-4">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="space-y-4"
+                        >
+                            <h3 className="text-[10px] font-bold tracking-[0.4em] uppercase text-gray-400">{t.about.conceptTitle}</h3>
+                            <p className="text-gray-700 text-sm md:text-base leading-relaxed font-light">
+                                {t.about.conceptText}
+                            </p>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.2 }}
+                            className="space-y-4"
+                        >
+                            <h3 className="text-[10px] font-bold tracking-[0.4em] uppercase text-gray-400">{t.about.visionTitle}</h3>
+                            <p className="text-gray-700 text-sm md:text-base leading-relaxed font-light italic">
+                                {t.about.visionText}
+                            </p>
+                        </motion.div>
+                    </div>
+
                     <section
-                        className="text-gray-800 text-lg md:text-xl font-normal leading-relaxed whitespace-pre-wrap max-w-2xl"
-                        style={{ lineHeight: 1.9, letterSpacing: '0.015em' }}
+                        className="text-gray-800 text-lg md:text-xl font-normal leading-relaxed whitespace-pre-wrap max-w-2xl pt-8 relative"
                     >
-                        {bio || (isJa
-                            ? "自己紹介文はまだ準備中です。フォトグラファーとしての活動や、自身の核となる想いをここに綴ります。"
-                            : "Bio is currently being tailored. I will share my journey and creative vision here soon.")
-                        }
+                        <div className="absolute -left-6 top-8 w-1 h-12 bg-gray-100 hidden md:block" />
+                        <h3 className="text-[10px] font-bold tracking-[0.4em] uppercase text-gray-400 mb-6">{t.about.biographyTitle}</h3>
+                        <div className="font-light" style={{ lineHeight: 2, letterSpacing: '0.02em' }}>
+                            {bio || t.about.biographyText}
+                        </div>
                     </section>
 
                     <GearSection profile={profile} />

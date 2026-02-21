@@ -4,15 +4,17 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import cloudinaryLoader from "@/lib/cloudinary-loader";
 
 export default function Hero() {
     const { t } = useLanguage();
 
     return (
-        <section className="relative w-full h-[100dvh] flex items-center justify-center overflow-hidden">
+        <section className="relative w-full min-h-[600px] h-[85dvh] flex items-center justify-center overflow-hidden">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                 <Image
+                    loader={cloudinaryLoader}
                     src="/images/hero.png"
                     alt="Hero Background"
                     fill
@@ -32,6 +34,7 @@ export default function Hero() {
                     className="w-32 h-32 md:w-56 md:h-56 mb-6 relative"
                 >
                     <Image
+                        loader={cloudinaryLoader}
                         src="/logo.png"
                         alt="DAITAN Logo"
                         fill
@@ -49,13 +52,34 @@ export default function Hero() {
                 </motion.h1>
 
                 <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 1, delay: 1, ease: "easeOut" }}
-                    className="text-lg md:text-xl font-light tracking-[0.2em] font-sans uppercase"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.8, ease: "easeOut" }}
+                    className="text-sm md:text-base font-light tracking-[0.2em] font-sans uppercase mb-10 opacity-90"
                 >
-                    {t.common.portfolio}
+                    {t.hero.catchphrase}
                 </motion.p>
+
+                {/* CTA Buttons */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 1.1, ease: "easeOut" }}
+                    className="flex flex-col sm:flex-row gap-4 sm:gap-6 mt-4 pointer-events-auto z-20"
+                >
+                    <a
+                        href="/portfolio"
+                        className="px-8 py-3 bg-white text-black text-sm tracking-widest uppercase font-bold hover:bg-black hover:text-white transition-all duration-300 border border-white rounded shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:shadow-none min-w-[200px]"
+                    >
+                        {t.hero.viewPortfolio}
+                    </a>
+                    <a
+                        href="/contact"
+                        className="px-8 py-3 bg-transparent text-white text-sm tracking-widest uppercase font-bold hover:bg-white/10 transition-all duration-300 border border-white/50 hover:border-white rounded min-w-[200px]"
+                    >
+                        {t.hero.contact}
+                    </a>
+                </motion.div>
             </div>
 
             {/* Scroll Indicator */}

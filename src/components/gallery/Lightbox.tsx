@@ -32,11 +32,7 @@ const getSnsInfo = (url: string) => {
     return { icon: <Globe size={18} strokeWidth={1.5} />, label: 'SNS' };
 };
 
-const formatShutterSpeed = (exposure: number) => {
-    if (!exposure) return '';
-    if (exposure >= 1) return `${Math.round(exposure)}s`;
-    return `1/${Math.round(1 / exposure)}`;
-};
+import { formatShutterSpeed } from "@/lib/utils/exif";
 
 export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxProps) {
     const { icon: snsIcon, label: snsLabel } = getSnsInfo(photo.snsUrl);
@@ -108,7 +104,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.02 }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
                         className="relative w-full h-full cursor-grab active:cursor-grabbing"
                         drag="x"
                         dragConstraints={{ left: 0, right: 0 }}
@@ -129,7 +125,9 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                             fill
                             className="object-contain pointer-events-none"
                             priority
-                            sizes="90vw"
+                            sizes="(max-width: 768px) 100vw, 85vw"
+                            placeholder="blur"
+                            blurDataURL={cloudinaryLoader({ src: photo.url, width: 50, quality: 10 })}
                         />
                     </motion.div>
                 </div>
@@ -525,6 +523,16 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* ✅ プリフェッチ (こっっそり次・前の写真を読み込む) */}
+            <div className="hidden">
+                {onNext && photo.nextPhotoUrl && (
+                    <Image loader={cloudinaryLoader} src={photo.nextPhotoUrl} alt="prefetch" width={800} height={1200} priority={false} />
+                )}
+                {onPrev && photo.prevPhotoUrl && (
+                    <Image loader={cloudinaryLoader} src={photo.prevPhotoUrl} alt="prefetch" width={800} height={1200} priority={false} />
+                )}
+            </div>
         </motion.div>
     );
 }
