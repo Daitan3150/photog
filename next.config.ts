@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   images: {
@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://res.cloudinary.com blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.algolia.net https://*.algolianet.com https://worker.daitan-portfolio.workers.dev; frame-ancestors 'none';",
+            value: "default-src 'self' https://*.sentry.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://*.sentry.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://res.cloudinary.com blob: https://*.sentry.io; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.algolia.net https://*.algolianet.com https://worker.daitan-portfolio.workers.dev https://*.sentry.io; frame-ancestors 'none';",
           },
           {
             key: 'X-Content-Type-Options',
@@ -49,4 +49,18 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['sharp', 'jose', 'jwks-rsa', 'firebase-admin'],
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // For all available options, see:
+  // https://github.com/getsentry/sentry-javascript/tree/main/packages/nextjs#optional-config
+
+  // Only print logs for uploading source maps in CI
+  silent: !process.env.CI,
+
+  // For all available options, see:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#use-hidden-source-map
+  hideSourceMaps: true,
+
+  // Automatically tree-shake Sentry logger statements to reduce bundle size
+  disableLogger: true,
+});
+

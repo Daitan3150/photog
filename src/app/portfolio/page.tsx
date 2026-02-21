@@ -20,34 +20,19 @@ export const metadata: Metadata = {
 };
 
 export default async function PortfolioPage({ searchParams }: PageProps) {
+    // URLからカテゴリーと写真IDを取得
     const params = await searchParams;
-    let currentCategory = params.category;
+    let currentCategory = params.category || 'all';
     const imgId = (params as any).img;
 
-    const allPhotos = await searchPhotos('');
-
-    // If imgId is provided but category is not, find the photo's category
-    if (imgId && !currentCategory) {
-        const targetPhoto = allPhotos.find((p: any) => p.id === imgId);
-        if (targetPhoto) {
-            currentCategory = targetPhoto.categoryId || targetPhoto.category;
-        }
-    }
-
-    // Default fallback
-    if (!currentCategory) currentCategory = 'all';
-
-    const filteredPhotos = allPhotos.filter((p: any) => {
-        if (currentCategory === 'all') return true;
-
-        const pCatId = String(p.categoryId || '').toLowerCase();
-        const pCatName = String(p.category || '').toLowerCase();
-        const targetCat = currentCategory.toLowerCase();
-
-        return pCatId === targetCat ||
-            pCatName === targetCat ||
-            (targetCat === 'snapshot' && pCatId === 'snap');
+    // サーバーサイドでのフィルタリング（Firestoreクエリを使用）
+    const allPhotos = await searchPhotos('', {
+        category: currentCategory === 'all' ? undefined : currentCategory,
+        limit: 100 // より多くの写真を表示可能に
     });
+
+    const filteredPhotos = allPhotos; // 既にサーバー側でフィルタリング済み
+
 
     return (
         <main className="min-h-screen pt-32 pb-20 bg-white">

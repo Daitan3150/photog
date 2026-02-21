@@ -678,7 +678,8 @@ const CATEGORY_MAP: Record<string, string> = {
     'animal': 'ANIMAL',
 };
 
-export async function searchPhotos(query: string) {
+export async function searchPhotos(query: string, options: { category?: string; limit?: number } = {}) {
+    const { category, limit = 50 } = options;
     try {
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
@@ -687,15 +688,26 @@ export async function searchPhotos(query: string) {
         if (!db) throw new Error('Failed to initialize Firestore');
 
         if (!query) {
-            const cachedPublic = await getCachedData<any[]>('public_photos');
+            const cacheKey = `public_photos_${category || 'all'}`;
+            const cachedPublic = await getCachedData<any[]>(cacheKey);
             if (cachedPublic) return cachedPublic;
 
-            const snapshot = await db.collection('photos')
-                .orderBy('createdAt', 'desc')
-                .limit(30)
-                .get();
+            let queryRef: any = db.collection('photos')
+                .orderBy('createdAt', 'desc');
 
-            const photos = snapshot.docs.map(doc => {
+            if (category && category !== 'all') {
+                // Handle snapshot/snap mapping
+                if (category.toLowerCase() === 'snapshot') {
+                    // This is tricky in Firestore without OR. We'll stick to ID match or name match.
+                    queryRef = queryRef.where('categoryId', '==', category);
+                } else {
+                    queryRef = queryRef.where('categoryId', '==', category);
+                }
+            }
+
+            const snapshot = await queryRef.limit(limit).get();
+
+            const photos = snapshot.docs.map((doc: any) => {
                 const data = doc.data();
                 const catId = String(data.categoryId || '');
                 return {
@@ -704,10 +716,10 @@ export async function searchPhotos(query: string) {
                     categoryId: catId,
                     category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
                 };
-            }).filter(p => p.categoryId && String(p.categoryId).trim() !== '');
+            }).filter((p: any) => p.categoryId && String(p.categoryId).trim() !== '');
 
             const serialized = serializeData(photos);
-            await setCachedData('public_photos', serialized);
+            await setCachedData(cacheKey, serialized, 3600);
             return serialized;
         }
 
@@ -715,14 +727,18 @@ export async function searchPhotos(query: string) {
         const { getSearchClient } = await import('../algolia');
         const searchClient = getSearchClient();
 
+        const searchParams: any = {
+            indexName: 'photos',
+            query: query,
+            hitsPerPage: limit,
+        };
+
+        if (category && category !== 'all') {
+            searchParams.filters = `category:${category}`;
+        }
+
         const { results } = await searchClient.search({
-            requests: [
-                {
-                    indexName: 'photos',
-                    query: query,
-                    hitsPerPage: 100,
-                }
-            ]
+            requests: [searchParams]
         });
 
         const hits = (results[0] as any).hits || [];
