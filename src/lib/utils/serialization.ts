@@ -28,15 +28,24 @@ export function serializeData(obj: any): any {
         return obj.toISOString();
     }
 
-    // Handle Firestore Timestamps (Server-Side)
-    // Firestore Timestamps often come with _seconds and _nanoseconds properties
-    // or a toDate() method.
-    if (typeof obj.toDate === 'function') {
-        return obj.toDate().toISOString();
-    }
-    
-    if (obj._seconds !== undefined && obj._nanoseconds !== undefined) {
-        return new Date(obj._seconds * 1000).toISOString();
+    // Handle Firestore Timestamps
+    if (obj && typeof obj === 'object') {
+        // Method 1: has toDate function
+        if (typeof obj.toDate === 'function') {
+            try {
+                return obj.toDate().toISOString();
+            } catch (e) {
+                return new Date().toISOString();
+            }
+        }
+
+        // Method 2: has seconds/nanoseconds (common for firestore-admin)
+        if (typeof obj.seconds === 'number') {
+            return new Date(obj.seconds * 1000).toISOString();
+        }
+        if (typeof obj._seconds === 'number') {
+            return new Date(obj._seconds * 1000).toISOString();
+        }
     }
 
     // Handle Arrays
@@ -45,11 +54,13 @@ export function serializeData(obj: any): any {
     }
 
     // Handle Regular Objects
+    // Caution: Simple deep copy - doesn't handle circular refs
     const serialized: Record<string, any> = {};
-    for (const key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            serialized[key] = serializeData(obj[key]);
-        }
+    for (const key of Object.keys(obj)) {
+        const val = obj[key];
+        // Skip functions and complicated instances
+        if (typeof val === 'function') continue;
+        serialized[key] = serializeData(val);
     }
 
     return serialized;
