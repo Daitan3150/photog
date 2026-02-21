@@ -319,21 +319,29 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
         });
 
         // 🛠️ メモリ上でソート (降順)
-        photos.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        photos.sort((a: any, b: any) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
+        });
 
         // 本来の Limit 分だけ抽出
         const finalPhotos = photos.slice(0, options.limit || 50);
-        const nextCursor = photos.length > (options.limit || 50) ? photos[(options.limit || 50) - 1].id : null;
+        const nextCursor = photos.length > (options.limit || 50) ? String(photos[(options.limit || 50) - 1].id) : null;
 
         console.log(`[getPhotos] Returning ${finalPhotos.length} photos.`);
-        return {
+
+        const result = {
             photos: finalPhotos,
-            nextCursor
+            nextCursor: nextCursor
         };
+
+        // Nuclear serialization sweep to ensure only plain objects are passed
+        return serializeData(result);
 
     } catch (error: any) {
         console.error('[getPhotos] Fatal error:', error.message);
-        return { photos: [], nextCursor: null, error: error.message };
+        return { photos: [], nextCursor: null, error: String(error.message) };
     }
 }
 
