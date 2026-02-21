@@ -2,16 +2,12 @@
 
 // Removed top-level admin/firebaseAdmin imports to prevent client-side leak
 import { PhotoFormData, Photo as PhotoType } from '@/types/photo';
-import { db } from '../db';
-import { photos as photoTable, subjects as subjectTable, tags as tagTable, photoTags as photoTagsTable } from '../db/schema';
-import { eq } from 'drizzle-orm';
 import { serializeData } from '../utils/serialization';
 import { getCoordinates } from '../utils/location';
 import { getCachedData, setCachedData } from '../worker-cache';
 import { syncPhotoToAlgolia } from '../algolia';
 import { appendToMetadataRegistry } from './metadata';
 import { revalidatePath } from 'next/cache';
-import { checkAndTriggerSync } from '../db/sync';
 
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'daitan10618@icloud.com';
 
@@ -136,51 +132,7 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
 
         await photoRef.set(photoDataToSave);
 
-        // --- 🐘 Neon (PostgreSQL) Sync ---
-        try {
-            const { db: pgDb } = await import('../db');
-            await pgDb.insert(photoTable).values({
-                id: photoId,
-                ...photoDataToSave,
-                shotAt: photoDataToSave.shotAt || null,
-                exif: photoDataToSave.exif || null,
-                focalPoint: photoDataToSave.focalPoint || null,
-            }).onConflictDoUpdate({
-                target: [photoTable.id],
-                set: { updatedAt: new Date() }
-            });
 
-            // Sync Tags
-            if (data.tags && data.tags.length > 0) {
-                for (const tagName of data.tags) {
-                    const tagResult = await pgDb.insert(tagTable).values({ name: tagName })
-                        .onConflictDoUpdate({ target: [tagTable.name], set: { name: tagName } })
-                        .returning({ id: tagTable.id });
-
-                    if (tagResult.length > 0) {
-                        await pgDb.insert(photoTagsTable).values({
-                            photoId: photoId,
-                            tagId: tagResult[0].id
-                        }).onConflictDoNothing();
-                    }
-                }
-            }
-
-            // Sync Subject
-            if (data.subjectName) {
-                await pgDb.insert(subjectTable).values({
-                    name: data.subjectName,
-                    snsUrl: data.snsUrl || null,
-                    autoRegistered: true
-                }).onConflictDoUpdate({
-                    target: [subjectTable.name],
-                    set: { snsUrl: data.snsUrl || null }
-                });
-            }
-        } catch (pgError) {
-            console.error('Failed to sync to Neon:', pgError);
-            // Don't fail the whole action if PG sync fails, Sentry will catch it
-        }
 
         revalidatePath('/');
         revalidatePath('/portfolio');
@@ -292,71 +244,7 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
         await setCachedData('public_photos', null);
         await setCachedData('public_photos_for_search', null);
 
-        // --- 🐘 Neon (PostgreSQL) Bulk Sync ---
-        try {
-            const { db: pgDb } = await import('../db');
 
-            // Insert photos in bulk
-            await pgDb.insert(photoTable).values(dataList.map((data, i) => ({
-                id: photoIds[i],
-                uploaderId,
-                modelId,
-                url: data.url,
-                publicId: data.publicId,
-                title: data.title || null,
-                subjectName: data.subjectName || null,
-                characterName: data.characterName || null,
-                location: data.location || null,
-                latitude: null, // Simplified for bulk for now
-                longitude: null,
-                shotAt: (data.shotAt && !isNaN(new Date(String(data.shotAt).replace(/:/g, '-')).getTime()))
-                    ? new Date(String(data.shotAt).replace(/:/g, '-'))
-                    : null,
-                snsUrl: data.snsUrl || null,
-                categoryId: data.categoryId || null,
-                displayMode: data.displayMode,
-                exif: data.exif || null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            } as any))).onConflictDoUpdate({
-                target: [photoTable.id],
-                set: { updatedAt: new Date() }
-            });
-
-            // Sync Subjects and Tags
-            for (let i = 0; i < dataList.length; i++) {
-                const data = dataList[i];
-                const photoId = photoIds[i];
-
-                if (data.subjectName) {
-                    await pgDb.insert(subjectTable).values({
-                        name: data.subjectName,
-                        snsUrl: data.snsUrl || null,
-                        autoRegistered: true
-                    }).onConflictDoUpdate({
-                        target: [subjectTable.name],
-                        set: { snsUrl: data.snsUrl || null }
-                    });
-                }
-
-                if (data.tags && data.tags.length > 0) {
-                    for (const tagName of data.tags) {
-                        const tagResult = await pgDb.insert(tagTable).values({ name: tagName })
-                            .onConflictDoUpdate({ target: [tagTable.name], set: { name: tagName } })
-                            .returning({ id: tagTable.id });
-
-                        if (tagResult.length > 0) {
-                            await pgDb.insert(photoTagsTable).values({
-                                photoId: photoId,
-                                tagId: tagResult[0].id
-                            }).onConflictDoNothing();
-                        }
-                    }
-                }
-            }
-        } catch (pgError) {
-            console.error('Failed to sync bulk photos to Neon:', pgError);
-        }
 
         // --- 💾 記録: ローカル管理ファイルへの書き出し ---
         await appendToMetadataRegistry(dataList);
@@ -796,55 +684,29 @@ export async function searchPhotos(query: string) {
         const admin = await getFirebaseAdmin();
         const db = admin.firestore();
 
-        // --- 🐘 Neon Auto-Sync Trigger ---
-        // 初回アクセス時にバックグラウンドで同期を開始します
-        checkAndTriggerSync();
-
-        // --- 🧠 記憶 (Memory): KV Cache (No query case) ---
         if (!query) {
             const cachedPublic = await getCachedData<any[]>('public_photos');
             if (cachedPublic) return cachedPublic;
 
-            // Fetch from Neon instead of Firestore
-            try {
-                const { db: pgDb } = await import('../db');
-                if (pgDb) {
-                    const results = await pgDb.query.photos.findMany({
-                        limit: 30,
-                        orderBy: (photos: any, { desc }: any) => [desc(photos.createdAt)],
-                    });
+            const snapshot = await db.collection('photos')
+                .orderBy('createdAt', 'desc')
+                .limit(30)
+                .get();
 
-                    if (results && results.length > 0) {
-                        console.log(`Fetched ${results.length} photos from Neon (Query: empty)`);
-                        const data = serializeData(results);
-                        return data.map((p: any) => ({
-                            ...p,
-                            category: p.categoryId,
-                        }));
-                    }
-                }
-            } catch (pgError) {
-                console.error('Neon fetch failed, falling back to Firestore:', pgError);
-                const snapshot = await db.collection('photos')
-                    .orderBy('createdAt', 'desc')
-                    .limit(30)
-                    .get();
+            const photos = snapshot.docs.map(doc => {
+                const data = doc.data();
+                const catId = String(data.categoryId || '');
+                return {
+                    id: doc.id,
+                    ...data,
+                    categoryId: catId,
+                    category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
+                };
+            }).filter(p => p.categoryId && String(p.categoryId).trim() !== '');
 
-                const photos = snapshot.docs.map(doc => {
-                    const data = doc.data();
-                    const catId = String(data.categoryId || '');
-                    return {
-                        id: doc.id,
-                        ...data,
-                        categoryId: catId,
-                        category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
-                    };
-                }).filter(p => p.categoryId && String(p.categoryId).trim() !== '');
-
-                const serialized = serializeData(photos);
-                await setCachedData('public_photos', serialized);
-                return serialized;
-            }
+            const serialized = serializeData(photos);
+            await setCachedData('public_photos', serialized);
+            return serialized;
         }
 
         // --- 💪 筋肉 (Muscle): Algolia Search ---
@@ -1170,45 +1032,7 @@ export async function getRecentPhotos(limit: number = 6) {
     let photos: any[] = [];
 
     try {
-        // --- 🐘 Neon (PostgreSQL) Fetch ---
-        try {
-            const { db: pgDb } = await import('../db');
-            if (pgDb) {
-                const results = await pgDb.query.photos.findMany({
-                    limit: limit + 10,
-                    orderBy: (photoTable: any, { desc }: any) => [desc(photoTable.createdAt)],
-                });
 
-                if (results && results.length > 0) {
-                    const processed = results.map((data: any) => {
-                        const catId = String(data.categoryId || '');
-                        return {
-                            ...data,
-                            categoryId: catId,
-                            category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
-                        };
-                    }).filter((p: any) => p.categoryId && String(p.categoryId).trim() !== '');
-
-                    if (processed.length > 0) {
-                        const featuredGenres = ['portrait', 'snapshot'];
-                        processed.sort((a: any, b: any) => {
-                            const aCat = String(a.categoryId).toLowerCase();
-                            const bCat = String(b.categoryId).toLowerCase();
-                            const aIsFeatured = featuredGenres.includes(aCat);
-                            const bIsFeatured = featuredGenres.includes(bCat);
-
-                            if (aIsFeatured && !bIsFeatured) return -1;
-                            if (!aIsFeatured && bIsFeatured) return 1;
-                            return 0;
-                        });
-                        photos = processed.slice(0, limit);
-                    }
-                }
-            }
-        } catch (pgError) {
-            console.error('Neon recent photos fetch failed:', pgError);
-            // Fall through to Firestore
-        }
 
         // --- 🔥 Firestore Fallback (if Neon results are empty) ---
         if (photos.length === 0) {
