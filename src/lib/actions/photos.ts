@@ -810,7 +810,7 @@ export async function searchPhotos(query: string) {
                 const { db: pgDb } = await import('../db');
                 if (pgDb) {
                     const results = await pgDb.query.photos.findMany({
-                        limit: 100,
+                        limit: 30,
                         orderBy: (photos: any, { desc }: any) => [desc(photos.createdAt)],
                     });
 
@@ -827,7 +827,7 @@ export async function searchPhotos(query: string) {
                 console.error('Neon fetch failed, falling back to Firestore:', pgError);
                 const snapshot = await db.collection('photos')
                     .orderBy('createdAt', 'desc')
-                    .limit(100)
+                    .limit(30)
                     .get();
 
                 const photos = snapshot.docs.map(doc => {
