@@ -30,6 +30,7 @@ export default function PhotosPage() {
     const [photos, setPhotos] = useState<any[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true); // 初期ロード状態
+    const [error, setError] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [bulkCategoryId, setBulkCategoryId] = useState('');
@@ -57,39 +58,38 @@ export default function PhotosPage() {
                 const token = await user.getIdToken();
                 console.log('[PhotosPage] ID Token obtained. Fetching data...');
 
-                // Create a timeout promise
-                const timeout = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Data fetch timeout (10s)')), 10000)
-                );
-
-                const [catResult, photoResult] = await Promise.race([
-                    Promise.all([
-                        getCategories(),
-                        getPhotos(token, { limit: 50 })
-                    ]),
-                    timeout
-                ]) as [any, any];
-
-                console.log('[PhotosPage] Data fetch completed.', {
-                    catSuccess: catResult?.success,
-                    photoCount: photoResult?.photos?.length
-                });
-
-                if (isMounted) {
+                // カテゴリ取得 (失敗しても写真は表示できるようにする)
+                let catData = [];
+                try {
+                    const catResult = await getCategories();
                     if (catResult && catResult.success) {
-                        setCategories(catResult.data);
+                        catData = catResult.data;
+                        if (isMounted) setCategories(catData);
                     } else {
                         console.warn('[PhotosPage] Categories fetch failed:', catResult?.error);
                     }
+                } catch (catErr: any) {
+                    console.error('[PhotosPage] Category fetch error (skipping):', catErr.message);
+                }
 
-                    if (photoResult && photoResult.photos) {
-                        setPhotos(photoResult.photos);
-                        setNextCursor(photoResult.nextCursor || null);
-                        setHasMore(!!photoResult.nextCursor);
-                    } else {
-                        console.warn('[PhotosPage] Photos fetch failed or empty');
+                // 写真取得
+                try {
+                    const photoResult = await getPhotos(token, { limit: 50 });
+                    if (isMounted) {
+                        if (photoResult && photoResult.photos) {
+                            setPhotos(photoResult.photos);
+                            setNextCursor(photoResult.nextCursor || null);
+                            setHasMore(!!photoResult.nextCursor);
+                        } else {
+                            console.warn('[PhotosPage] Photos fetch failed or empty');
+                            setPhotos([]);
+                        }
+                    }
+                } catch (photoErr: any) {
+                    console.error('[PhotosPage] Photo fetch error:', photoErr.message);
+                    if (isMounted) {
                         setPhotos([]);
-                        setHasMore(false);
+                        setError('写真の取得中にエラーが発生しました。');
                     }
                 }
             } catch (err: any) {
@@ -292,6 +292,15 @@ export default function PhotosPage() {
                     </Link>
                 </div>
             </div>
+
+            {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center justify-between">
+                    <p className="text-sm font-medium">{error}</p>
+                    <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
+                        <X size={16} />
+                    </button>
+                </div>
+            )}
 
             {loading ? (
                 <div className="text-center py-20 text-gray-500">読み込み中...</div>
