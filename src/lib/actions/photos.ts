@@ -1029,52 +1029,45 @@ export async function getPublicPhotoById(photoId: string): Promise<any> {
 }
 
 export async function getRecentPhotos(limit: number = 6) {
-    let photos: any[] = [];
-
     try {
+        const { getFirebaseAdmin } = await import('../firebaseAdmin');
+        const admin = await getFirebaseAdmin();
+        const db = admin.firestore();
 
+        const snapshot = await db.collection('photos')
+            .orderBy('createdAt', 'desc')
+            .limit(limit + 10)
+            .get();
 
-        // --- 🔥 Firestore Fallback (if Neon results are empty) ---
-        if (photos.length === 0) {
-            const { getFirebaseAdmin } = await import('../firebaseAdmin');
-            const admin = await getFirebaseAdmin();
-            const db = admin.firestore();
+        const photos = snapshot.docs
+            .map(doc => {
+                const data = doc.data();
+                const catId = data.categoryId || '';
+                return {
+                    id: doc.id,
+                    ...data,
+                    category: CATEGORY_MAP[String(catId)] || String(catId).toUpperCase() || 'OTHER',
+                    shotAt: serializeData(data.shotAt),
+                    createdAt: serializeData(data.createdAt),
+                    updatedAt: serializeData(data.updatedAt),
+                };
+            })
+            .filter((p: any) => p.categoryId && String(p.categoryId).trim() !== '');
 
-            const snapshot = await db.collection('photos')
-                .orderBy('createdAt', 'desc')
-                .limit(limit + 10)
-                .get();
+        // Apply featured genres sort
+        const featuredGenres = ['portrait', 'snapshot'];
+        photos.sort((a: any, b: any) => {
+            const aCat = String(a.categoryId).toLowerCase();
+            const bCat = String(b.categoryId).toLowerCase();
+            const aIsFeatured = featuredGenres.includes(aCat);
+            const bIsFeatured = featuredGenres.includes(bCat);
 
-            photos = snapshot.docs
-                .map(doc => {
-                    const data = doc.data();
-                    const catId = data.categoryId || '';
-                    return {
-                        id: doc.id,
-                        ...data,
-                        category: CATEGORY_MAP[String(catId)] || String(catId).toUpperCase() || 'OTHER',
-                        shotAt: serializeData(data.shotAt),
-                        createdAt: serializeData(data.createdAt),
-                        updatedAt: serializeData(data.updatedAt),
-                    };
-                })
-                .filter((p: any) => p.categoryId && String(p.categoryId).trim() !== '');
+            if (aIsFeatured && !bIsFeatured) return -1;
+            if (!aIsFeatured && bIsFeatured) return 1;
+            return 0;
+        });
 
-            // Apply featured genres sort to Firestore results before slicing
-            const featuredGenres = ['portrait', 'snapshot'];
-            photos.sort((a: any, b: any) => {
-                const aCat = String(a.categoryId).toLowerCase();
-                const bCat = String(b.categoryId).toLowerCase();
-                const aIsFeatured = featuredGenres.includes(aCat);
-                const bIsFeatured = featuredGenres.includes(bCat);
-
-                if (aIsFeatured && !bIsFeatured) return -1;
-                if (!aIsFeatured && bIsFeatured) return 1;
-                return 0;
-            });
-
-            return serializeData(photos.slice(0, limit));
-        }
+        return serializeData(photos.slice(0, limit));
     } catch (error) {
         console.error('Error fetching recent photos:', error);
         return [];
