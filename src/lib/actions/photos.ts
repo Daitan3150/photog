@@ -710,8 +710,9 @@ export async function searchPhotos(query: string, options: { category?: string; 
 
                 // 例外の処理 (snap/snapshot 等)
                 if (targetCat === 'snapshot') {
-                    // もし 'snap' と 'snapshot' が混在している場合、両方取るには in クエリか別々に取得が必要です
                     queryRef = db.collection('photos').where('categoryId', 'in', ['snapshot', 'snap', 'SNAPSHOT', 'SNAP']);
+                } else if (targetCat === 'landscape') {
+                    queryRef = db.collection('photos').where('categoryId', 'in', ['landscape', 'LANDSCAPE']);
                 }
 
                 const snapshot = await queryRef.limit(200).get();
