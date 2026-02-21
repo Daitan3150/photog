@@ -810,7 +810,7 @@ export async function searchPhotos(query: string) {
                 const { db: pgDb } = await import('../db');
                 if (pgDb) {
                     const results = await pgDb.query.photos.findMany({
-                        limit: 12,
+                        limit: 100,
                         orderBy: (photos: any, { desc }: any) => [desc(photos.createdAt)],
                     });
 

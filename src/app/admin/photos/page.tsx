@@ -50,26 +50,41 @@ export default function PhotosPage() {
     }, [user]);
 
     const fetchPhotos = async (reset = false) => {
-        if (!user) return;
+        if (!user) {
+            console.log('[PhotosPage] fetchPhotos blocked: no user.');
+            return;
+        }
         try {
+            console.log('[PhotosPage] Calling fetchPhotos...', { reset });
             if (reset) setLoading(true);
             else setLoadingMore(true);
 
             const token = await user.getIdToken();
             const currentCursor = reset ? undefined : (nextCursor || undefined);
+
+            console.log('[PhotosPage] Invoking getPhotos server action...');
             const result = await getPhotos(token, { limit: 50, cursor: currentCursor });
+            console.log('[PhotosPage] getPhotos returned:', result);
 
-            if (reset) {
-                setPhotos(result.photos);
+            if (result && result.photos) {
+                if (reset) {
+                    setPhotos(result.photos);
+                } else {
+                    setPhotos(prev => [...prev, ...result.photos]);
+                }
+                setNextCursor(result.nextCursor || null);
+                setHasMore(!!result.nextCursor);
             } else {
-                setPhotos(prev => [...prev, ...result.photos]);
+                console.warn('[PhotosPage] getPhotos returned invalid result:', result);
+                if (reset) setPhotos([]);
+                setHasMore(false);
             }
-
-            setNextCursor(result.nextCursor);
-            setHasMore(!!result.nextCursor);
         } catch (err) {
             console.error('fetchPhotos error:', err);
+            if (reset) setPhotos([]);
+            setHasMore(false);
         } finally {
+            console.log('[PhotosPage] Setting loading to false.');
             if (reset) setLoading(false);
             else setLoadingMore(false);
         }
