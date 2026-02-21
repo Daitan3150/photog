@@ -27,20 +27,21 @@ export default function AdminLoginPage() {
         setIsEmergencyAvailable(false);
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            // By calling getUserRole here, it will be cached in sessionStorage as implemented in user.ts
             await getUserRole(userCredential.user.uid);
-
-            // Immediate redirect. AuthProvider will see the user and the cached role.
             router.push('/admin');
         } catch (err: any) {
             console.error(err);
-            if (err.code?.includes('referer-') || err.message?.includes('referer')) {
-                setError('このドメインからの認証がブロックされています（Firebase設定の問題）。');
+            const errorCode = err.code || '';
+            const errorMessage = err.message || '';
+
+            if (errorCode.includes('referer-') || errorMessage.includes('referer') ||
+                errorCode === 'auth/configuration-not-found' || errorCode === 'auth/internal-error') {
+                setError(`設定エラーが発生しました (${errorCode})。ドメイン制限か、Firebaseコンソールでの有効化が必要です。`);
                 setIsEmergencyAvailable(true);
-            } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+            } else if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential') {
                 setError('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
             } else {
-                setError(`エラー: ${err.shortMessage || err.message || 'ログインに失敗しました。'}`);
+                setError(`エラー: ${err.shortMessage || errorCode || errorMessage || 'ログインに失敗しました。'}`);
             }
         } finally {
             setLoading(false);
@@ -143,6 +144,7 @@ export default function AdminLoginPage() {
                         </motion.button>
                     )}
                 </form>
+
                 <div className="mt-4 text-center text-sm space-y-2">
                     <div>
                         <Link href="/admin/help" className="text-gray-500 hover:text-blue-600 font-bold flex items-center justify-center gap-1 transition-colors">
