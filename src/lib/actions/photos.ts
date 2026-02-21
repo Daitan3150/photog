@@ -268,7 +268,9 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
         // Get user role from Firestore
         const userDoc = await db.collection('users').doc(uid).get();
         const userData = userDoc.data();
-        const isAdmin = userData?.role === 'admin';
+        const email = decodedToken.email;
+        const isSuperAdmin = email === SUPER_ADMIN_EMAIL;
+        const isAdmin = userData?.role === 'admin' || isSuperAdmin;
 
         let query: any = db.collection('photos').orderBy('createdAt', 'desc');
 
@@ -288,7 +290,7 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
         const limit = options.limit || 50;
         query = query.limit(limit);
 
-        console.log(`[getPhotos] Fetching up to ${limit} photos for UID: ${uid}`);
+        console.log(`[getPhotos] Fetching up to ${limit} photos for UID: ${uid} (Admin: ${isAdmin})`);
         const snapshot = await query.get();
         console.log(`[getPhotos] Found ${snapshot.size} photos.`);
 
@@ -692,33 +694,51 @@ export async function searchPhotos(query: string, options: { category?: string; 
             const cachedPublic = await getCachedData<any[]>(cacheKey);
             if (cachedPublic) return cachedPublic;
 
-            let queryRef: any = db.collection('photos')
-                .orderBy('createdAt', 'desc');
+            let photos: any[] = [];
+            const targetCat = category?.toLowerCase();
 
-            if (category && category !== 'all') {
-                // Handle snapshot/snap mapping
-                if (category.toLowerCase() === 'snapshot') {
-                    // This is tricky in Firestore without OR. We'll stick to ID match or name match.
-                    queryRef = queryRef.where('categoryId', '==', category);
-                } else {
-                    queryRef = queryRef.where('categoryId', '==', category);
+            if (!targetCat || targetCat === 'all') {
+                // 通常の全件取得（インデックス不要）
+                const snapshot = await db.collection('photos')
+                    .orderBy('createdAt', 'desc')
+                    .limit(limit)
+                    .get();
+                photos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } else {
+                // 🛠️ 特定カテゴリの取得（インデックスエラーを避けるため orderBy を外す）
+                // Firestore では where と orderBy を組み合わせると複合インデックスが必要になりますが、
+                // ポートフォリオ程度なら全件取得してメモリでソートしても十分高速です。
+                let queryRef = db.collection('photos').where('categoryId', '==', targetCat);
+
+                // 例外の処理 (snap/snapshot 等)
+                if (targetCat === 'snapshot') {
+                    // もし 'snap' と 'snapshot' が混在している場合、両方取るには in クエリか別々に取得が必要です
+                    queryRef = db.collection('photos').where('categoryId', 'in', ['snapshot', 'snap', 'SNAPSHOT', 'SNAP']);
                 }
+
+                const snapshot = await queryRef.limit(200).get();
+                photos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // メモリ上でソート
+                photos.sort((a, b) => {
+                    const dateA = a.createdAt?.toDate?.()?.getTime() || new Date(a.createdAt).getTime() || 0;
+                    const dateB = b.createdAt?.toDate?.()?.getTime() || new Date(b.createdAt).getTime() || 0;
+                    return dateB - dateA;
+                });
+
+                if (photos.length > limit) photos = photos.slice(0, limit);
             }
 
-            const snapshot = await queryRef.limit(limit).get();
-
-            const photos = snapshot.docs.map((doc: any) => {
-                const data = doc.data();
+            const results_data = photos.map((data: any) => {
                 const catId = String(data.categoryId || '');
                 return {
-                    id: doc.id,
                     ...data,
                     categoryId: catId,
                     category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
                 };
             }).filter((p: any) => p.categoryId && String(p.categoryId).trim() !== '');
 
-            const serialized = serializeData(photos);
+            const serialized = serializeData(results_data);
             await setCachedData(cacheKey, serialized, 3600);
             return serialized;
         }
