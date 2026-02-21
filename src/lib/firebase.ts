@@ -7,7 +7,7 @@ import { getPerformance } from "firebase/performance";
 import { getRemoteConfig, RemoteConfig, fetchAndActivate } from "firebase/remote-config";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBdhiREiTTViaDBXSvfkjxCKi71Bi0232A",
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: "daitan-portfolio.firebaseapp.com",
     projectId: "daitan-portfolio",
     storageBucket: "daitan-portfolio.firebasestorage.app",
