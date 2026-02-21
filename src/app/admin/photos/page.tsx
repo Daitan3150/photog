@@ -29,7 +29,7 @@ export default function PhotosPage() {
     const router = useRouter();
     const [photos, setPhotos] = useState<any[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true); // 初期ロード状態
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [bulkCategoryId, setBulkCategoryId] = useState('');
@@ -40,31 +40,71 @@ export default function PhotosPage() {
     const [hasMore, setHasMore] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
 
+    // 🔄 初期データの一括取得（最適化された Effect）
     useEffect(() => {
-        if (user) {
-            fetchPhotos(true);
-            getCategories().then(res => {
-                if (res.success) setCategories(res.data);
-            });
+        let isMounted = true;
+
+        async function initializeData() {
+            if (!user) {
+                if (isMounted) setLoading(false);
+                return;
+            }
+
+            if (isMounted) setLoading(true);
+
+            try {
+                // 並列でカテゴリと初期写真をフェッチ
+                const token = await user.getIdToken();
+                const [catResult, photoResult] = await Promise.all([
+                    getCategories(),
+                    getPhotos(token, { limit: 50 })
+                ]);
+
+                if (isMounted) {
+                    if (catResult.success) {
+                        setCategories(catResult.data);
+                    }
+                    if (photoResult && photoResult.photos) {
+                        setPhotos(photoResult.photos);
+                        setNextCursor(photoResult.nextCursor || null);
+                        setHasMore(!!photoResult.nextCursor);
+                    } else {
+                        setPhotos([]);
+                        setHasMore(false);
+                    }
+                }
+            } catch (err) {
+                console.error('[PhotosPage] Initialization error:', err);
+                if (isMounted) {
+                    setPhotos([]);
+                    setHasMore(false);
+                }
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
         }
+
+        initializeData();
+
+        return () => {
+            isMounted = false;
+        };
     }, [user]);
 
+    // 🔄 個別の「もっと見る」または「リロード」処理
     const fetchPhotos = async (reset = false) => {
-        if (!user) {
-            console.log('[PhotosPage] fetchPhotos blocked: no user.');
-            return;
-        }
+        if (!user) return;
+
         try {
-            console.log('[PhotosPage] Calling fetchPhotos...', { reset });
             if (reset) setLoading(true);
             else setLoadingMore(true);
 
             const token = await user.getIdToken();
             const currentCursor = reset ? undefined : (nextCursor || undefined);
 
-            console.log('[PhotosPage] Invoking getPhotos server action...');
             const result = await getPhotos(token, { limit: 50, cursor: currentCursor });
-            console.log('[PhotosPage] getPhotos returned:', result);
 
             if (result && result.photos) {
                 if (reset) {
@@ -74,17 +114,15 @@ export default function PhotosPage() {
                 }
                 setNextCursor(result.nextCursor || null);
                 setHasMore(!!result.nextCursor);
-            } else {
-                console.warn('[PhotosPage] getPhotos returned invalid result:', result);
-                if (reset) setPhotos([]);
+            } else if (reset) {
+                setPhotos([]);
                 setHasMore(false);
             }
         } catch (err) {
-            console.error('fetchPhotos error:', err);
+            console.error('[PhotosPage] fetchPhotos error:', err);
             if (reset) setPhotos([]);
             setHasMore(false);
         } finally {
-            console.log('[PhotosPage] Setting loading to false.');
             if (reset) setLoading(false);
             else setLoadingMore(false);
         }
