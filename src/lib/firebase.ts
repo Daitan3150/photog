@@ -20,10 +20,10 @@ if (!firebaseConfig.apiKey) {
 }
 
 // Initialize Firebase
-let app: any;
-let db: any;
-let auth: any;
-let storage: any;
+let app: any = null;
+let db: any = null;
+let auth: any = null;
+let storage: any = null;
 
 try {
     if (firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith('AIza')) {
@@ -32,8 +32,7 @@ try {
         auth = getAuth(app);
         storage = getStorage(app);
     } else {
-        console.warn("[Firebase] API Key is missing or invalid. Skipping initialization.");
-        app = null;
+        console.warn("[Firebase] API Key is missing or invalid. Check environment variables.");
     }
 } catch (e) {
     console.error("[Firebase] Initialization error:", e);

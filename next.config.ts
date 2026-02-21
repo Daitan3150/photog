@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self' https://*.sentry.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://*.sentry.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://res.cloudinary.com blob: https://*.sentry.io; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.algolia.net https://*.algolianet.com https://worker.daitan-portfolio.workers.dev https://*.sentry.io; frame-ancestors 'none';",
+            value: "default-src 'self' https://*.sentry.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://*.sentry.io https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://res.cloudinary.com blob: https://*.sentry.io https://*.googleusercontent.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.algolia.net https://*.algolianet.com https://*.firebaseio.com https://*.googleapis.com https://*.firebase.com https://*.sentry.io; frame-ancestors 'none';",
           },
           {
             key: 'X-Content-Type-Options',

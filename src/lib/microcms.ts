@@ -30,26 +30,25 @@ export type Category = {
 // API Functions
 export const getBlogs = async (queries?: MicroCMSQueries) => {
     if (!client) {
-        console.warn("MicroCMS client is not initialized (missing API keys).");
+        console.warn("[microCMS] Client not initialized. Please check MICROCMS_SERVICE_DOMAIN and MICROCMS_API_KEY.");
         return { contents: [], totalCount: 0, offset: 0, limit: 0 };
     }
 
+    const endpoint = "blogs";
     try {
-        // --- 🧠 記憶 (Memory): KV Cache ---
         const cacheKey = `blogs_${JSON.stringify(queries || {})}`;
         const cached = await getCachedData<any>(cacheKey);
         if (cached) return cached;
 
         const data = await client.getList<Blog>({
-            endpoint: "blogs",
+            endpoint,
             queries,
         });
 
-        // 🔥 Cache the result
         await setCachedData(cacheKey, data);
         return data;
-    } catch (error) {
-        console.error("MicroCMS getList error:", error);
+    } catch (error: any) {
+        console.error(`[microCMS] Error fetching from endpoint "${endpoint}":`, error.message);
         return { contents: [], totalCount: 0, offset: 0, limit: 0 };
     }
 };
@@ -59,26 +58,25 @@ export const getBlogDetail = async (
     queries?: MicroCMSQueries
 ) => {
     if (!client) {
-        throw new Error("MicroCMS client is not initialized.");
+        throw new Error("[microCMS] Client not initialized.");
     }
 
+    const endpoint = "blogs";
     try {
-        // --- 🧠 記憶 (Memory): KV Cache ---
         const cacheKey = `blog_detail_${contentId}_${JSON.stringify(queries || {})}`;
         const cached = await getCachedData<Blog>(cacheKey);
         if (cached) return cached;
 
         const data = await client.getListDetail<Blog>({
-            endpoint: "blogs",
+            endpoint,
             contentId,
             queries,
         });
 
-        // 🔥 Cache the result
         await setCachedData(cacheKey, data);
         return data;
-    } catch (error) {
-        console.error("MicroCMS getBlogDetail error:", error);
+    } catch (error: any) {
+        console.error(`[microCMS] Error fetching details for ID "${contentId}" from endpoint "${endpoint}":`, error.message);
         throw error;
     }
 };
