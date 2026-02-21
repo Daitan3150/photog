@@ -62,8 +62,8 @@ export default function AdminLoginPage() {
                 setError(result.error || '緊急ログインに失敗しました。');
             }
         } catch (err: any) {
-            console.error(err);
-            setError('システムエラーが発生しました。管理者に連絡してください。');
+            console.error('Emergency Login Failed Detail:', err);
+            setError(`緊急ログインエラー: ${err.code || err.message || '不明なシステムエラー'}`);
         } finally {
             setLoading(false);
         }
