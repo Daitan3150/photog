@@ -60,26 +60,6 @@ export default function Hero() {
                     {t.hero.catchphrase}
                 </motion.p>
 
-                {/* CTA Buttons */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1, delay: 1.1, ease: "easeOut" }}
-                    className="flex flex-col sm:flex-row gap-4 sm:gap-6 mt-4 pointer-events-auto z-20"
-                >
-                    <a
-                        href="/portfolio"
-                        className="px-8 py-3 bg-white text-black text-sm tracking-widest uppercase font-bold hover:bg-black hover:text-white transition-all duration-300 border border-white rounded shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:shadow-none min-w-[200px]"
-                    >
-                        {t.hero.viewPortfolio}
-                    </a>
-                    <a
-                        href="/contact"
-                        className="px-8 py-3 bg-transparent text-white text-sm tracking-widest uppercase font-bold hover:bg-white/10 transition-all duration-300 border border-white/50 hover:border-white rounded min-w-[200px]"
-                    >
-                        {t.hero.contact}
-                    </a>
-                </motion.div>
             </div>
 
             {/* Scroll Indicator */}
