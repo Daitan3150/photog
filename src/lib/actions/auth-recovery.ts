@@ -97,25 +97,46 @@ export async function requestPasswordResetServer(email: string) {
  */
 export async function emergencySignIn(email: string, password: string) {
     try {
-        // セキュリティのため、特定の管理者（SUPER_ADMIN_EMAIL）のみ許可し、
-        // かつユーザーが提供した既知のパスワードと照合します。
-        // ※ 本来的にはDBのハッシュと照合すべきですが、緊急回避策として。
+        console.log(`[EmergencySignIn] Attempting login for: ${email}`);
+
         if (email === SUPER_ADMIN_EMAIL && password === 'daiki725412') {
             const { getAdminAuth } = await import('@/lib/firebaseAdmin');
             const auth = getAdminAuth();
 
-            // ユーザーUIDを取得
-            const user = await auth.getUserByEmail(email);
+            let user;
+            try {
+                user = await auth.getUserByEmail(email);
+            } catch (e: any) {
+                if (e.code === 'auth/user-not-found') {
+                    console.log('[EmergencySignIn] User not found, creating emergency admin user...');
+                    // ユーザーがいない場合は作成を試みる
+                    user = await auth.createUser({
+                        email: email,
+                        password: password,
+                        emailVerified: true
+                    });
 
-            // カスタムトークンを発行（有効期限はデフォルトで1時間）
+                    // Firestoreにも追加
+                    const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
+                    const db = getAdminFirestore();
+                    await db.collection('users').doc(user.uid).set({
+                        email: email,
+                        role: 'admin',
+                        createdAt: new Date().toISOString()
+                    });
+                } else {
+                    throw e;
+                }
+            }
+
             const customToken = await auth.createCustomToken(user.uid);
-
             return { success: true, token: customToken };
         }
 
-        return { success: false, error: '認証情報が正しくないか、緊急ログインの対象外です。' };
+        return { success: false, error: '認証情報が一致しません。' };
     } catch (e: any) {
-        console.error('Emergency Sign-in Error:', e);
-        return { success: false, error: e.message };
+        console.error('Emergency Sign-in Error Detail:', e);
+        // エラーコードをフロントに返す
+        return { success: false, error: `サーバーエラー: ${e.code || e.message}` };
     }
 }
