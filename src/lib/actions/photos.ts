@@ -721,8 +721,16 @@ export async function searchPhotos(query: string, options: { category?: string; 
 
                 // メモリ上でソート
                 photos.sort((a: any, b: any) => {
-                    const dateA = a.createdAt?.toDate?.()?.getTime() || new Date(a.createdAt).getTime() || 0;
-                    const dateB = b.createdAt?.toDate?.()?.getTime() || new Date(b.createdAt).getTime() || 0;
+                    let dateA = 0;
+                    let dateB = 0;
+                    if (a.createdAt) {
+                        dateA = typeof a.createdAt.toDate === 'function' ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime();
+                    }
+                    if (b.createdAt) {
+                        dateB = typeof b.createdAt.toDate === 'function' ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime();
+                    }
+                    if (isNaN(dateA)) dateA = 0;
+                    if (isNaN(dateB)) dateB = 0;
                     return dateB - dateA;
                 });
 
