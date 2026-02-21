@@ -688,7 +688,8 @@ export async function searchPhotos(query: string, options: { category?: string; 
         if (!db) throw new Error('Failed to initialize Firestore');
 
         if (!query) {
-            const cacheKey = `public_photos_${category || 'all'}`;
+            // キャッシュキーを更新して古い（空の）キャッシュを無視する
+            const cacheKey = `public_photos_v2_${category || 'all'}`;
             const cachedPublic = await getCachedData<any[]>(cacheKey);
             if (cachedPublic) return cachedPublic;
 
