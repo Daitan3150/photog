@@ -319,7 +319,7 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
         });
 
         // 🛠️ メモリ上でソート (降順)
-        photos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        photos.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         // 本来の Limit 分だけ抽出
         const finalPhotos = photos.slice(0, options.limit || 50);
