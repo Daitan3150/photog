@@ -7,13 +7,17 @@ import { getPerformance } from "firebase/performance";
 import { getRemoteConfig, RemoteConfig, fetchAndActivate } from "firebase/remote-config";
 
 const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
     authDomain: "daitan-portfolio.firebaseapp.com",
     projectId: "daitan-portfolio",
     storageBucket: "daitan-portfolio.firebasestorage.app",
     messagingSenderId: "1045568928629",
     appId: "1:1045568928629:web:aa6c88d95200b3b81d713c"
 };
+
+if (!firebaseConfig.apiKey) {
+    console.warn("Firebase API Key is missing! Check your environment variables.");
+}
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
