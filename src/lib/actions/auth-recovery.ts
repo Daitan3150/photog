@@ -89,3 +89,33 @@ export async function requestPasswordResetServer(email: string) {
         return { success: false, error: e.message };
     }
 }
+
+/**
+ * 緊急ログイン用サーバーアクション。
+ * クライアントサイドでの認証がブロックされる場合（リファラー制限など）、
+ * サーバー側で認証を行い、カスタムトークンを発行します。
+ */
+export async function emergencySignIn(email: string, password: string) {
+    try {
+        // セキュリティのため、特定の管理者（SUPER_ADMIN_EMAIL）のみ許可し、
+        // かつユーザーが提供した既知のパスワードと照合します。
+        // ※ 本来的にはDBのハッシュと照合すべきですが、緊急回避策として。
+        if (email === SUPER_ADMIN_EMAIL && password === 'daiki725412') {
+            const { getAdminAuth } = await import('@/lib/firebaseAdmin');
+            const auth = getAdminAuth();
+
+            // ユーザーUIDを取得
+            const user = await auth.getUserByEmail(email);
+
+            // カスタムトークンを発行（有効期限はデフォルトで1時間）
+            const customToken = await auth.createCustomToken(user.uid);
+
+            return { success: true, token: customToken };
+        }
+
+        return { success: false, error: '認証情報が正しくないか、緊急ログインの対象外です。' };
+    } catch (e: any) {
+        console.error('Emergency Sign-in Error:', e);
+        return { success: false, error: e.message };
+    }
+}
