@@ -46,7 +46,7 @@ export async function requestPasswordResetServer(email: string) {
         // リセットリンクを生成 (Firebase Admin SDK)
         // 注意: プロジェクト設定で「アクションURL」が正しく設定されている必要があります。
         const resetLink = await auth.generatePasswordResetLink(email, {
-            url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://next-portfolio-eosin-eight.vercel.app'}/admin/login`,
+            url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://next-portfolio-lime-one.vercel.app'}/admin/login`,
         });
 
         // Resendを使用してメール送信
