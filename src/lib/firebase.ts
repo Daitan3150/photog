@@ -20,40 +20,48 @@ if (!firebaseConfig.apiKey) {
 }
 
 // Initialize Firebase
-let app;
-try {
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-} catch (e) {
-    console.error("Firebase initialization failed:", e);
-    // Provide a dummy app object to avoid crashing other services immediately, 
-    // but in a real client environment, this would be a problem.
-    app = {} as any;
-}
+let app: any;
+let db: any;
+let auth: any;
+let storage: any;
 
-const db = getFirestore(app);
-const auth = getAuth(app);
-const storage = getStorage(app);
+try {
+    if (firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith('AIza')) {
+        app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+        db = getFirestore(app);
+        auth = getAuth(app);
+        storage = getStorage(app);
+    } else {
+        console.warn("[Firebase] API Key is missing or invalid. Skipping initialization.");
+        app = null;
+    }
+} catch (e) {
+    console.error("[Firebase] Initialization error:", e);
+}
 
 // Analytics, Performance, Remote Config (client-side only)
 let analytics: Analytics | null = null;
 let performance: any | null = null;
 let remoteConfig: RemoteConfig | null = null;
 
-if (typeof window !== 'undefined') {
-    analytics = getAnalytics(app);
-    performance = getPerformance(app);
-    remoteConfig = getRemoteConfig(app);
+if (typeof window !== 'undefined' && app) {
+    try {
+        analytics = getAnalytics(app);
+        performance = getPerformance(app);
+        remoteConfig = getRemoteConfig(app);
 
-    // Remote Config settings
-    if (remoteConfig) {
-        remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
-        remoteConfig.defaultConfig = {
-            maintenance_mode: false,
-            banner_message: '',
-            max_upload_size: 10485760, // 10MB
-            featured_category: '',
-        };
-        fetchAndActivate(remoteConfig).catch(console.error);
+        if (remoteConfig) {
+            remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
+            remoteConfig.defaultConfig = {
+                maintenance_mode: false,
+                banner_message: '',
+                max_upload_size: 10485760,
+                featured_category: '',
+            };
+            fetchAndActivate(remoteConfig).catch(console.error);
+        }
+    } catch (e) {
+        console.error("[Firebase] Client service init failed:", e);
     }
 }
 
