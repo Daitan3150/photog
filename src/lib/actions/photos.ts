@@ -701,7 +701,7 @@ export async function searchPhotos(query: string, options: { category?: string; 
                     .orderBy('createdAt', 'desc')
                     .limit(limit)
                     .get();
-                photos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                photos = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
             } else {
                 // 🛠️ 特定カテゴリの取得（インデックスエラーを避けるため orderBy を外す）
                 // Firestore では where と orderBy を組み合わせると複合インデックスが必要になりますが、
@@ -715,10 +715,10 @@ export async function searchPhotos(query: string, options: { category?: string; 
                 }
 
                 const snapshot = await queryRef.limit(200).get();
-                photos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                photos = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
                 // メモリ上でソート
-                photos.sort((a, b) => {
+                photos.sort((a: any, b: any) => {
                     const dateA = a.createdAt?.toDate?.()?.getTime() || new Date(a.createdAt).getTime() || 0;
                     const dateB = b.createdAt?.toDate?.()?.getTime() || new Date(b.createdAt).getTime() || 0;
                     return dateB - dateA;
@@ -1074,7 +1074,7 @@ export async function getRecentPhotos(limit: number = 6) {
             .get();
 
         const photos = snapshot.docs
-            .map(doc => {
+            .map((doc: any) => {
                 const data = doc.data();
                 const catId = data.categoryId || '';
                 return {
@@ -1203,7 +1203,7 @@ export async function getExifSuggestions() {
         const TARGET_LENS_PATTERN = /voigtlander|nokton|40mm/i;
         const CORRECT_LENS_NAME = 'voigtlander NOKTON classic 40mm F1.4 SC';
 
-        snapshot.docs.forEach(doc => {
+        snapshot.docs.forEach((doc: any) => {
             const exif = doc.data().exif;
             if (exif) {
                 if (exif.Model && typeof exif.Model === 'string') {
@@ -1236,7 +1236,7 @@ export async function getExifSuggestions() {
             success: true,
             data: {
                 models: Array.from(models).sort(),
-                lensModels: Array.from(lensModels).sort((a, b) => {
+                lensModels: Array.from(lensModels).sort((a: any, b: any) => {
                     // マスターにあるものを優先的に上に持ってくる
                     const aInMaster = masterLenses.has(a);
                     const bInMaster = masterLenses.has(b);
