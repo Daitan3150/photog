@@ -11,10 +11,12 @@ interface FirebaseAdminConfig {
 function formatPrivateKey(key: string) {
     if (!key) return '';
     let formattedKey = key;
+    // Handle cases where the key might be wrapped in quotes (Vercel behavior)
     if (formattedKey.startsWith('"') && formattedKey.endsWith('"')) {
         formattedKey = formattedKey.slice(1, -1);
     }
-    return formattedKey.replace(/\\n/g, "\n");
+    // Handle both literal newlines and escaped \n sequences
+    return formattedKey.replace(/\\n/g, "\n").replace(/\n/g, "\n");
 }
 
 export function createFirebaseAdminApp(config: FirebaseAdminConfig) {

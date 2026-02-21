@@ -263,7 +263,13 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
         const decodedToken = await auth.verifyIdToken(idToken);
         const uid = decodedToken.uid;
 
-        const db = getAdminFirestore();
+        let db;
+        try {
+            db = getAdminFirestore();
+        } catch (initError: any) {
+            console.error('[getPhotos] Firestore initialization failed:', initError.message);
+            return { photos: [], nextCursor: null };
+        }
 
         // Get user role from Firestore
         const userDoc = await db.collection('users').doc(uid).get();
