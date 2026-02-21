@@ -20,14 +20,19 @@ function formatPrivateKey(key: string) {
 }
 
 export function createFirebaseAdminApp(config: FirebaseAdminConfig) {
+    const initId = Math.random().toString(36).substring(7);
+    console.log(`[FirebaseAdmin][${initId}] Checking for existing app...`);
+
     // Next.js can sometimes re-run code, so check if app already exists
     const existingApp = admin.apps.find(app => app?.name === '[DEFAULT]');
     if (existingApp) {
+        console.log(`[FirebaseAdmin][${initId}] Using existing [DEFAULT] app.`);
         return existingApp;
     }
 
     try {
-        console.log(`[FirebaseAdmin] Initializing default app for project: ${config.projectId}`);
+        console.log(`[FirebaseAdmin][${initId}] Initializing NEW app for project: ${config.projectId}`);
+        const start = Date.now();
 
         const cert = admin.credential.cert({
             projectId: config.projectId,
@@ -35,13 +40,16 @@ export function createFirebaseAdminApp(config: FirebaseAdminConfig) {
             privateKey: formatPrivateKey(config.privateKey),
         });
 
-        return admin.initializeApp({
+        const app = admin.initializeApp({
             credential: cert,
             projectId: config.projectId,
             storageBucket: `${config.projectId}.appspot.com`,
         });
+
+        console.log(`[FirebaseAdmin][${initId}] Initialization successful in ${Date.now() - start}ms`);
+        return app;
     } catch (error: any) {
-        console.error('[FirebaseAdmin] Initialization failed:', error.message);
+        console.error(`[FirebaseAdmin][${initId}] Initialization failed Error:`, error.message);
         throw error;
     }
 }
