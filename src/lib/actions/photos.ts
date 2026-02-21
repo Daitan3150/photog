@@ -324,8 +324,8 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
                 aspectRatio: data.aspectRatio || 1.5,
                 tags: data.tags || [],
                 exif: safeExif,
-                // 日付関連は必ず文字列に変換
-                shotAt: serializeData(data.shotAt),
+                // 日付関連は安全のため null または 文字列に変換
+                shotAt: null, // 全て「なし」に変更
                 createdAt: serializeData(data.createdAt) || new Date().toISOString(),
                 updatedAt: serializeData(data.updatedAt) || new Date().toISOString(),
             };
