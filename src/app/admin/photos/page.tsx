@@ -50,36 +50,56 @@ export default function PhotosPage() {
                 return;
             }
 
+            console.log('[PhotosPage] Initializing data for user:', user.email);
             if (isMounted) setLoading(true);
 
             try {
-                // 並列でカテゴリと初期写真をフェッチ
                 const token = await user.getIdToken();
-                const [catResult, photoResult] = await Promise.all([
-                    getCategories(),
-                    getPhotos(token, { limit: 50 })
-                ]);
+                console.log('[PhotosPage] ID Token obtained. Fetching data...');
+
+                // Create a timeout promise
+                const timeout = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Data fetch timeout (10s)')), 10000)
+                );
+
+                const [catResult, photoResult] = await Promise.race([
+                    Promise.all([
+                        getCategories(),
+                        getPhotos(token, { limit: 50 })
+                    ]),
+                    timeout
+                ]) as [any, any];
+
+                console.log('[PhotosPage] Data fetch completed.', {
+                    catSuccess: catResult?.success,
+                    photoCount: photoResult?.photos?.length
+                });
 
                 if (isMounted) {
-                    if (catResult.success) {
+                    if (catResult && catResult.success) {
                         setCategories(catResult.data);
+                    } else {
+                        console.warn('[PhotosPage] Categories fetch failed:', catResult?.error);
                     }
+
                     if (photoResult && photoResult.photos) {
                         setPhotos(photoResult.photos);
                         setNextCursor(photoResult.nextCursor || null);
                         setHasMore(!!photoResult.nextCursor);
                     } else {
+                        console.warn('[PhotosPage] Photos fetch failed or empty');
                         setPhotos([]);
                         setHasMore(false);
                     }
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error('[PhotosPage] Initialization error:', err);
                 if (isMounted) {
                     setPhotos([]);
                     setHasMore(false);
                 }
             } finally {
+                console.log('[PhotosPage] Initialization finished.');
                 if (isMounted) {
                     setLoading(false);
                 }
