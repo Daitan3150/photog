@@ -278,37 +278,25 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
         const isSuperAdmin = email === SUPER_ADMIN_EMAIL;
         const isAdmin = userData?.role === 'admin' || isSuperAdmin;
 
-        let query: any = db.collection('photos').orderBy('createdAt', 'desc');
+        console.log(`[getPhotos] Starting fetch for UID: ${uid} (Admin: ${isAdmin})`);
+
+        // 🛠️ 安全策: インデックスエラーを避けるため orderBy を外し、まず where だけ、あるいは全件で取得
+        let query: any = db.collection('photos');
 
         if (!isAdmin) {
             query = query.where('uploaderId', '==', uid);
         }
 
-        // Pagination: Start After Cursor
-        if (options.cursor) {
-            const cursorDoc = await db.collection('photos').doc(options.cursor).get();
-            if (cursorDoc.exists) {
-                query = query.startAfter(cursorDoc);
-            }
-        }
+        // Limit を少し多めに取ってメモリでソートする (インデックス不要にするため)
+        const fetchLimit = 200;
+        const snapshot = await query.limit(fetchLimit).get();
+        console.log(`[getPhotos] Firestore returned ${snapshot.size} docs.`);
 
-        // Limit
-        const limit = options.limit || 50;
-        query = query.limit(limit);
-
-        console.log(`[getPhotos] Fetching up to ${limit} photos for UID: ${uid} (Admin: ${isAdmin})`);
-        const snapshot = await query.get();
-        console.log(`[getPhotos] Found ${snapshot.size} photos.`);
-
-        const photos = snapshot.docs.map((doc: any) => {
+        let photos = snapshot.docs.map((doc: any) => {
             const data = doc.data();
-
-            // EXIFのサニタイズ
             const safeExif = serializeData(data.exif);
-
             const catId = String(data.categoryId || '');
 
-            // 重要: 非シリアライザブルなオブジェクト（Timestamp等）がクライアントに渡らないよう各フィールドを明示的に指定
             return {
                 id: doc.id,
                 url: data.url || '',
@@ -324,24 +312,28 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
                 aspectRatio: data.aspectRatio || 1.5,
                 tags: data.tags || [],
                 exif: safeExif,
-                // 日付関連は安全のため null または 文字列に変換
-                shotAt: null, // 全て「なし」に変更
+                shotAt: null, // 全て「なし」に固定
                 createdAt: serializeData(data.createdAt) || new Date().toISOString(),
                 updatedAt: serializeData(data.updatedAt) || new Date().toISOString(),
             };
         });
 
-        // Determine next cursor
-        const nextCursor = photos.length === limit ? photos[photos.length - 1].id : null;
+        // 🛠️ メモリ上でソート (降順)
+        photos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+        // 本来の Limit 分だけ抽出
+        const finalPhotos = photos.slice(0, options.limit || 50);
+        const nextCursor = photos.length > (options.limit || 50) ? photos[(options.limit || 50) - 1].id : null;
+
+        console.log(`[getPhotos] Returning ${finalPhotos.length} photos.`);
         return {
-            photos,
+            photos: finalPhotos,
             nextCursor
         };
 
-    } catch (error) {
-        console.error('Error fetching photos:', error);
-        return { photos: [], nextCursor: null };
+    } catch (error: any) {
+        console.error('[getPhotos] Fatal error:', error.message);
+        return { photos: [], nextCursor: null, error: error.message };
     }
 }
 
