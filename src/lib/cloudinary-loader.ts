@@ -3,8 +3,8 @@
 import { ImageLoaderProps } from 'next/image';
 
 export default function cloudinaryLoader({ src, width, quality }: ImageLoaderProps) {
-    if (!src.includes('res.cloudinary.com')) {
-        return src;
+    if (!src || typeof src !== 'string' || !src.includes('res.cloudinary.com')) {
+        return src || '';
     }
 
     const params = ['f_auto', 'q_auto', `w_${width}`];

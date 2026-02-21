@@ -736,7 +736,7 @@ export async function searchPhotos(query: string, options: { category?: string; 
                     categoryId: catId,
                     category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
                 };
-            }).filter((p: any) => p.categoryId && String(p.categoryId).trim() !== '');
+            }).filter((p: any) => p.categoryId && String(p.categoryId).trim() !== '' && p.url && String(p.url).trim() !== '');
 
             const serialized = serializeData(results_data);
             await setCachedData(cacheKey, serialized, 3600);
