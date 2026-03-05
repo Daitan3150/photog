@@ -1,6 +1,6 @@
 "use client";
 
-import { Configure, RefinementList, useHits, useSearchBox, Pagination, CurrentRefinements, ClearRefinements, useInstantSearch } from "react-instantsearch";
+import { Configure, RefinementList, useHits, SearchBox, Pagination, CurrentRefinements, ClearRefinements, useInstantSearch } from "react-instantsearch";
 import { InstantSearchNext } from "react-instantsearch-nextjs";
 import { getSearchClient } from "@/lib/algolia";
 import { motion, AnimatePresence } from "framer-motion";
@@ -120,7 +120,7 @@ function SidebarFilter({ title, attribute, icon: Icon }: { title: string, attrib
     );
 }
 
-export default function SearchInterface() {
+export default function SearchInterface({ initialQuery = '' }: { initialQuery?: string }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return (
@@ -128,6 +128,11 @@ export default function SearchInterface() {
             searchClient={searchClient}
             indexName="photos"
             routing={true}
+            initialUiState={{
+                photos: {
+                    query: initialQuery
+                }
+            }}
         >
             <Configure hitsPerPage={12} />
 
@@ -179,6 +184,22 @@ export default function SearchInterface() {
                 {/* Main Content */}
                 <main className="flex-1">
                     <div className="mb-8">
+                        {/* Search Input Box */}
+                        <div className="mb-6">
+                            <SearchBox
+                                placeholder="モデル名や場所、タグで検索..."
+                                classNames={{
+                                    root: "relative w-full",
+                                    form: "relative flex items-center w-full",
+                                    input: "w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all",
+                                    submit: "absolute left-4 text-gray-400 hover:text-black transition-colors",
+                                    reset: "absolute right-4 text-gray-400 hover:text-black transition-colors",
+                                    submitIcon: "w-5 h-5",
+                                    resetIcon: "w-4 h-4"
+                                }}
+                            />
+                        </div>
+
                         <CurrentRefinements
                             classNames={{
                                 list: "flex flex-wrap gap-2",
