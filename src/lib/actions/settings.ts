@@ -45,11 +45,14 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 
 export async function updateSiteSettings(settings: Partial<SiteSettings>) {
     try {
-        const docRef = doc(db, "settings", SETTINGS_DOC_ID);
+        const { getAdminFirestore } = await import("@/lib/firebaseAdmin");
+        const adminDb = getAdminFirestore();
+        const docRef = adminDb.collection("settings").doc(SETTINGS_DOC_ID);
+
         const current = await getSiteSettings();
         const updated = { ...current, ...settings };
 
-        await setDoc(docRef, updated, { merge: true });
+        await docRef.set(updated, { merge: true });
 
         revalidatePath("/");
         revalidatePath("/admin");

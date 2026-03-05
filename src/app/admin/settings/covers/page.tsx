@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { getSiteSettings, updateSiteSettings, SiteSettings } from '@/lib/actions/settings';
-import { Camera, Save, RefreshCw, Layout, Image as ImageIcon, Check } from 'lucide-react';
+import { Camera, Save, RefreshCw, Layout, Image as ImageIcon, Check, Search, Zap } from 'lucide-react';
 import Image from 'next/image';
 import cloudinaryLoader from '@/lib/cloudinary-loader';
 import { searchPhotos } from '@/lib/actions/photos';
+import { rebuildAlgoliaIndex } from '@/lib/actions/algolia';
 import { Photo } from '@/types/photo';
 
 export default function CoverSettingsPage() {
@@ -23,6 +24,7 @@ export default function CoverSettingsPage() {
     const [selectorTarget, setSelectorTarget] = useState<keyof SiteSettings['covers'] | null>(null);
     const [recentPhotos, setRecentPhotos] = useState<Photo[]>([]);
     const [photoLoading, setPhotoLoading] = useState(false);
+    const [syncing, setSyncing] = useState(false);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -68,6 +70,21 @@ export default function CoverSettingsPage() {
         });
         setIsSelectorOpen(false);
         setSelectorTarget(null);
+    };
+
+    const handleRebuildAlgolia = async () => {
+        if (!confirm('全ての写真データを検索エンジン(Algolia)へ再同期しますか？')) return;
+        setSyncing(true);
+        setMessage('');
+        setError('');
+
+        const result = await rebuildAlgoliaIndex();
+        if (result.success) {
+            setMessage(`検索インデックスの再構築が完了しました（${result.count}件）。`);
+        } else {
+            setError('同期エラー: ' + result.error);
+        }
+        setSyncing(false);
     };
 
     if (!isAdmin) return <div className="p-10 text-center">アクセス権限がありません。</div>;
@@ -202,6 +219,38 @@ export default function CoverSettingsPage() {
                         className="w-full border p-2 rounded text-xs bg-gray-50 outline-none"
                         placeholder="Cloudinary URL"
                     />
+                </div>
+            </div>
+
+            {/* Algolia Sync Section */}
+            <div className="mt-12 pt-8 border-t border-gray-200">
+                <div className="bg-blue-50 p-8 rounded-3xl border border-blue-100">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="flex gap-4">
+                            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white flex-shrink-0">
+                                <Search className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-black text-gray-900">検索エンジンの同期</h2>
+                                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                                    写真が表示されない場合や、モデル名での検索がおかしい場合は、<br />
+                                    データベース内の全写真を検索エンジン（Algolia）へ再同期してください。
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleRebuildAlgolia}
+                            disabled={syncing}
+                            className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 min-w-[200px] disabled:opacity-50"
+                        >
+                            {syncing ? (
+                                <RefreshCw className="animate-spin w-5 h-5" />
+                            ) : (
+                                <Zap className="w-5 h-5" />
+                            )}
+                            {syncing ? '同期中...' : 'インデックス再構築'}
+                        </button>
+                    </div>
                 </div>
             </div>
 
