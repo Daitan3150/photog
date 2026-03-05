@@ -309,138 +309,198 @@ export default function PhotosPage() {
                     <p className="text-xl mb-4">写真が見つかりません。</p>
                     <p>「新規写真の投稿」ボタンから写真を追加してください。</p>
                 </div>
-            ) : (
-                <>
-                    {isSelectionMode && (
-                        <div className="mb-4 flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-100">
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={handleSelectAll}
-                                    className="text-sm font-medium text-blue-700 hover:text-blue-800 flex items-center gap-2"
-                                >
-                                    {selectedIds.size === photos.length ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                                    すべて選択
-                                </button>
-                                <span className="text-sm text-blue-600 font-bold">{selectedIds.size} 枚選択中</span>
+            ) : (() => {
+                // カテゴリーごとにグループ化
+                const uncategorized = photos.filter(p => !p.categoryId || String(p.categoryId).trim() === '');
+                const categorized = photos.filter(p => p.categoryId && String(p.categoryId).trim() !== '');
+                const groupedByCategory: Record<string, any[]> = {};
+                categorized.forEach(p => {
+                    const catName = getCategoryName(p.categoryId) || p.categoryId;
+                    if (!groupedByCategory[catName]) groupedByCategory[catName] = [];
+                    groupedByCategory[catName].push(p);
+                });
+                const categoryNames = Object.keys(groupedByCategory).sort();
+
+                const renderPhotoCard = (photo: any) => {
+                    const isSelected = selectedIds.has(photo.id);
+                    const catName = getCategoryName(photo.categoryId);
+                    return (
+                        <div
+                            key={photo.id}
+                            onClick={() => {
+                                if (isSelectionMode) {
+                                    toggleSelection(photo.id);
+                                } else {
+                                    router.push(`/admin/photos/${photo.id}`);
+                                }
+                            }}
+                            className={`bg-white rounded-xl shadow-sm overflow-hidden border transition-all cursor-pointer group relative ${isSelected ? 'ring-2 ring-blue-500 border-transparent' : 'border-gray-100 hover:shadow-md'
+                                }`}
+                        >
+                            {isSelectionMode && (
+                                <div className={`absolute top-3 left-3 z-10 p-1 rounded-md transition-colors ${isSelected ? 'bg-blue-500 text-white' : 'bg-white/80 text-gray-400 border border-gray-200'
+                                    }`}>
+                                    {isSelected ? <Check className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                                </div>
+                            )}
+
+                            {catName && (
+                                <div className="absolute top-3 right-3 z-10">
+                                    <span className="bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
+                                        {catName}
+                                    </span>
+                                </div>
+                            )}
+
+                            <div className="relative aspect-[3/2] bg-gray-100">
+                                <Image
+                                    loader={cloudinaryLoader}
+                                    src={photo.url}
+                                    alt={photo.title || 'Untitled'}
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                />
+                                {!isSelectionMode && (
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                                        {photo.snsUrl && (
+                                            <a
+                                                href={photo.snsUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-2 bg-white rounded-full text-blue-500 hover:text-blue-600"
+                                                onClick={(e) => e.stopPropagation()}
+                                                title="SNSリンクを開く"
+                                            >
+                                                <ExternalLink className="w-5 h-5" />
+                                            </a>
+                                        )}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(photo.id);
+                                            }}
+                                            className="p-2 bg-white rounded-full text-red-500 hover:text-red-600"
+                                            title="写真を削除"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {photos.map((photo: any) => {
-                            const isSelected = selectedIds.has(photo.id);
-                            const catName = getCategoryName(photo.categoryId);
-                            return (
-                                <div
-                                    key={photo.id}
-                                    onClick={() => {
-                                        if (isSelectionMode) {
-                                            toggleSelection(photo.id);
-                                        } else {
-                                            router.push(`/admin/photos/${photo.id}`);
-                                        }
-                                    }}
-                                    className={`bg-white rounded-xl shadow-sm overflow-hidden border transition-all cursor-pointer group relative ${isSelected ? 'ring-2 ring-blue-500 border-transparent' : 'border-gray-100 hover:shadow-md'
-                                        }`}
-                                >
-                                    {isSelectionMode && (
-                                        <div className={`absolute top-3 left-3 z-10 p-1 rounded-md transition-colors ${isSelected ? 'bg-blue-500 text-white' : 'bg-white/80 text-gray-400 border border-gray-200'
-                                            }`}>
-                                            {isSelected ? <Check className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                                        </div>
-                                    )}
-
-                                    {/* カテゴリーバッジ */}
-                                    {catName && (
-                                        <div className="absolute top-3 right-3 z-10">
-                                            <span className="bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
-                                                {catName}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    <div className="relative aspect-[3/2] bg-gray-100">
-                                        <Image
-                                            loader={cloudinaryLoader}
-                                            src={photo.url}
-                                            alt={photo.title || 'Untitled'}
-                                            fill
-                                            className="object-cover"
-                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                        />
-                                        {!isSelectionMode && (
-                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                                {photo.snsUrl && (
-                                                    <a
-                                                        href={photo.snsUrl}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="p-2 bg-white rounded-full text-blue-500 hover:text-blue-600"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        title="SNSリンクを開く"
-                                                    >
-                                                        <ExternalLink className="w-5 h-5" />
-                                                    </a>
-                                                )}
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(photo.id);
-                                                    }}
-                                                    className="p-2 bg-white rounded-full text-red-500 hover:text-red-600"
-                                                    title="写真を削除"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                </button>
-                                            </div>
+                            <div className="p-4">
+                                <div className="flex justify-between items-start mb-1">
+                                    <h3 className="font-bold text-lg truncate flex-1" title={photo.title || '見出し未設定'}>
+                                        {photo.title || <span className="text-gray-300 font-normal italic">見出し未設定</span>}
+                                    </h3>
+                                </div>
+                                <div className="flex justify-between items-end">
+                                    <div className="text-sm text-gray-600">
+                                        <p className="font-medium text-pink-600">{photo.subjectName || <span className="opacity-0">-</span>}</p>
+                                        <p className="text-xs text-gray-400 mt-1">{photo.location || <span className="opacity-0">-</span>}</p>
+                                    </div>
+                                    <div className="text-right text-xs text-gray-400 font-mono space-y-0.5">
+                                        {photo.shotAt && (
+                                            <p title="撮影日">📷 {formatDate(photo.shotAt)}</p>
+                                        )}
+                                        {photo.createdAt && (
+                                            <p title="追加日" className="text-gray-300">
+                                                ＋{formatDate(photo.createdAt)}
+                                            </p>
                                         )}
                                     </div>
-                                    <div className="p-4">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <h3 className="font-bold text-lg truncate flex-1" title={photo.title || '見出し未設定'}>
-                                                {photo.title || <span className="text-gray-300 font-normal italic">見出し未設定</span>}
-                                            </h3>
-                                            {(!photo.title || !photo.categoryId) && (
-                                                <span className="shrink-0 ml-2 px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-bold border border-amber-200 rounded">
-                                                    未設定
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="flex justify-between items-end">
-                                            <div className="text-sm text-gray-600">
-                                                <p className="font-medium text-pink-600">{photo.subjectName || <span className="opacity-0">-</span>}</p>
-                                                <p className="text-xs text-gray-400 mt-1">{photo.location || <span className="opacity-0">-</span>}</p>
-                                            </div>
-                                            <div className="text-right text-xs text-gray-400 font-mono space-y-0.5">
-                                                {photo.shotAt && (
-                                                    <p title="撮影日">📷 {formatDate(photo.shotAt)}</p>
-                                                )}
-                                                {photo.createdAt && (
-                                                    <p title="追加日" className="text-gray-300">
-                                                        ＋{formatDate(photo.createdAt)}
-                                                    </p>
-                                                )}
-                                            </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                };
+
+                return (
+                    <>
+                        {isSelectionMode && (
+                            <div className="mb-4 flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={handleSelectAll}
+                                        className="text-sm font-medium text-blue-700 hover:text-blue-800 flex items-center gap-2"
+                                    >
+                                        {selectedIds.size === photos.length ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                                        すべて選択
+                                    </button>
+                                    <span className="text-sm text-blue-600 font-bold">{selectedIds.size} 枚選択中</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* サマリーバー */}
+                        <div className="mb-6 flex flex-wrap gap-3">
+                            <div className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-600">
+                                全 <span className="font-bold text-gray-900">{photos.length}</span> 枚
+                            </div>
+                            {uncategorized.length > 0 && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm font-bold text-red-600 flex items-center gap-2">
+                                    ⚠️ 未分類 <span className="bg-red-100 px-2 py-0.5 rounded-full text-red-700">{uncategorized.length}枚</span>
+                                </div>
+                            )}
+                            {categoryNames.map(catName => (
+                                <div key={catName} className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600">
+                                    {catName} <span className="font-bold text-gray-900">{groupedByCategory[catName].length}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* 🚨 未分類の写真（最上部に大きく警告表示） */}
+                        {uncategorized.length > 0 && (
+                            <div className="mb-10">
+                                <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-4">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-xl">⚠️</div>
+                                        <div>
+                                            <h2 className="text-xl font-bold text-red-700">カテゴリー未設定の写真</h2>
+                                            <p className="text-sm text-red-500">
+                                                以下の <span className="font-bold">{uncategorized.length}枚</span> はカテゴリーが未設定のため、ポートフォリオに公開されません。
+                                            </p>
                                         </div>
                                     </div>
+                                    <p className="text-xs text-red-400 mt-2">
+                                        写真をクリックして編集画面からカテゴリーを設定するか、複数選択で一括カテゴリー変更ができます。
+                                    </p>
                                 </div>
-                            );
-                        })}
-                    </div>
-                    {hasMore && (
-                        <div className="mt-8 text-center pb-8">
-                            <button
-                                onClick={handleLoadMore}
-                                disabled={loadingMore}
-                                className="px-6 py-3 bg-white border border-gray-200 rounded-full shadow-sm text-gray-600 font-bold hover:bg-gray-50 hover:shadow-md transition-all flex items-center gap-2 mx-auto disabled:opacity-50"
-                            >
-                                {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
-                                {loadingMore ? '読み込み中...' : 'もっと見る'}
-                            </button>
-                        </div>
-                    )}
-                </>
-            )}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    {uncategorized.map(renderPhotoCard)}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* カテゴリーごとのセクション */}
+                        {categoryNames.map(catName => (
+                            <div key={catName} className="mb-10">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wider">{catName}</h2>
+                                    <span className="text-sm text-gray-400 font-medium">{groupedByCategory[catName].length}枚</span>
+                                    <div className="h-[1px] flex-1 bg-gray-200" />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    {groupedByCategory[catName].map(renderPhotoCard)}
+                                </div>
+                            </div>
+                        ))}
+
+                        {hasMore && (
+                            <div className="mt-8 text-center pb-8">
+                                <button
+                                    onClick={handleLoadMore}
+                                    disabled={loadingMore}
+                                    className="px-6 py-3 bg-white border border-gray-200 rounded-full shadow-sm text-gray-600 font-bold hover:bg-gray-50 hover:shadow-md transition-all flex items-center gap-2 mx-auto disabled:opacity-50"
+                                >
+                                    {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+                                    {loadingMore ? '読み込み中...' : 'もっと見る'}
+                                </button>
+                            </div>
+                        )}
+                    </>
+                );
+            })()}
 
             {/* Floating Action Bar（選択中に表示） */}
             {selectedIds.size > 0 && (
