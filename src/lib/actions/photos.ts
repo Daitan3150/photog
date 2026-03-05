@@ -9,6 +9,7 @@ import { syncPhotoToAlgolia } from '../algolia';
 import { appendToMetadataRegistry } from './metadata';
 import { revalidatePath } from 'next/cache';
 
+const SUPER_ADMIN_EMAILS = ['daitan10618@icloud.com', 'daitan10618@gmail.com'];
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'daitan10618@icloud.com';
 
 interface SavePhotoResult {
@@ -93,7 +94,7 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
         const userData = userDoc.data();
 
         // [AUTO-GRANT ADMIN] for specific email in server action
-        const isSuperAdminByEmail = decodedToken.email === 'daitan10618@gmail.com' || decodedToken.email === 'daitan10618@icloud.com';
+        const isSuperAdminByEmail = SUPER_ADMIN_EMAILS.includes(decodedToken.email || '') || decodedToken.email === SUPER_ADMIN_EMAIL;
 
         const modelId = userData?.modelId || null;
         const role = userData?.role || (isSuperAdminByEmail ? 'admin' : null);
@@ -282,7 +283,7 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
         const userDoc = await db.collection('users').doc(uid).get();
         const userData = userDoc.data();
         const email = decodedToken.email;
-        const isSuperAdmin = email === SUPER_ADMIN_EMAIL;
+        const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(email || '') || email === SUPER_ADMIN_EMAIL;
         const isAdmin = userData?.role === 'admin' || isSuperAdmin;
 
         console.log(`[getPhotos] Starting fetch for UID: ${uid} (Admin: ${isAdmin})`);
