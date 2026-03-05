@@ -145,8 +145,11 @@ export default function NewPhotoPage() {
             },
             body: JSON.stringify({ paramsToSign })
         });
-        if (!res.ok) throw new Error('Signature fetch failed');
-        return await res.json() as { signature: string; timestamp: number; apiKey: string };
+        if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || 'Signature fetch failed');
+        }
+        return await res.json() as { signature: string; timestamp: number; apiKey: string; cloudName: string };
     };
 
     const reflectExifToForm = (mergedExif: any) => {
@@ -375,7 +378,7 @@ export default function NewPhotoPage() {
                             uploadParams.auto_tagging = '0.6';
                         }
 
-                        const { signature, apiKey } = await fetchSignature(uploadParams);
+                        const { signature, apiKey, cloudName } = await fetchSignature(uploadParams);
 
                         const formData = new FormData();
                         formData.append('file', fileToUpload);
@@ -391,8 +394,14 @@ export default function NewPhotoPage() {
 
 
                         // ✅ XHR でリアルタイム進捗取得
+                        // 注意: cloudNameが取得できていないとURLが不正になり Network Error になります
+                        const actualCloudName = cloudName || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+                        if (!actualCloudName) {
+                            throw new Error('Cloudinary Cloud Name is not configured');
+                        }
+
                         const result = await xhrUpload(
-                            `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                            `https://api.cloudinary.com/v1_1/${actualCloudName}/image/upload`,
                             formData,
                             (pct) => updateStatus('uploading', 30 + Math.round(pct * 0.6)) // 30%〜90%
                         );

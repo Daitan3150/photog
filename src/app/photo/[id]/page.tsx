@@ -3,7 +3,8 @@ import { getPhotoPublic } from '@/lib/actions/photos';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Share2, Camera, MapPin, Tag, User, Calendar, Grid } from 'lucide-react';
+import { ArrowLeft, Share2, Camera, MapPin, Tag, User, Calendar, Grid, Sparkles } from 'lucide-react';
+import { clsx } from 'clsx';
 import { getRelatedPhotos } from '@/lib/algolia';
 import LikeButton from '@/components/gallery/LikeButton';
 import cloudinaryLoader from '@/lib/cloudinary-loader';
@@ -130,16 +131,33 @@ export default async function PhotoPage({ params }: Props) {
 
             <main className="container mx-auto px-4 py-24 md:py-32 flex flex-col items-center">
                 {/* Photo Stage */}
-                <div className="relative w-full max-w-5xl aspect-[2/3] md:aspect-[3/2] overflow-hidden group">
-                    <Image
-                        loader={cloudinaryLoader as any}
-                        src={photo.url}
-                        alt={photo.title || 'Portfolio Photography'}
-                        fill
-                        priority
-                        className="object-contain shadow-2xl transition-transform duration-700 group-hover:scale-[1.02]"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
-                    />
+                <div className={clsx(
+                    "relative w-full max-w-5xl aspect-[2/3] md:aspect-[3/2] overflow-hidden group p-[2px] md:p-[4px]",
+                    (photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && "bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 rounded-2xl shadow-2xl shadow-purple-500/40"
+                )}>
+                    <div className="relative w-full h-full overflow-hidden bg-black/40 rounded-xl">
+                        <Image
+                            loader={cloudinaryLoader as any}
+                            src={photo.url}
+                            alt={photo.title || 'Portfolio Photography'}
+                            fill
+                            priority
+                            className="object-contain shadow-2xl transition-transform duration-700 group-hover:scale-[1.02]"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+                        />
+
+                        {/* Cosplay Luxury Sparkle Effect */}
+                        {(photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && (
+                            <div className="absolute inset-0 pointer-events-none">
+                                <div className="absolute top-4 right-4 animate-pulse">
+                                    <Sparkles className="w-8 h-8 text-white fill-amber-300 drop-shadow-glow" />
+                                </div>
+                                <div className="absolute bottom-10 left-10 animate-pulse delay-1000">
+                                    <Sparkles className="w-6 h-6 text-white/60 fill-purple-300 drop-shadow-glow" />
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Info Section */}
@@ -158,25 +176,59 @@ export default async function PhotoPage({ params }: Props) {
 
                         <div className="grid grid-cols-1 gap-4">
                             <div className="flex items-center gap-4 text-white/60 group">
-                                <div className="p-2 rounded-lg bg-white/5 border border-white/5 group-hover:border-white/20 transition-all">
+                                <div className={clsx(
+                                    "p-2 rounded-lg border transition-all",
+                                    (photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') ? "bg-purple-900/40 border-purple-500/50 text-purple-200" : "bg-white/5 border-white/5 group-hover:border-white/20"
+                                )}>
                                     <User className="w-4 h-4" />
                                 </div>
-                                <span className="text-sm tracking-wide">{photo.subjectName}</span>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] uppercase tracking-widest opacity-50 font-bold">
+                                        {(photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') ? 'Cosplayer' : 'Model'}
+                                    </span>
+                                    <span className={clsx(
+                                        "text-sm tracking-wide",
+                                        (photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && "text-purple-100 font-medium"
+                                    )}>{photo.subjectName}</span>
+                                </div>
                             </div>
+
+                            {/* Cosplay Event Details */}
+                            {(photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && photo.event && (
+                                <div className="flex items-center gap-4 text-white/60 group">
+                                    <div className="p-2 rounded-lg bg-amber-900/40 border border-amber-500/50 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                                        <Calendar className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] uppercase tracking-widest opacity-50 font-bold">Event</span>
+                                        <span className="text-sm tracking-wide text-amber-100 font-bold underline underline-offset-4 decoration-amber-500/30">
+                                            {photo.event}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex items-center gap-4 text-white/60 group">
                                 <div className="p-2 rounded-lg bg-white/5 border border-white/5 group-hover:border-white/20 transition-all">
                                     <MapPin className="w-4 h-4" />
                                 </div>
-                                <span className="text-sm tracking-wide">{photo.location}</span>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] uppercase tracking-widest opacity-50 font-bold">Location</span>
+                                    <span className="text-sm tracking-wide">{photo.location}</span>
+                                </div>
                             </div>
+
                             {photo.shotAt && (
                                 <div className="flex items-center gap-4 text-white/60 group">
                                     <div className="p-2 rounded-lg bg-white/5 border border-white/5 group-hover:border-white/20 transition-all">
                                         <Calendar className="w-4 h-4" />
                                     </div>
-                                    <span className="text-sm tracking-wide">
-                                        {new Date(photo.shotAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                    </span>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] uppercase tracking-widest opacity-50 font-bold">Date</span>
+                                        <span className="text-sm tracking-wide">
+                                            {new Date(photo.shotAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                        </span>
+                                    </div>
                                 </div>
                             )}
                         </div>

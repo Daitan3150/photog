@@ -48,6 +48,8 @@ import SecurityProvider from "@/components/SecurityProvider";
 import MaintenanceOverlay from "@/components/MaintenanceOverlay";
 import JsonLd from "@/components/seo/JsonLd";
 
+import SeasonalBackground from "@/components/effects/SeasonalBackground";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -59,6 +61,7 @@ export default function RootLayout({
         <AnalyticsProvider>
           <LanguageProvider>
             <SecurityProvider>
+              <SeasonalBackground />
               <MaintenanceOverlay />
               <JsonLd type="Photographer" />
               <JsonLd type="WebSite" />

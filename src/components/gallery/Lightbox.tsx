@@ -7,7 +7,8 @@ import { X, ChevronLeft, ChevronRight, MapPin, User, Instagram, Twitter, Globe, 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getPhotoStats, incrementPhotoStats, PhotoStats } from "@/lib/worker-stats";
-import { Heart } from "lucide-react";
+import { Heart, Sparkles, Calendar } from "lucide-react";
+import { clsx } from "clsx";
 
 interface LightboxProps {
     photo: any;
@@ -118,17 +119,55 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                             }
                         }}
                     >
-                        <Image
-                            loader={cloudinaryLoader}
-                            src={photo.url}
-                            alt={photo.title || "Photography"}
-                            fill
-                            className="object-contain pointer-events-none"
-                            priority
-                            sizes="(max-width: 768px) 100vw, 85vw"
-                            placeholder="blur"
-                            blurDataURL={cloudinaryLoader({ src: photo.url, width: 50, quality: 10 })}
-                        />
+                        <div className={clsx(
+                            "relative w-full h-full p-1 md:p-2",
+                            (photo.category?.toLowerCase() === 'cosplay' || photo.categoryId?.toLowerCase() === 'cosplay') && "bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 rounded-2xl shadow-2xl shadow-purple-500/20"
+                        )}>
+                            <Image
+                                loader={cloudinaryLoader}
+                                src={photo.url}
+                                alt={photo.title || "Photography"}
+                                fill
+                                className={clsx(
+                                    "object-contain pointer-events-none transition-all duration-500",
+                                    (photo.category?.toLowerCase() === 'cosplay' || photo.categoryId?.toLowerCase() === 'cosplay') && "rounded-xl"
+                                )}
+                                priority
+                                sizes="(max-width: 768px) 100vw, 85vw"
+                                placeholder="blur"
+                                blurDataURL={cloudinaryLoader({ src: photo.url, width: 50, quality: 10 })}
+                            />
+
+                            {/* Cosplay Sparkle Layer */}
+                            {(photo.category?.toLowerCase() === 'cosplay' || photo.categoryId?.toLowerCase() === 'cosplay') && (
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl">
+                                    {[...Array(6)].map((_, i) => (
+                                        <motion.div
+                                            key={i}
+                                            initial={{ opacity: 0, scale: 0 }}
+                                            animate={{
+                                                opacity: [0, 1, 0],
+                                                scale: [0, 1, 0],
+                                                x: [Math.random() * 100 - 50, Math.random() * 100 - 50],
+                                                y: [Math.random() * 100 - 50, Math.random() * 100 - 50]
+                                            }}
+                                            transition={{
+                                                duration: 2 + Math.random() * 2,
+                                                repeat: Infinity,
+                                                delay: Math.random() * 2
+                                            }}
+                                            className="absolute"
+                                            style={{
+                                                left: `${Math.random() * 100}%`,
+                                                top: `${Math.random() * 100}%`
+                                            }}
+                                        >
+                                            <Sparkles className="w-6 h-6 text-white/40 drop-shadow-glow" />
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </motion.div>
                 </div>
 
@@ -176,12 +215,33 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                         <div className="pt-6 border-t border-gray-100 space-y-4">
                             {photo.subjectName && (
                                 <div className="flex items-center gap-3 text-gray-600">
-                                    <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
-                                        <User size={14} className="opacity-50" />
+                                    <div className={clsx(
+                                        "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+                                        (photo.category?.toLowerCase() === 'cosplay' || photo.categoryId?.toLowerCase() === 'cosplay') ? "bg-purple-100 text-purple-600" : "bg-gray-50 text-gray-400"
+                                    )}>
+                                        <User size={14} className={(photo.category?.toLowerCase() === 'cosplay' || photo.categoryId?.toLowerCase() === 'cosplay') ? "" : "opacity-50"} />
                                     </div>
                                     <div>
-                                        <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Model</p>
-                                        <p className="text-sm font-medium">{photo.subjectName}</p>
+                                        <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">
+                                            {(photo.category?.toLowerCase() === 'cosplay' || photo.categoryId?.toLowerCase() === 'cosplay') ? 'Cosplayer' : 'Model'}
+                                        </p>
+                                        <p className={clsx(
+                                            "text-sm font-medium",
+                                            (photo.category?.toLowerCase() === 'cosplay' || photo.categoryId?.toLowerCase() === 'cosplay') && "text-purple-900"
+                                        )}>{photo.subjectName}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Cosplay Event Name Display */}
+                            {(photo.category?.toLowerCase() === 'cosplay' || photo.categoryId?.toLowerCase() === 'cosplay') && photo.event && (
+                                <div className="flex items-center gap-3 text-gray-600">
+                                    <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                                        <Calendar size={14} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Event</p>
+                                        <p className="text-sm font-bold text-amber-700 tracking-wide">{photo.event}</p>
                                     </div>
                                 </div>
                             )}
