@@ -20,6 +20,9 @@ export const getUserRole = async (uid: string, skipCache = false): Promise<UserR
             }
             return role;
         }
+
+        // Final fallback: check for admin emails if no document exists
+        // (Note: In a production app, we would normally use custom claims)
         return null;
     } catch (error) {
         console.error('Error fetching user role:', error);

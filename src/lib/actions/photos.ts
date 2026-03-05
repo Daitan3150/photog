@@ -91,7 +91,12 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
         // Get user profile to include modelId
         const userDoc = await db.collection('users').doc(uploaderId).get();
         const userData = userDoc.data();
+
+        // [AUTO-GRANT ADMIN] for specific email in server action
+        const isSuperAdminByEmail = decodedToken.email === 'daitan10618@gmail.com' || decodedToken.email === 'daitan10618@icloud.com';
+
         const modelId = userData?.modelId || null;
+        const role = userData?.role || (isSuperAdminByEmail ? 'admin' : null);
 
         // [GEOCODING] Fetch coordinates from location string
         let latitude = null;

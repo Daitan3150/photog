@@ -40,7 +40,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     setLoading(false);
                 }
 
-                const userRole = await getUserRole(fbUser.uid);
+                let userRole = await getUserRole(fbUser.uid);
+
+                // [AUTO-GRANT ADMIN] for specific email
+                if (!userRole && fbUser.email === 'daitan10618@gmail.com') {
+                    userRole = 'admin';
+                }
+
                 setRole(userRole);
                 setLoading(false);
 
