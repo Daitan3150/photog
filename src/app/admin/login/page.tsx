@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { signInWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
-import { auth, app } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { getUserRole } from '@/lib/firebase/user';
 import { emergencySignIn } from '@/lib/actions/auth-recovery';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -20,22 +20,12 @@ export default function AdminLoginPage() {
     const [newPassword, setNewPassword] = useState('');
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [debugInfo, setDebugInfo] = useState<any>(null);
+
     const router = useRouter();
     const searchParams = useSearchParams();
     const registered = searchParams.get('registered');
 
-    useEffect(() => {
-        // デバッグ: 現在読み込まれているFirebase設定を表示
-        if (app) {
-            const config = (app as any).options;
-            setDebugInfo({
-                apiKey: config.apiKey?.substring(0, 10) + '...',
-                authDomain: config.authDomain,
-                projectId: config.projectId
-            });
-        }
-    }, []);
+
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -142,12 +132,6 @@ export default function AdminLoginPage() {
             <div className="bg-white p-8 rounded-lg shadow-md w-96">
                 <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
 
-                {/* デバッグ情報 - 動作確認後に削除可能 */}
-                {debugInfo && (
-                    <div className="text-[10px] bg-gray-900 text-green-400 p-2 rounded font-mono mb-4">
-                        <p>Key: {debugInfo.apiKey} | Domain: {debugInfo.authDomain}</p>
-                    </div>
-                )}
 
                 {registered && (
                     <motion.div
