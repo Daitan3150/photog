@@ -1,7 +1,7 @@
 'use server';
 
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
-import { syncPhotoToAlgolia, getIndexClient } from '@/lib/algolia';
+import { getIndexClient } from '@/lib/algolia';
 import { revalidatePath } from 'next/cache';
 
 const INDEX_NAME = 'photos';
@@ -11,43 +11,62 @@ export async function rebuildAlgoliaIndex() {
         const db = getAdminFirestore();
         const client = getIndexClient();
 
-        console.log('[Algolia] Starting index rebuild...');
+        console.log('[Algolia] インデックス再構築を開始...');
 
-        // 1. Configure the index settings for better search
-        try {
-            // Use legacy setSettings if available or use the client directly
-            // For algoliasearch v5+, we might need a different approach but let's try basic sync first
-            console.log('[Algolia] Configuring index settings...');
-            // Note: In v5, settings are managed via the index's specific methods or the task API
-        } catch (configError) {
-            console.error('[Algolia] Config Error (skipping):', configError);
-        }
-
-        // 2. Fetch all photos from Firestore
+        // 1. Firestoreから全写真を取得
         const snapshot = await db.collection('photos').get();
-        const photos = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        const photos = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                objectID: doc.id,
+                id: doc.id,
+                title: data.title || '',
+                url: data.url || '',
+                subjectName: data.subjectName || '',
+                characterName: data.characterName || '',
+                event: data.event || '',
+                location: data.location || '',
+                category: data.category || '',
+                categoryId: data.categoryId || data.category || '',
+                tags: data.tags || [],
+                shotAt: data.shotAt?.toDate?.()?.getTime() ??
+                    (typeof data.shotAt === 'string' ? new Date(data.shotAt).getTime() : data.shotAt || 0),
+                createdAt: data.createdAt?.toDate?.()?.getTime() ??
+                    (typeof data.createdAt === 'string' ? new Date(data.createdAt).getTime() : data.createdAt || 0),
+            };
+        });
 
-        console.log(`[Algolia] Found ${photos.length} photos in Firestore.`);
+        console.log(`[Algolia] Firestoreから${photos.length}件の写真を取得しました。`);
 
-        // 3. Clear the index (Optional, but good for "clean start")
-        // await client.clearObjects({ indexName: INDEX_NAME });
-
-        // 4. Batch sync
-        let successCount = 0;
-        for (const photo of photos) {
-            const success = await syncPhotoToAlgolia(photo);
-            if (success) successCount++;
+        if (photos.length === 0) {
+            return { success: false, error: 'Firestoreに写真データが見つかりませんでした。' };
         }
 
-        console.log(`[Algolia] Sync complete. Success: ${successCount}/${photos.length}`);
+        // 2. バッチで一括送信（最大1000件/バッチ）
+        const BATCH_SIZE = 500;
+        let totalSaved = 0;
+
+        for (let i = 0; i < photos.length; i += BATCH_SIZE) {
+            const batch = photos.slice(i, i + BATCH_SIZE);
+            try {
+                await client.saveObjects({
+                    indexName: INDEX_NAME,
+                    objects: batch,
+                });
+                totalSaved += batch.length;
+                console.log(`[Algolia] ${totalSaved}/${photos.length}件を同期しました。`);
+            } catch (batchError: any) {
+                console.error(`[Algolia] バッチ送信エラー:`, batchError);
+                return { success: false, error: `バッチ送信失敗: ${batchError.message}` };
+            }
+        }
+
+        console.log(`[Algolia] 全件同期完了: ${totalSaved}件`);
 
         revalidatePath('/search');
-        return { success: true, count: successCount };
+        return { success: true, count: totalSaved };
     } catch (error: any) {
-        console.error('[Algolia] Rebuild Error:', error);
+        console.error('[Algolia] 再構築エラー:', error);
         return { success: false, error: error.message };
     }
 }

@@ -605,7 +605,7 @@ export default function NewPhotoPage() {
         switch (status) {
             case 'queued': return '待機中...';
             case 'resizing': return 'リサイズ中...';
-
+            case 'converting': return '変換中...';
             case 'uploading': return 'アップロード中...';
             case 'processing': return 'AI解析中...';
             case 'done': return '✅ 完了';
@@ -613,6 +613,7 @@ export default function NewPhotoPage() {
             default: return status;
         }
     };
+
 
     return (
         <div>
