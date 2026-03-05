@@ -146,7 +146,7 @@ export default function NewPhotoPage() {
             body: JSON.stringify({ paramsToSign })
         });
         if (!res.ok) {
-            const errBody = await res.json().catch(() => ({}));
+            const errBody = await res.json().catch(() => ({})) as { error?: string };
             throw new Error(errBody.error || 'Signature fetch failed');
         }
         return await res.json() as { signature: string; timestamp: number; apiKey: string; cloudName: string };
