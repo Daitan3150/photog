@@ -7,38 +7,72 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { Filter, X, Search as SearchIcon, Tag, MapPin, Grid } from "lucide-react";
+import { Filter, X, Search as SearchIcon, Tag, MapPin, Grid, User, Calendar, Sparkles } from "lucide-react";
 import { clsx } from "clsx";
 import cloudinaryLoader from "@/lib/cloudinary-loader";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const searchClient = getSearchClient();
 
 function Hit({ hit }: { hit: any }) {
+    const isCosplay = hit.category?.toLowerCase() === 'cosplay';
+
     return (
         <motion.div
             layout
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="break-inside-avoid relative group mb-4"
+            className={clsx(
+                "break-inside-avoid relative group mb-4 rounded-lg overflow-hidden",
+                isCosplay && "p-[2px] bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 shadow-lg shadow-purple-200/50"
+            )}
         >
-            <Link href={`/portfolio?img=${hit.objectID}`} className="block overflow-hidden relative rounded-sm shadow-sm group">
+            <Link href={`/portfolio?img=${hit.objectID}`} className="block overflow-hidden relative rounded-sm bg-white group">
                 <Image
                     loader={cloudinaryLoader}
                     src={hit.url}
                     alt={hit.title}
                     width={800}
                     height={1000}
-                    className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 25vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-5 text-left">
-                    <p className="text-[10px] tracking-[0.2em] uppercase text-white/70 mb-1">
-                        {hit.category}
-                    </p>
-                    <h3 className="text-sm font-serif tracking-[0.1em] text-white">
+
+                {isCosplay && (
+                    <div className="absolute top-3 right-3 z-10">
+                        <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                            className="bg-white/20 backdrop-blur-md p-1.5 rounded-full border border-white/40"
+                        >
+                            <Sparkles className="w-4 h-4 text-white fill-amber-300" />
+                        </motion.div>
+                    </div>
+                )}
+
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-5 text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className={clsx(
+                            "text-[9px] tracking-[0.2em] uppercase px-2 py-0.5 rounded-full text-white/90",
+                            isCosplay ? "bg-purple-600" : "bg-black/40 backdrop-blur-sm"
+                        )}>
+                            {hit.category}
+                        </span>
+                    </div>
+                    <h3 className="text-sm font-serif tracking-[0.1em] text-white line-clamp-1">
                         {hit.title}
                     </h3>
+                    {hit.subjectName && (
+                        <p className="text-[10px] text-white/60 mt-1 flex items-center gap-1.5 italic font-light">
+                            <User className="w-3 h-3" /> {hit.subjectName}
+                        </p>
+                    )}
+                    {hit.event && (
+                        <p className="text-[10px] text-amber-300/80 mt-0.5 flex items-center gap-1.5 font-medium">
+                            <Calendar className="w-3 h-3" /> {hit.event}
+                        </p>
+                    )}
                 </div>
             </Link>
         </motion.div>
@@ -73,7 +107,8 @@ function CustomHits() {
         return (
             <div className="text-center py-20 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                 <p className="text-xl text-gray-400 font-serif italic">
-                    No results found for your filters.
+                    {/* No results text handled by parent */}
+                    No results found.
                 </p>
                 <ClearRefinements
                     translations={{
@@ -122,6 +157,8 @@ function SidebarFilter({ title, attribute, icon: Icon }: { title: string, attrib
 
 export default function SearchInterface({ initialQuery = '' }: { initialQuery?: string }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [searchMode, setSearchMode] = useState<'all' | 'model' | 'event'>('all');
+    const { t } = useLanguage();
 
     return (
         <InstantSearchNext
@@ -134,7 +171,14 @@ export default function SearchInterface({ initialQuery = '' }: { initialQuery?: 
                 }
             }}
         >
-            <Configure hitsPerPage={12} />
+            <Configure
+                hitsPerPage={12}
+                restrictSearchableAttributes={
+                    searchMode === 'model' ? ['subjectName'] :
+                        searchMode === 'event' ? ['event'] :
+                            undefined
+                }
+            />
 
             <div className="flex flex-col lg:flex-row gap-12">
                 {/* Mobile Filter Toggle */}
@@ -163,13 +207,15 @@ export default function SearchInterface({ initialQuery = '' }: { initialQuery?: 
 
                     <div className="sticky top-24">
                         <div className="mb-10">
-                            <h2 className="text-2xl font-serif font-bold mb-2">Filters</h2>
-                            <p className="text-xs text-gray-400 tracking-widest uppercase">Refine your search</p>
+                            <h2 className="text-2xl font-serif font-bold mb-2">{t.search.filters}</h2>
+                            <p className="text-xs text-gray-400 tracking-widest uppercase">{t.search.refine}</p>
                         </div>
 
-                        <SidebarFilter title="Categories" attribute="category" icon={Grid} />
-                        <SidebarFilter title="Locations" attribute="location" icon={MapPin} />
-                        <SidebarFilter title="Tags" attribute="tags" icon={Tag} />
+                        <SidebarFilter title={t.search.categories} attribute="category" icon={Grid} />
+                        <SidebarFilter title={t.search.models} attribute="subjectName" icon={User} />
+                        <SidebarFilter title={t.search.events} attribute="event" icon={Calendar} />
+                        <SidebarFilter title={t.search.locations} attribute="location" icon={MapPin} />
+                        <SidebarFilter title={t.search.tags} attribute="tags" icon={Tag} />
 
                         <div className="mt-10 pt-6 border-t border-gray-100">
                             <ClearRefinements
@@ -184,10 +230,37 @@ export default function SearchInterface({ initialQuery = '' }: { initialQuery?: 
                 {/* Main Content */}
                 <main className="flex-1">
                     <div className="mb-8">
+                        {/* Search Mode Toggle */}
+                        <div className="flex gap-2 mb-6 p-1 bg-gray-100 rounded-lg w-fit">
+                            {[
+                                { id: 'all', label: t.search.modeAll, icon: SearchIcon },
+                                { id: 'model', label: t.search.modeModel, icon: User },
+                                { id: 'event', label: t.search.modeEvent, icon: Calendar },
+                            ].map((mode) => (
+                                <button
+                                    key={mode.id}
+                                    onClick={() => setSearchMode(mode.id as any)}
+                                    className={clsx(
+                                        "flex items-center gap-2 px-4 py-2 rounded-md text-xs tracking-widest transition-all",
+                                        searchMode === mode.id
+                                            ? "bg-white text-black shadow-sm font-bold"
+                                            : "text-gray-500 hover:text-black"
+                                    )}
+                                >
+                                    <mode.icon className="w-3 h-3" />
+                                    {mode.label}
+                                </button>
+                            ))}
+                        </div>
+
                         {/* Search Input Box */}
                         <div className="mb-6">
                             <SearchBox
-                                placeholder="モデル名や場所、タグで検索..."
+                                placeholder={
+                                    searchMode === 'model' ? t.search.modelPlaceholder :
+                                        searchMode === 'event' ? t.search.eventPlaceholder :
+                                            t.search.placeholder
+                                }
                                 classNames={{
                                     root: "relative w-full",
                                     form: "relative flex items-center w-full",

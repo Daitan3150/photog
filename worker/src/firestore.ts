@@ -92,6 +92,7 @@ export async function batchSavePhotos(env: Env, uploaderId: string, modelId: str
             title: photo.title || null,
             subjectName: photo.subjectName || null,
             characterName: photo.characterName || null,
+            event: photo.event || null,
             location: photo.location || null,
             shotAt: (photo.shotAt && photo.shotAt.length > 0)
                 ? (photo.shotAt.includes('T') ? photo.shotAt : `${photo.shotAt}T12:00:00.000Z`)

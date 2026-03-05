@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Menu, Camera, Home, User, Mail, AlertTriangle, Globe, LogOut, FileText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Camera, Home, User, Mail, AlertTriangle, Globe, LogOut, FileText, Settings } from 'lucide-react';
 import { useAuth } from '@/components/admin/AuthProvider';
 
 
@@ -136,6 +136,17 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                         >
                             <AlertTriangle size={20} className={pathname.startsWith('/admin/requests') ? '' : 'text-slate-400 group-hover:text-white'} />
                             {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">削除依頼</span>}
+                        </Link>
+
+                        <Link
+                            href="/admin/settings/covers"
+                            className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/settings/covers')
+                                ? `${accentColor} text-white ${glowClass}`
+                                : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
+                                } ${isCollapsed ? 'justify-center' : ''}`}
+                        >
+                            <Settings size={20} className={pathname.startsWith('/admin/settings') ? '' : 'text-slate-400 group-hover:text-white'} />
+                            {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">サイト設定</span>}
                         </Link>
                     </>
                 )}

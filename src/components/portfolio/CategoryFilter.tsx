@@ -2,18 +2,19 @@
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const CATEGORIES = [
-    { id: 'all', name: 'ALL', nameJa: '全て' },
-    { id: 'cosplay', name: 'COSPLAY', nameJa: 'コスプレ' },
-    { id: 'portrait', name: 'PORTRAIT', nameJa: 'ポートレート' },
-    { id: 'snapshot', name: 'SNAPSHOT', nameJa: 'スナップ' },
-    { id: 'landscape', name: 'LANDSCAPE', nameJa: '風景' },
-    { id: 'animal', name: 'ANIMAL', nameJa: '動物' },
+    { id: 'cosplay' },
+    { id: 'portrait' },
+    { id: 'snapshot' },
+    { id: 'landscape' },
+    { id: 'animal' },
 ];
 
 export default function CategoryFilter({ currentCategory }: { currentCategory: string }) {
     const router = useRouter();
+    const { t } = useLanguage();
 
     const handleCategoryChange = (slug: string) => {
         router.push(`/portfolio?category=${slug}`);
@@ -35,7 +36,7 @@ export default function CategoryFilter({ currentCategory }: { currentCategory: s
                         : 'text-gray-400 hover:text-black'
                         }`}
                 >
-                    {cat.name}
+                    {t.portfolio.categories[cat.id as keyof typeof t.portfolio.categories] || cat.id.toUpperCase()}
                     {currentCategory === cat.id && (
                         <motion.div
                             layoutId="activeTab"

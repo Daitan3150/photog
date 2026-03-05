@@ -5,9 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { getSnsUrl } from "@/lib/utils/sns";
-import { Instagram, Twitter, ExternalLink, Globe, Share2 } from "lucide-react";
+import { Instagram, Twitter, ExternalLink, Globe, Share2, Calendar, Sparkles } from "lucide-react";
 import Lightbox from "./Lightbox";
 import cloudinaryLoader from "@/lib/cloudinary-loader";
+import { clsx } from "clsx";
 
 // SNS Service detection helper
 const getSnsIcon = (url: string) => {
@@ -28,6 +29,7 @@ interface Photo {
     subjectName?: string;
     snsUrl?: string;
     characterName?: string;
+    event?: string;
     displayMode?: 'title' | 'character';
     aspectRatio?: "portrait" | "landscape" | "square";
     href?: string;
@@ -100,7 +102,10 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.5, delay: index * 0.1 }}
-                        className="break-inside-avoid relative group"
+                        className={clsx(
+                            "break-inside-avoid relative group mb-4",
+                            photo.category?.toLowerCase() === 'cosplay' && "p-[2px] rounded-lg bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 shadow-lg shadow-purple-200/50"
+                        )}
                     >
                         <div className="flex flex-col">
                             <Link href={photo.href || `/portfolio?img=${photo.id}`} className="block overflow-hidden relative rounded-sm shadow-sm">
@@ -114,6 +119,18 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                     priority={index < 4}
                                 />
+
+                                {photo.category?.toLowerCase() === 'cosplay' && (
+                                    <div className="absolute top-3 right-3 z-10">
+                                        <motion.div
+                                            animate={{ rotate: 360 }}
+                                            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                                            className="bg-white/20 backdrop-blur-md p-1.5 rounded-full border border-white/40"
+                                        >
+                                            <Sparkles className="w-4 h-4 text-white fill-amber-300" />
+                                        </motion.div>
+                                    </div>
+                                )}
 
                                 {/* Metadata Overlay (Inside Image) */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-5 text-left">
@@ -144,6 +161,12 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                                     <Share2 className="w-3.5 h-3.5" />
                                                 </Link>
                                             </div>
+
+                                            {photo.event && (
+                                                <p className="text-[10px] text-amber-300 font-medium tracking-wider flex items-center gap-1">
+                                                    <Calendar className="w-3 h-3" /> {photo.event}
+                                                </p>
+                                            )}
 
                                             {photo.exif && (
                                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 opacity-60 text-[9px] uppercase tracking-widest font-light">

@@ -4,10 +4,17 @@ import { useAuth } from '@/components/admin/AuthProvider';
 import BackupEmailButton from '@/components/admin/BackupEmailButton';
 import { Camera, Mail, Plus, User, ArrowRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { getSiteSettings, SiteSettings } from '@/lib/actions/settings';
 
 export default function AdminDashboard() {
     const { user, role } = useAuth();
     const isAdmin = role === 'admin';
+    const [settings, setSettings] = useState<SiteSettings | null>(null);
+
+    useEffect(() => {
+        getSiteSettings().then(setSettings);
+    }, []);
 
     return (
         <div className="animate-in fade-in duration-700">
@@ -17,6 +24,11 @@ export default function AdminDashboard() {
 
             <div className={`p-8 rounded-2xl shadow-xl transition-all duration-500 border overflow-hidden relative
                 ${isAdmin ? 'bg-white border-gray-100' : 'bg-[#0f0c29] border-fuchsia-500/30'}`}
+                style={isAdmin && settings?.covers.admin_dashboard ? {
+                    backgroundImage: `linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url(${settings.covers.admin_dashboard})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                } : {}}
             >
                 {/* Background Decoration for Models */}
                 {!isAdmin && (

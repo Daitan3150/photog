@@ -7,6 +7,7 @@ export interface Photo {
     subjectName: string; // Model or Layer name
     location: string;
     characterName?: string; // [NEW] For cosplayers
+    event?: string; // [NEW] Event name (especially for cosplay)
     shotAt: Date; // Will be stored as Timestamp in Firestore
     snsUrl?: string; // Link to Instagram/X
     categoryId?: string; // Category ID
@@ -24,6 +25,7 @@ export interface Photo {
 export type PhotoFormData = Omit<Photo, 'id' | 'uploaderId' | 'createdAt' | 'updatedAt' | 'shotAt'> & {
     shotAt: string; // From date input
     characterName?: string;
+    event?: string;
     categoryId?: string;
     displayMode: 'title' | 'character';
     exif?: any;

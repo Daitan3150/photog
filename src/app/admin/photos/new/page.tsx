@@ -98,6 +98,7 @@ export default function NewPhotoPage() {
     const [shotAtEnabled, setShotAtEnabled] = useState(true);
     const [snsUrl, setSnsUrl] = useState('');
     const [categoryId, setCategoryId] = useState('');
+    const [event, setEvent] = useState('');
     const [displayMode, setDisplayMode] = useState<'title' | 'character'>('title');
     const [isDragging, setIsDragging] = useState(false);
     const dropZoneRef = useRef<HTMLLabelElement>(null);
@@ -540,6 +541,7 @@ export default function NewPhotoPage() {
                     shotAt: finalShotAt,
                     snsUrl,
                     categoryId,
+                    event: categoryId === 'cosplay' ? event : '',
                     displayMode,
 
                     exif: {
@@ -871,6 +873,24 @@ export default function NewPhotoPage() {
                             </select>
                         </div>
 
+                        {categoryId === 'cosplay' && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="space-y-2 overflow-hidden"
+                            >
+                                <label className="block text-sm font-bold text-indigo-700">コスプレイベント名</label>
+                                <input
+                                    type="text"
+                                    value={event}
+                                    onChange={(e) => setEvent(e.target.value)}
+                                    className="w-full border-2 border-indigo-100 p-2 rounded focus:ring-2 focus:ring-indigo-500 outline-none bg-indigo-50/30"
+                                    placeholder="例: コミケ105, アコスタ池袋"
+                                />
+                                <p className="text-[10px] text-indigo-400">※ コスプレカテゴリー選択時のみ有効です。</p>
+                            </motion.div>
+                        )}
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="block text-sm font-bold text-gray-700">共通モデル名</label>
@@ -1092,7 +1112,7 @@ export default function NewPhotoPage() {
                         </div>
                     </form>
                 </div>
-            </div>
+            </div >
         </div >
     );
 }

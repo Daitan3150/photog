@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 
 import { getSearchClient } from "@/lib/algolia";
 import Image from "next/image";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 function SearchButton() {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -20,6 +21,7 @@ function SearchButton() {
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
+    const { t } = useLanguage();
 
     // Instant search on query change (Algolia)
     useEffect(() => {
@@ -101,7 +103,7 @@ function SearchButton() {
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search: photos, models, locations..."
+                                placeholder={t.common.searchPlaceholder}
                                 className="w-full bg-transparent border-b-2 border-gray-200 text-3xl md:text-5xl font-serif py-4 focus:outline-none focus:border-black placeholder:text-gray-300 transition-colors"
                             />
                             {isLoading && (
@@ -140,7 +142,7 @@ function SearchButton() {
                                 </Link>
                             ))}
                             {searchQuery && searchQuery.length >= 2 && searchResults.length === 0 && !isLoading && (
-                                <p className="text-gray-400 text-center col-span-full mt-4">No results found for "{searchQuery}"</p>
+                                <p className="text-gray-400 text-center col-span-full mt-4">{t.common.noResults}</p>
                             )}
                         </div>
                     </motion.div>
@@ -151,18 +153,16 @@ function SearchButton() {
 }
 
 
-import { useLanguage } from "@/lib/i18n/LanguageContext";
-
 export default function Header() {
     const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();
     const { language, toggleLanguage, t } = useLanguage();
 
     const navItems = [
-        { name: "Portfolio", href: "/portfolio" },
-        { name: "Blog", href: "/blog" }, // [NEW]
-        { name: "About", href: "/about" },
-        { name: "Contact", href: "/contact" },
+        { name: t.nav.home === 'ホーム' ? 'Portfolio' : 'Portfolio', href: "/portfolio" },
+        { name: 'Blog', href: "/blog" },
+        { name: t.about.title, href: "/about" },
+        { name: t.hero.contact, href: "/contact" },
     ];
 
     // Hide header on admin and dashboard pages

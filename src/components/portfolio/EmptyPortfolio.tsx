@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function EmptyPortfolio() {
-    const { language } = useLanguage();
+    const { t } = useLanguage();
 
     return (
         <div className="flex flex-col items-center justify-center py-32 space-y-8 relative overflow-hidden">
@@ -42,7 +42,7 @@ export default function EmptyPortfolio() {
                     transition={{ duration: 1, delay: 1 }}
                     className="text-gray-400 font-light tracking-[0.2em] text-xs md:text-sm uppercase"
                 >
-                    {language === 'ja' ? '次の物語を準備中...' : 'Tailoring the next story...'}
+                    {t.portfolio.empty.subtitle}
                 </motion.p>
             </div>
         </div>

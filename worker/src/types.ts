@@ -19,6 +19,7 @@ export interface PhotoData {
     title?: string | null;
     subjectName?: string | null;
     characterName?: string | null;
+    event?: string | null;
     location?: string | null;
     shotAt?: string | null; // ISO string
     snsUrl?: string | null;

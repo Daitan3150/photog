@@ -22,12 +22,12 @@ export const metadata: Metadata = {
 export default async function PortfolioPage({ searchParams }: PageProps) {
     // URLからカテゴリーと写真IDを取得
     const params = await searchParams;
-    let currentCategory = params.category || 'all';
+    let currentCategory = params.category || 'cosplay';
     const imgId = (params as any).img;
 
     // サーバーサイドでのフィルタリング（Firestoreクエリを使用）
     const allPhotos = await searchPhotos('', {
-        category: currentCategory === 'all' ? undefined : currentCategory,
+        category: currentCategory,
         limit: 100 // より多くの写真を表示可能に
     });
 
