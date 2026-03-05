@@ -949,9 +949,33 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         if (data.categoryId !== undefined) updates.categoryId = data.categoryId;
         if (data.displayMode !== undefined) updates.displayMode = data.displayMode;
         if (data.shotAt !== undefined) {
-            updates.shotAt = new Date(data.shotAt);
+            if (data.shotAt && String(data.shotAt).length > 0) {
+                const parsed = new Date(data.shotAt);
+                updates.shotAt = !isNaN(parsed.getTime()) ? parsed : null;
+            } else {
+                updates.shotAt = null;
+            }
         }
-        if (data.exif !== undefined) updates.exif = data.exif;
+        if (data.exif !== undefined) {
+            // exifオブジェクト内のTimestamp風オブジェクトやDate文字列をクリーンアップ
+            const cleanExif: any = {};
+            for (const [key, value] of Object.entries(data.exif || {})) {
+                if (value === null || value === undefined) {
+                    cleanExif[key] = null;
+                } else if (typeof value === 'object' && value !== null && ('seconds' in value || '_seconds' in value || 'toDate' in value)) {
+                    // Timestamp風オブジェクトはISO文字列に変換
+                    try {
+                        const secs = (value as any).seconds || (value as any)._seconds;
+                        cleanExif[key] = typeof secs === 'number' ? new Date(secs * 1000).toISOString() : String(value);
+                    } catch {
+                        cleanExif[key] = String(value);
+                    }
+                } else {
+                    cleanExif[key] = value;
+                }
+            }
+            updates.exif = cleanExif;
+        }
         if (data.exifRequest !== undefined) updates.exifRequest = data.exifRequest;
         if (data.tags !== undefined) updates.tags = data.tags;
         if (data.focalPoint !== undefined) updates.focalPoint = data.focalPoint;

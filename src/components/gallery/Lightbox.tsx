@@ -309,17 +309,17 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                     <p className="text-[10px] uppercase tracking-[0.4em] text-gray-900 font-bold">Share this Photo</p>
                                     <div className="h-[1px] flex-1 bg-gray-100 ml-4" />
                                 </div>
-                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                <div className="grid grid-cols-3 gap-2">
                                     {/* X (Twitter) Share Button */}
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setShareConfirmType('Twitter');
                                         }}
-                                        className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black text-white hover:bg-gray-800 transition-all group pointer-events-auto"
+                                        className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-black text-white hover:bg-gray-800 transition-all pointer-events-auto"
                                     >
-                                        <Twitter size={16} />
-                                        <span className="text-xs font-bold font-sans">Share on X</span>
+                                        <Twitter size={18} />
+                                        <span className="text-[10px] font-bold font-sans">X</span>
                                     </button>
 
                                     {/* Instagram Share Button */}
@@ -328,35 +328,27 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                             e.stopPropagation();
                                             setShareConfirmType('Instagram');
                                         }}
-                                        className="flex items-center justify-center gap-2 p-3 rounded-xl bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white hover:opacity-90 transition-all group pointer-events-auto"
+                                        className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white hover:opacity-90 transition-all pointer-events-auto"
                                     >
-                                        <Instagram size={16} />
-                                        <span className="text-xs font-bold font-sans">Instagram</span>
+                                        <Instagram size={18} />
+                                        <span className="text-[10px] font-bold font-sans">Instagram</span>
+                                    </button>
+
+                                    {/* Copy Link Button */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const url = `${window.location.origin}/photo/${photo.id}`;
+                                            navigator.clipboard.writeText(url);
+                                            setCopied(true);
+                                            setTimeout(() => setCopied(false), 2000);
+                                        }}
+                                        className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl transition-all pointer-events-auto border ${copied ? 'bg-green-50 border-green-200 text-green-600' : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100'}`}
+                                    >
+                                        {copied ? <Check size={18} /> : <Copy size={18} />}
+                                        <span className="text-[10px] font-bold font-sans">{copied ? 'Copied!' : 'URLコピー'}</span>
                                     </button>
                                 </div>
-
-                                {/* Copy Link Button */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const url = `${window.location.origin}/photo/${photo.id}`;
-                                        navigator.clipboard.writeText(url);
-                                        setCopied(true);
-                                        setTimeout(() => setCopied(false), 2000);
-                                    }}
-                                    className="flex items-center gap-4 w-full p-4 rounded-2xl bg-gray-50 text-gray-900 hover:bg-gray-100 transition-all group pointer-events-auto border border-gray-100"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
-                                        {copied ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
-                                    </div>
-                                    <div className="flex-1 overflow-hidden font-sans text-left">
-                                        <p className="text-xs font-bold leading-tight">{copied ? 'Copied URL!' : 'Copy Permalink'}</p>
-                                        <p className="text-[9px] text-gray-400 truncate tracking-tight mt-0.5">
-                                            {`${window.location.origin.replace(/^https?:\/\//, '')}/photo/${photo.id}`}
-                                        </p>
-                                    </div>
-                                    <Share2 size={14} className="opacity-40" />
-                                </button>
                             </div>
                         </div>
 
