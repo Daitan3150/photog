@@ -6,7 +6,7 @@ import { getSearchClient } from "@/lib/algolia";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Filter, X, Search as SearchIcon, Tag, MapPin, Grid, User, Calendar, Sparkles } from "lucide-react";
 import { clsx } from "clsx";
 import cloudinaryLoader from "@/lib/cloudinary-loader";
@@ -15,14 +15,13 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 const searchClient = getSearchClient();
 
 function Hit({ hit }: { hit: any }) {
-    const isCosplay = hit.category?.toLowerCase() === 'cosplay';
+    const isCosplay = (hit.category?.toLowerCase() === 'cosplay' || hit.categoryId?.toLowerCase() === 'cosplay');
 
     return (
         <motion.div
-            layout
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className={clsx(
                 "break-inside-avoid relative group mb-4 rounded-lg overflow-hidden",
                 isCosplay && "p-[2px] bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 shadow-lg shadow-purple-200/50"
@@ -97,17 +96,22 @@ function SearchSkeleton() {
 
 function CustomHits() {
     const { hits } = useHits();
-    const { status } = useInstantSearch();
+    const { status, error } = useInstantSearch();
 
-    if (status === 'loading' || status === 'stalled') {
+    // Debugging
+    console.log('[Search] status:', status, 'hits:', hits.length, 'error:', error);
+
+    // Only show skeleton if we have no hits at all and we are loading
+    const isLoading = status === 'loading' || status === 'stalled';
+
+    if (isLoading && hits.length === 0) {
         return <SearchSkeleton />;
     }
 
-    if (hits.length === 0) {
+    if (hits.length === 0 && !isLoading) {
         return (
             <div className="text-center py-20 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                 <p className="text-xl text-gray-400 font-serif italic">
-                    {/* No results text handled by parent */}
                     No results found.
                 </p>
                 <ClearRefinements
@@ -121,8 +125,11 @@ function CustomHits() {
     }
 
     return (
-        <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
-            <AnimatePresence>
+        <div className={clsx(
+            "columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4 transition-opacity duration-300",
+            status === 'stalled' ? "opacity-70" : "opacity-100"
+        )}>
+            <AnimatePresence mode="popLayout">
                 {hits.map((hit) => (
                     <Hit key={hit.objectID} hit={hit} />
                 ))}
@@ -160,16 +167,19 @@ export default function SearchInterface({ initialQuery = '' }: { initialQuery?: 
     const [searchMode, setSearchMode] = useState<'all' | 'model' | 'event'>('all');
     const { t } = useLanguage();
 
+    // 💡 Stabilize initial UI state to prevent flashing when URL syncs back
+    const initialUiState = useMemo(() => ({
+        photos: {
+            query: initialQuery
+        }
+    }), []); // Only calculate once on mount
+
     return (
         <InstantSearchNext
             searchClient={searchClient}
             indexName="photos"
             routing={true}
-            initialUiState={{
-                photos: {
-                    query: initialQuery
-                }
-            }}
+            initialUiState={initialUiState}
         >
             <Configure
                 hitsPerPage={12}
