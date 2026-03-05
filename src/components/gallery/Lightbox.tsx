@@ -303,10 +303,10 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                 </div>
                             )}
 
-                            {/* Enhanced Share Section (SNS Buttons) */}
+                            {/* SNS共有セクション */}
                             <div className="pt-8 border-t border-gray-100">
                                 <div className="flex items-center justify-between mb-4">
-                                    <p className="text-[10px] uppercase tracking-[0.4em] text-gray-900 font-bold">Share this Photo</p>
+                                    <p className="text-[10px] uppercase tracking-[0.3em] text-gray-900 font-bold">この写真をシェア</p>
                                     <div className="h-[1px] flex-1 bg-gray-100 ml-4" />
                                 </div>
                                 <div className="grid grid-cols-3 gap-2">
@@ -319,7 +319,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                         className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-black text-white hover:bg-gray-800 transition-all pointer-events-auto"
                                     >
                                         <Twitter size={18} />
-                                        <span className="text-[10px] font-bold font-sans">X</span>
+                                        <span className="text-[10px] font-bold font-sans">Xでシェア</span>
                                     </button>
 
                                     {/* Instagram Share Button */}
@@ -331,7 +331,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                         className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white hover:opacity-90 transition-all pointer-events-auto"
                                     >
                                         <Instagram size={18} />
-                                        <span className="text-[10px] font-bold font-sans">Instagram</span>
+                                        <span className="text-[10px] font-bold font-sans">Instagramへ</span>
                                     </button>
 
                                     {/* Copy Link Button */}
@@ -346,7 +346,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                         className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl transition-all pointer-events-auto border ${copied ? 'bg-green-50 border-green-200 text-green-600' : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100'}`}
                                     >
                                         {copied ? <Check size={18} /> : <Copy size={18} />}
-                                        <span className="text-[10px] font-bold font-sans">{copied ? 'Copied!' : 'URLコピー'}</span>
+                                        <span className="text-[10px] font-bold font-sans">{copied ? 'コピー済み' : 'リンクをコピー'}</span>
                                     </button>
                                 </div>
                             </div>
@@ -447,13 +447,13 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-4">
                                     <div className="text-white">
                                         <p className="text-[10px] uppercase tracking-widest opacity-70">Banner Preview</p>
-                                        <p className="text-sm font-bold truncate">{photo.title || 'Photography'}</p>
+                                        <p className="text-sm font-bold truncate">{photo.title || '写真'}</p>
                                     </div>
                                 </div>
 
                                 {/* Click to adjust tooltip */}
-                                <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-md px-2 py-1 rounded text-[8px] text-white/80 opacity-0 group-hover/banner:opacity-100 transition-opacity uppercase tracking-widest">
-                                    Click to adjust crop
+                                <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-md px-2 py-1 rounded text-[8px] text-white/80 opacity-0 group-hover/banner:opacity-100 transition-opacity tracking-widest">
+                                    タップで位置調整
                                 </div>
                             </div>
 
@@ -470,7 +470,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                 </p>
 
                                 <div className="mb-8 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                    <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Crop Position</p>
+                                    <p className="text-[10px] tracking-widest text-gray-400 font-bold mb-1">切り抜き位置</p>
                                     <p className="text-[11px] text-gray-500">
                                         プレビュー画像をクリックして、共有バナーの中心（顔など）を選択してください。
                                     </p>
@@ -501,13 +501,13 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                             : 'bg-gradient-to-r from-[#f09433] to-[#bc1888] shadow-orange-100'
                                             }`}
                                     >
-                                        {shareConfirmType === 'Instagram' ? 'Instagram を開く' : `${shareConfirmType} で共有する`}
+                                        {shareConfirmType === 'Instagram' ? 'Instagramを開く' : 'Xでシェアする'}
                                     </button>
                                     <button
                                         onClick={() => setShareConfirmType(null)}
                                         className="w-full py-4 rounded-xl text-gray-400 font-bold hover:bg-gray-50 transition-colors"
                                     >
-                                        共有しない
+                                        キャンセル
                                     </button>
                                 </div>
                             </div>
