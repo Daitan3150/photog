@@ -255,8 +255,8 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                 </div>
                             )}
 
-                            {/* Map for Landscape/Animal */}
-                            {(photo.categoryId === 'landscape' || photo.categoryId === 'animal') && photo.latitude && photo.longitude && (
+                            {/* Map Display (for photos with location data) */}
+                            {photo.latitude && photo.longitude && (
                                 <div className="pt-2">
                                     <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-2">Location Map</p>
                                     <div className="w-full h-40 rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50 relative pointer-events-auto">
