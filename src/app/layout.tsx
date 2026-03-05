@@ -14,7 +14,7 @@ const notoSerifJP = Noto_Serif_JP({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://next-portfolio-eosin-eight.vercel.app"),
+  metadataBase: new URL("https://next-portfolio-lime-one.vercel.app"),
   title: {
     template: "%s | DAITAN",
     default: "DAITAN | Portrait & Snapshot Photographer",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "DAITAN | Portrait & Snapshot Photographer",
     description: "Capture the moment. Portfolio of Daitan.",
-    url: "https://next-portfolio-eosin-eight.vercel.app",
+    url: "https://next-portfolio-lime-one.vercel.app",
     siteName: "DAITAN Portfolio",
     locale: "ja_JP",
     type: "website",

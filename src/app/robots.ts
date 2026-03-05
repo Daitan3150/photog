@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: '/private/',
         },
-        sitemap: 'https://next-portfolio-eosin-eight.vercel.app/sitemap.xml',
+        sitemap: 'https://next-portfolio-lime-one.vercel.app/sitemap.xml',
     };
 }

@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { getRecentPhotos } from '@/lib/actions/photos';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    const baseUrl = 'https://next-portfolio-eosin-eight.vercel.app';
+    const baseUrl = 'https://next-portfolio-lime-one.vercel.app';
 
     // Static pages
     const routes = [
