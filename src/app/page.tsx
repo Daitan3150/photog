@@ -32,7 +32,7 @@ export default async function Home() {
       />
 
       {/* Recent Works Section */}
-      <section className="py-16 md:py-24 px-4 md:px-12 bg-white">
+      <section className="py-16 md:py-24 px-4 md:px-12 bg-transparent">
         <HomeRecentWorksHeader />
 
         <Suspense fallback={<div className="text-center py-12"><div className="w-8 h-8 border-2 border-gray-200 border-t-black rounded-full animate-spin mx-auto" /></div>}>

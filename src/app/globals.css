@@ -8,14 +8,23 @@
 }
 
 :root {
-  --background: #ffffff;
+  --background: transparent;
   --foreground: #171717;
 }
 
 body {
-  background: var(--background);
+  background: white; /* Fallback */
+  background: linear-gradient(to bottom, #ffffff, #fdfbfb);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: white;
+  z-index: -2; /* 背景アニメーション(-1)よりさらに後ろ */
 }
 
 h1, h2, h3, h4, h5, h6 {

@@ -27,7 +27,7 @@ function Hit({ hit }: { hit: any }) {
                 isCosplay && "p-[2px] bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 shadow-lg shadow-purple-200/50"
             )}
         >
-            <Link href={`/portfolio?img=${hit.objectID}`} className="block overflow-hidden relative rounded-sm bg-white group">
+            <Link href={`/portfolio?img=${hit.objectID}`} className="block overflow-hidden relative rounded-sm bg-white/40 backdrop-blur-[2px] group">
                 <Image
                     loader={cloudinaryLoader}
                     src={hit.url}
@@ -206,7 +206,7 @@ export default function SearchInterface({ initialQuery = '' }: { initialQuery?: 
                 {/* Sidebar - Desktop */}
                 <aside className={clsx(
                     "lg:w-64 flex-shrink-0",
-                    "fixed inset-0 z-[60] bg-white p-8 lg:relative lg:p-0 lg:block transition-transform duration-500 ease-in-out",
+                    "fixed inset-0 z-[60] bg-white/80 backdrop-blur-md p-8 lg:relative lg:p-0 lg:block lg:bg-transparent lg:backdrop-blur-none transition-transform duration-500 ease-in-out",
                     isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
                 )}>
                     {isSidebarOpen && <div className="fixed inset-0 bg-black/20 backdrop-blur-sm -z-10 lg:hidden" onClick={() => setIsSidebarOpen(false)} />}

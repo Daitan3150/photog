@@ -438,20 +438,27 @@ export default function PhotosPage() {
                                 全 <span className="font-bold text-gray-900">{photos.length}</span> 枚
                             </div>
                             {uncategorized.length > 0 && (
-                                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm font-bold text-red-600 flex items-center gap-2">
+                                <button
+                                    onClick={() => document.getElementById('section-uncategorized')?.scrollIntoView({ behavior: 'smooth' })}
+                                    className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm font-bold text-red-600 flex items-center gap-2 hover:bg-red-100 transition-colors cursor-pointer"
+                                >
                                     ⚠️ 未分類 <span className="bg-red-100 px-2 py-0.5 rounded-full text-red-700">{uncategorized.length}枚</span>
-                                </div>
+                                </button>
                             )}
                             {categoryNames.map(catName => (
-                                <div key={catName} className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600">
+                                <button
+                                    key={catName}
+                                    onClick={() => document.getElementById(`section-${catName}`)?.scrollIntoView({ behavior: 'smooth' })}
+                                    className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                                >
                                     {catName} <span className="font-bold text-gray-900">{groupedByCategory[catName].length}</span>
-                                </div>
+                                </button>
                             ))}
                         </div>
 
                         {/* 🚨 未分類の写真（最上部に大きく警告表示） */}
                         {uncategorized.length > 0 && (
-                            <div className="mb-10">
+                            <div className="mb-10" id="section-uncategorized">
                                 <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-4">
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-xl">⚠️</div>
@@ -474,7 +481,7 @@ export default function PhotosPage() {
 
                         {/* カテゴリーごとのセクション */}
                         {categoryNames.map(catName => (
-                            <div key={catName} className="mb-10">
+                            <div key={catName} className="mb-10" id={`section-${catName}`}>
                                 <div className="flex items-center gap-3 mb-4">
                                     <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wider">{catName}</h2>
                                     <span className="text-sm text-gray-400 font-medium">{groupedByCategory[catName].length}枚</span>

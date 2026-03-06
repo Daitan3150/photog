@@ -4,10 +4,31 @@
 import { PhotoFormData, Photo as PhotoType } from '@/types/photo';
 import { serializeData } from '../utils/serialization';
 import { getCoordinates } from '../utils/location';
-import { getCachedData, setCachedData } from '../worker-cache';
+import { getCachedData, setCachedData, clearCachedData } from '../worker-cache';
 import { syncPhotoToAlgolia } from '../algolia';
 import { appendToMetadataRegistry } from './metadata';
 import { revalidatePath } from 'next/cache';
+
+const CATEGORIES = ['all', 'portrait', 'snapshot', 'cosplay', 'landscape', 'animal', 'other'];
+
+async function purgePublicCache() {
+    try {
+        // 基本のキャッシュ
+        await clearCachedData('public_photos');
+        await clearCachedData('public_photos_for_search');
+
+        // バージョン付き各カテゴリーのキャッシュをすべてクリア
+        await Promise.all(CATEGORIES.map(cat => clearCachedData(`public_photos_v2_${cat}`)));
+
+        console.log('[Cache Purge] All public photo caches cleared.');
+
+        revalidatePath('/');
+        revalidatePath('/portfolio');
+        revalidatePath('/search');
+    } catch (e) {
+        console.error('[Cache Purge Error]', e);
+    }
+}
 
 const SUPER_ADMIN_EMAILS = ['daitan10618@icloud.com', 'daitan10618@gmail.com'];
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'daitan10618@icloud.com';
@@ -143,9 +164,8 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
 
         revalidatePath('/');
         revalidatePath('/portfolio');
-        // --- 🧠 記憶 (Memory): キャッシュ破棄 ---
-        await setCachedData('public_photos', null);
-        await setCachedData('public_photos_for_search', null);
+        // --- 🧠 記憶 (Memory): キャッシュ完全破棄 ---
+        await purgePublicCache();
 
         // --- 💪 筋肉 (Muscle): 検索インデックス同期 (Algolia) ---
         await syncPhotoToAlgolia({
