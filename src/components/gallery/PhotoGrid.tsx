@@ -108,7 +108,10 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                         )}
                     >
                         <div className="flex flex-col">
-                            <Link href={photo.href || `/portfolio?img=${photo.id}`} className="block overflow-hidden relative rounded-sm shadow-sm">
+                            <Link
+                                href={photo.href || `/portfolio?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), img: photo.id }).toString()}`}
+                                className="block overflow-hidden relative rounded-sm shadow-sm"
+                            >
                                 <Image
                                     loader={cloudinaryLoader}
                                     src={photo.url}
