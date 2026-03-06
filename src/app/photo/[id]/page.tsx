@@ -160,8 +160,8 @@ export default async function PhotoPage({ params }: Props) {
                     </div>
                 </div>
 
-                {/* Gorgeous Cosplay Event Banner */}
-                {(photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && photo.event && (
+                {/* Gorgeous Event Banner */}
+                {photo.event && (
                     <div className="relative w-full max-w-lg mt-8 mb-4 group">
                         <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 via-pink-500 to-amber-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
                         <div className="relative p-6 bg-white border border-indigo-100 rounded-2xl flex flex-col items-center">

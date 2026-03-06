@@ -641,7 +641,7 @@ export default function NewPhotoPage() {
                     shotAt: finalShotAt,
                     snsUrl,
                     categoryId,
-                    event: categoryId?.toLowerCase() === 'cosplay' ? event : '',
+                    event: event || '',
                     displayMode,
 
                     exif: {
@@ -974,29 +974,17 @@ export default function NewPhotoPage() {
                             </select>
                         </div>
 
-                        {categoryId?.toLowerCase() === 'cosplay' && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                className="space-y-2 overflow-hidden"
-                            >
-                                <div className={`p-4 rounded-xl border-2 transition-all duration-500 ${event ? 'bg-gradient-to-br from-indigo-50 to-blue-50 border-indigo-200 shadow-lg scale-[1.01]' : 'bg-gray-50 border-gray-100'}`}>
-                                    <label className={`block text-sm font-bold mb-1.5 transition-colors ${event ? 'text-indigo-600' : 'text-indigo-700'}`}>
-                                        {event ? '✨ コスプレイベント名' : 'コスプレイベント名'}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={event}
-                                        onChange={(e) => setEvent(e.target.value)}
-                                        className={`w-full p-3 rounded-lg outline-none transition-all ${event ? 'text-xl font-black text-indigo-900 bg-white shadow-inner border-indigo-200 focus:ring-4 focus:ring-indigo-200' : 'w-full border-2 border-indigo-100 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white'}`}
-                                        placeholder="例: コミケ105, アコスタ池袋"
-                                    />
-                                    <p className={`text-[10px] mt-1.5 transition-colors ${event ? 'text-indigo-500 font-bold' : 'text-indigo-400'}`}>
-                                        {event ? '🌟 ポートフォリオでこのイベント名が強調表示されます' : '※ コスプレカテゴリー選択時のみ有効です。'}
-                                    </p>
-                                </div>
-                            </motion.div>
-                        )}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-bold text-gray-700">イベント名</label>
+                            <input
+                                type="text"
+                                value={event}
+                                onChange={(e) => setEvent(e.target.value)}
+                                className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                                placeholder="例: コミケ105, デザインフェスタ"
+                            />
+                            <p className="text-[10px] text-gray-400">※ 全カテゴリーで入力可能です。ポートフォリオで強調表示されます。</p>
+                        </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
