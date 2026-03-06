@@ -432,9 +432,20 @@ export default function NewPhotoPage() {
                 }
 
                 try {
-                    updateStatus('resizing', 15);
+                    updateStatus('resizing', 15, '圧縮中 (2500px)...');
                     fileToUpload = await resizeImageClient(file, 2500, 2500, 0.82);
-                } catch { /* リサイズ失敗→オリジナル使用 */ }
+                } catch (firstErr) {
+                    console.warn('[Upload] 1度目のリサイズに失敗 (メモリ不足等). 1600pxで再試行...', firstErr);
+                    try {
+                        updateStatus('resizing', 15, 'サイズを下げて再圧縮中 (1600px)...');
+                        fileToUpload = await resizeImageClient(file, 1600, 1600, 0.7);
+                    } catch (secondErr) {
+                        console.error('[Upload] 全リサイズ処理に失敗:', secondErr);
+                        const errMsg = secondErr instanceof Error ? secondErr.message : 'メモリ不足';
+                        updateStatus('error', 0, `端末のメモリ不足等により写真を圧縮できませんでした。少し時間を空けるか小さな写真をお試しください。(${errMsg})`);
+                        return; // ⚠️ リサイズに失敗した巨大画像をそのまま強制アップロードさせるのをここで防ぐ（非常に重要）
+                    }
+                }
 
                 const fileSizeMB = (fileToUpload instanceof Blob ? fileToUpload.size : file.size) / (1024 * 1024);
                 console.log(`[Upload] ${file.name}: リサイズ後 ${fileSizeMB.toFixed(1)}MB`);
