@@ -16,7 +16,8 @@ import { motion } from 'framer-motion';
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 const MAX_FILE_SIZE_MB = 50;
 const MAX_FILES = 20;
-const MAX_RETRY = 3;
+const MAX_RETRY = 5;
+const CHUNK_SIZE = 6 * 1024 * 1024; // 6MB チャンク
 const HISTORY_KEY = 'upload_history';
 const LENS_HISTORY_KEY = 'lens_history';
 
@@ -49,7 +50,7 @@ async function computeFileHash(file: File): Promise<string> {
 
 
 
-// ✅ XHRアップロード（リアルタイム進捗付き）
+// ✅ XHRアップロード（リアルタイム進捗 + 大容量対応）
 function xhrUpload(
     url: string,
     formData: FormData,
@@ -58,7 +59,7 @@ function xhrUpload(
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', url);
-        xhr.timeout = 120000; // 2分タイムアウト
+        xhr.timeout = 300000; // 5分タイムアウト（大容量対応）
         xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) {
                 onProgress(Math.round((e.loaded / e.total) * 100));
@@ -66,7 +67,11 @@ function xhrUpload(
         };
         xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
-                resolve(JSON.parse(xhr.responseText));
+                try {
+                    resolve(JSON.parse(xhr.responseText));
+                } catch {
+                    reject(new Error('レスポンス解析エラー'));
+                }
             } else {
                 try {
                     const err = JSON.parse(xhr.responseText);
@@ -77,9 +82,78 @@ function xhrUpload(
             }
         };
         xhr.onerror = () => reject(new Error('ネットワークエラー: 接続を確認してください'));
-        xhr.ontimeout = () => reject(new Error('タイムアウト: ファイルが大きすぎる可能性があります'));
+        xhr.ontimeout = () => reject(new Error('タイムアウト: 回線が遅い可能性があります（5分超過）'));
         xhr.send(formData);
     });
+}
+
+// ✅ チャンク分割アップロード（大容量ファイル用）
+async function chunkedUpload(
+    cloudName: string,
+    blob: Blob,
+    uploadParams: Record<string, string>,
+    signature: string,
+    apiKey: string,
+    onProgress: (pct: number) => void
+): Promise<Record<string, unknown>> {
+    const totalSize = blob.size;
+    const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+    const uniqueId = `chunked-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    let result: Record<string, unknown> = {};
+
+    for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, totalSize);
+        const chunk = blob.slice(start, end);
+
+        const formData = new FormData();
+        formData.append('file', chunk, `upload_chunk`);
+        formData.append('signature', signature);
+        formData.append('api_key', apiKey);
+
+        Object.entries(uploadParams).forEach(([key, value]) => {
+            formData.append(key, value);
+        });
+
+        // Content-Range ヘッダーで分割送信
+        const contentRange = `bytes ${start}-${end - 1}/${totalSize}`;
+
+        result = await new Promise<Record<string, unknown>>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', uploadUrl);
+            xhr.timeout = 120000; // チャンクあたり2分
+            xhr.setRequestHeader('X-Unique-Upload-Id', uniqueId);
+            xhr.setRequestHeader('Content-Range', contentRange);
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const chunkProgress = (e.loaded / e.total);
+                    const overallProgress = ((i + chunkProgress) / totalChunks) * 100;
+                    onProgress(Math.round(overallProgress));
+                }
+            };
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try { resolve(JSON.parse(xhr.responseText)); }
+                    catch { reject(new Error('チャンク応答の解析失敗')); }
+                } else {
+                    try {
+                        const err = JSON.parse(xhr.responseText);
+                        reject(new Error(err?.error?.message || `チャンク${i + 1}送信失敗`));
+                    } catch {
+                        reject(new Error(`チャンク${i + 1}送信失敗 (HTTP ${xhr.status})`));
+                    }
+                }
+            };
+            xhr.onerror = () => reject(new Error(`チャンク${i + 1}: ネットワークエラー`));
+            xhr.ontimeout = () => reject(new Error(`チャンク${i + 1}: タイムアウト`));
+            xhr.send(formData);
+        });
+    }
+
+    return result; // 最後のチャンクのレスポンスが完全な結果
 }
 
 
@@ -324,7 +398,7 @@ export default function NewPhotoPage() {
         ]);
 
         // --- 🏎️ TURBO MODE: Direct Cloudinary Upload (with XHR progress + auto-retry) ---
-        const CONCURRENCY = 4;
+        const CONCURRENCY = 2; // 安定性のため2並列に制限
         for (let i = 0; i < fileArray.length; i += CONCURRENCY) {
             const batch = fileArray.slice(i, i + CONCURRENCY);
             await Promise.all(batch.map(async (file) => {
@@ -340,78 +414,85 @@ export default function NewPhotoPage() {
 
                 const fileHash = fileHashMap.get(file.name) || '';
 
+                // ✅ EXIF解析 + リサイズは初回のみ（リトライ時はスキップ）
+                let clientExif: any = null;
+                let fileToUpload: File | Blob = file;
+
+                try {
+                    updateStatus('processing', 5);
+                    clientExif = await exifr.parse(file, {
+                        tiff: true, xmp: true, exif: true, gps: true,
+                    });
+                    if (clientExif) {
+                        setFileExifMap(prev => new Map(prev).set(fileHash, clientExif));
+                        reflectExifToForm(clientExif);
+                    }
+                } catch (e) {
+                    console.warn('EXIF parse failed:', e);
+                }
+
+                try {
+                    updateStatus('resizing', 15);
+                    fileToUpload = await resizeImageClient(file, 2500, 2500, 0.82);
+                } catch { /* リサイズ失敗→オリジナル使用 */ }
+
+                const fileSizeMB = (fileToUpload instanceof Blob ? fileToUpload.size : file.size) / (1024 * 1024);
+                console.log(`[Upload] ${file.name}: リサイズ後 ${fileSizeMB.toFixed(1)}MB`);
+
                 for (let attempt = 1; attempt <= MAX_RETRY; attempt++) {
                     try {
-                        // ✅ EXIF解析 (クライアント側)
-                        updateStatus('processing', 5);
-                        let clientExif: any = null;
-                        try {
-                            clientExif = await exifr.parse(file, {
-                                tiff: true,
-                                xmp: true,
-                                exif: true,
-                                gps: true,
-                            });
-                            if (clientExif) {
-                                setFileExifMap(prev => new Map(prev).set(fileHash, clientExif));
+                        updateStatus('uploading', 25, attempt > 1 ? `リトライ ${attempt}/${MAX_RETRY}...` : undefined);
 
-                                // ✅ クライアント側で解析できたら即座にフォームに反映
-                                reflectExifToForm(clientExif);
-                            }
-                        } catch (e) {
-                            console.warn('EXIF parse failed:', e);
-                        }
-
-                        // ✅ リサイズ
-                        updateStatus('resizing', 20);
-                        let fileToUpload: File | Blob = file;
-                        try {
-                            fileToUpload = await resizeImageClient(file, 2500, 2500, 0.85);
-                        } catch { /* リサイズ失敗時はオリジナルを使用 */ }
-
-                        // WebP変換は削除 (Cloudinary f_auto に任せる + EXIF保持のため)
-
-                        updateStatus('uploading', 30);
-
-                        // ✅ Cloudinary 署名付きアップロード（XHR + AI タグ）
+                        // ✅ Cloudinary 署名取得
                         const timestamp = Math.round(new Date().getTime() / 1000);
                         const uploadParams: Record<string, any> = {
                             timestamp,
                             folder: 'portfolio',
                             upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'next-portfolio',
                         };
-
-                        if (useAiTags) {
-                            uploadParams.auto_tagging = '0.6';
-                        }
+                        if (useAiTags) uploadParams.auto_tagging = '0.6';
 
                         const { signature, apiKey, cloudName } = await fetchSignature(uploadParams);
-
-                        const formData = new FormData();
-                        formData.append('file', fileToUpload);
-                        formData.append('signature', signature);
-                        formData.append('api_key', apiKey);
-                        formData.append('timestamp', String(timestamp));
-
-                        Object.entries(uploadParams).forEach(([key, value]) => {
-                            if (key !== 'timestamp') {
-                                formData.append(key, String(value));
-                            }
-                        });
-
-
-                        // ✅ XHR でリアルタイム進捗取得
-                        // 注意: cloudNameが取得できていないとURLが不正になり Network Error になります
                         const actualCloudName = cloudName || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-                        if (!actualCloudName) {
-                            throw new Error('Cloudinary Cloud Name is not configured');
-                        }
+                        if (!actualCloudName) throw new Error('Cloudinary Cloud Name 未設定');
 
-                        const result = await xhrUpload(
-                            `https://api.cloudinary.com/v1_1/${actualCloudName}/image/upload`,
-                            formData,
-                            (pct) => updateStatus('uploading', 30 + Math.round(pct * 0.6)) // 30%〜90%
-                        );
+                        let result: Record<string, unknown>;
+
+                        if (fileSizeMB > 5) {
+                            // ✅ 大容量: チャンク分割アップロード
+                            updateStatus('uploading', 28, `分割アップロード中 (${fileSizeMB.toFixed(1)}MB)...`);
+                            result = await chunkedUpload(
+                                actualCloudName,
+                                fileToUpload,
+                                {
+                                    timestamp: String(timestamp),
+                                    ...Object.fromEntries(
+                                        Object.entries(uploadParams)
+                                            .filter(([k]) => k !== 'timestamp')
+                                            .map(([k, v]) => [k, String(v)])
+                                    ),
+                                },
+                                signature,
+                                apiKey,
+                                (pct) => updateStatus('uploading', 28 + Math.round(pct * 0.62))
+                            );
+                        } else {
+                            // ✅ 通常サイズ: 一括アップロード
+                            const formData = new FormData();
+                            formData.append('file', fileToUpload);
+                            formData.append('signature', signature);
+                            formData.append('api_key', apiKey);
+                            formData.append('timestamp', String(timestamp));
+                            Object.entries(uploadParams).forEach(([key, value]) => {
+                                if (key !== 'timestamp') formData.append(key, String(value));
+                            });
+
+                            result = await xhrUpload(
+                                `https://api.cloudinary.com/v1_1/${actualCloudName}/image/upload`,
+                                formData,
+                                (pct) => updateStatus('uploading', 28 + Math.round(pct * 0.62))
+                            );
+                        }
 
                         updateStatus('processing', 92);
 
@@ -450,8 +531,10 @@ export default function NewPhotoPage() {
                         if (attempt === MAX_RETRY) {
                             updateStatus('error', 0, `失敗 (${MAX_RETRY}回試行): ${errMsg}`);
                         } else {
-                            updateStatus('uploading', 30 * attempt, `リトライ中... (${attempt}/${MAX_RETRY})`);
-                            await new Promise(r => setTimeout(r, 1000 * attempt));
+                            // 指数バックオフ: 2秒, 4秒, 8秒, 16秒...
+                            const waitSec = Math.pow(2, attempt);
+                            updateStatus('uploading', 10, `${waitSec}秒後にリトライ (${attempt}/${MAX_RETRY}): ${errMsg}`);
+                            await new Promise(r => setTimeout(r, waitSec * 1000));
                         }
                     }
                 }

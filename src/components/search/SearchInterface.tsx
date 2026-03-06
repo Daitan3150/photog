@@ -271,6 +271,9 @@ export default function SearchInterface({ initialQuery = '' }: { initialQuery?: 
                                         searchMode === 'event' ? t.search.eventPlaceholder :
                                             t.search.placeholder
                                 }
+                                onSubmit={(e) => {
+                                    e.preventDefault(); // Enter押下時のページ遷移を防止
+                                }}
                                 classNames={{
                                     root: "relative w-full",
                                     form: "relative flex items-center w-full",
