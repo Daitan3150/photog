@@ -113,8 +113,12 @@ async function chunkedUpload(
         formData.append('signature', signature);
         formData.append('api_key', apiKey);
 
+        // 🚨 IMPORTANT: チャンクアップロード使用時（X-Unique-Upload-Id 送信時）、
+        // Cloudinary はなぜか signed upload であっても upload_preset を要求するバグ/仕様があるため明示的に必須とする
+        formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'next-portfolio');
+
         Object.entries(uploadParams).forEach(([key, value]) => {
-            formData.append(key, value);
+            if (key !== 'upload_preset') formData.append(key, value);
         });
 
         // Content-Range ヘッダーで分割送信
