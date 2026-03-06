@@ -368,23 +368,17 @@ export default function PhotosPage() {
                                                 href={photo.snsUrl}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="p-2 bg-white rounded-full text-blue-500 hover:text-blue-600"
+                                                className="p-3 bg-white/90 backdrop-blur-sm shadow-xl rounded-full text-blue-500 hover:text-blue-600 hover:scale-110 transition-all"
                                                 onClick={(e) => e.stopPropagation()}
                                                 title="SNSリンクを開く"
                                             >
                                                 <ExternalLink className="w-5 h-5" />
                                             </a>
                                         )}
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDelete(photo.id);
-                                            }}
-                                            className="p-2 bg-white rounded-full text-red-500 hover:text-red-600"
-                                            title="写真を削除"
-                                        >
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
+                                        <div className="p-3 bg-white/90 backdrop-blur-sm shadow-xl rounded-full text-gray-700 hover:text-blue-600 hover:scale-110 transition-all font-bold flex items-center gap-2">
+                                            <Edit className="w-5 h-5" />
+                                            <span className="text-sm">編集</span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -410,6 +404,21 @@ export default function PhotosPage() {
                                         )}
                                     </div>
                                 </div>
+                                {!isSelectionMode && (
+                                    <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(photo.id);
+                                            }}
+                                            className="text-xs flex items-center gap-1.5 text-gray-400 hover:text-red-600 transition-colors px-2 py-1 rounded hover:bg-red-50"
+                                            title="写真を削除"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            削除
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     );
@@ -457,129 +466,137 @@ export default function PhotosPage() {
                         </div>
 
                         {/* 🚨 未分類の写真（最上部に大きく警告表示） */}
-                        {uncategorized.length > 0 && (
-                            <div className="mb-10" id="section-uncategorized">
-                                <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-4">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-xl">⚠️</div>
-                                        <div>
-                                            <h2 className="text-xl font-bold text-red-700">カテゴリー未設定の写真</h2>
-                                            <p className="text-sm text-red-500">
-                                                以下の <span className="font-bold">{uncategorized.length}枚</span> はカテゴリーが未設定のため、ポートフォリオに公開されません。
-                                            </p>
+                        {
+                            uncategorized.length > 0 && (
+                                <div className="mb-10" id="section-uncategorized">
+                                    <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-4">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-xl">⚠️</div>
+                                            <div>
+                                                <h2 className="text-xl font-bold text-red-700">カテゴリー未設定の写真</h2>
+                                                <p className="text-sm text-red-500">
+                                                    以下の <span className="font-bold">{uncategorized.length}枚</span> はカテゴリーが未設定のため、ポートフォリオに公開されません。
+                                                </p>
+                                            </div>
                                         </div>
+                                        <p className="text-xs text-red-400 mt-2">
+                                            写真をクリックして編集画面からカテゴリーを設定するか、複数選択で一括カテゴリー変更ができます。
+                                        </p>
                                     </div>
-                                    <p className="text-xs text-red-400 mt-2">
-                                        写真をクリックして編集画面からカテゴリーを設定するか、複数選択で一括カテゴリー変更ができます。
-                                    </p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                        {uncategorized.map(renderPhotoCard)}
+                                    </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                    {uncategorized.map(renderPhotoCard)}
-                                </div>
-                            </div>
-                        )}
+                            )
+                        }
 
                         {/* カテゴリーごとのセクション */}
-                        {categoryNames.map(catName => (
-                            <div key={catName} className="mb-10" id={`section-${catName}`}>
-                                <div className="flex items-center gap-3 mb-4">
-                                    <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wider">{catName}</h2>
-                                    <span className="text-sm text-gray-400 font-medium">{groupedByCategory[catName].length}枚</span>
-                                    <div className="h-[1px] flex-1 bg-gray-200" />
+                        {
+                            categoryNames.map(catName => (
+                                <div key={catName} className="mb-10" id={`section-${catName}`}>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wider">{catName}</h2>
+                                        <span className="text-sm text-gray-400 font-medium">{groupedByCategory[catName].length}枚</span>
+                                        <div className="h-[1px] flex-1 bg-gray-200" />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                        {groupedByCategory[catName].map(renderPhotoCard)}
+                                    </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                    {groupedByCategory[catName].map(renderPhotoCard)}
-                                </div>
-                            </div>
-                        ))}
+                            ))
+                        }
 
-                        {hasMore && (
-                            <div className="mt-8 text-center pb-8">
-                                <button
-                                    onClick={handleLoadMore}
-                                    disabled={loadingMore}
-                                    className="px-6 py-3 bg-white border border-gray-200 rounded-full shadow-sm text-gray-600 font-bold hover:bg-gray-50 hover:shadow-md transition-all flex items-center gap-2 mx-auto disabled:opacity-50"
-                                >
-                                    {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    {loadingMore ? '読み込み中...' : 'もっと見る'}
-                                </button>
-                            </div>
-                        )}
+                        {
+                            hasMore && (
+                                <div className="mt-8 text-center pb-8">
+                                    <button
+                                        onClick={handleLoadMore}
+                                        disabled={loadingMore}
+                                        className="px-6 py-3 bg-white border border-gray-200 rounded-full shadow-sm text-gray-600 font-bold hover:bg-gray-50 hover:shadow-md transition-all flex items-center gap-2 mx-auto disabled:opacity-50"
+                                    >
+                                        {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+                                        {loadingMore ? '読み込み中...' : 'もっと見る'}
+                                    </button>
+                                </div>
+                            )
+                        }
                     </>
                 );
             })()}
 
             {/* Floating Action Bar（選択中に表示） */}
-            {selectedIds.size > 0 && (
-                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                    <div className="bg-neutral-900 border border-neutral-800 text-white px-6 py-4 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-center gap-4 backdrop-blur-md bg-opacity-90 min-w-[340px]">
-                        <span className="font-bold text-sm border-b sm:border-b-0 sm:border-r border-neutral-700 pb-2 sm:pb-0 sm:pr-6 sm:mr-2 w-full sm:w-auto text-center sm:text-left">
-                            {selectedIds.size}枚選択中
-                        </span>
+            {
+                selectedIds.size > 0 && (
+                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="bg-neutral-900 border border-neutral-800 text-white px-6 py-4 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-center gap-4 backdrop-blur-md bg-opacity-90 min-w-[340px]">
+                            <span className="font-bold text-sm border-b sm:border-b-0 sm:border-r border-neutral-700 pb-2 sm:pb-0 sm:pr-6 sm:mr-2 w-full sm:w-auto text-center sm:text-left">
+                                {selectedIds.size}枚選択中
+                            </span>
 
-                        {/* 一括カテゴリー変更 */}
-                        <div className="flex items-center gap-2 flex-1">
-                            <Tag className="w-4 h-4 text-blue-400 shrink-0" />
-                            <select
-                                value={bulkCategoryId}
-                                onChange={(e) => setBulkCategoryId(e.target.value)}
-                                className="flex-1 bg-neutral-800 border border-neutral-700 text-white text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-blue-500"
-                            >
-                                <option value="">カテゴリーを選択...</option>
-                                <option value="">── 未設定にする ──</option>
-                                {categories.map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                            </select>
+                            {/* 一括カテゴリー変更 */}
+                            <div className="flex items-center gap-2 flex-1">
+                                <Tag className="w-4 h-4 text-blue-400 shrink-0" />
+                                <select
+                                    value={bulkCategoryId}
+                                    onChange={(e) => setBulkCategoryId(e.target.value)}
+                                    className="flex-1 bg-neutral-800 border border-neutral-700 text-white text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-blue-500"
+                                >
+                                    <option value="">カテゴリーを選択...</option>
+                                    <option value="">── 未設定にする ──</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={handleBulkCategoryUpdate}
+                                    disabled={isBulkUpdating}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 shrink-0"
+                                >
+                                    <Check className="w-4 h-4" />
+                                    {isBulkUpdating ? '更新中...' : '適用'}
+                                </button>
+                            </div>
+
+                            {/* EXIF Sync Button */}
                             <button
-                                onClick={handleBulkCategoryUpdate}
-                                disabled={isBulkUpdating}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 shrink-0"
+                                onClick={handleBulkExifSync}
+                                disabled={isExifSyncing}
+                                className="bg-neutral-700 hover:bg-neutral-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                                title="CloudinaryからEXIF情報を再取得"
                             >
-                                <Check className="w-4 h-4" />
-                                {isBulkUpdating ? '更新中...' : '適用'}
+                                <span className="text-xs">EXIF同期</span>
                             </button>
-                        </div>
 
-                        {/* EXIF Sync Button */}
-                        <button
-                            onClick={handleBulkExifSync}
-                            disabled={isExifSyncing}
-                            className="bg-neutral-700 hover:bg-neutral-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-                            title="CloudinaryからEXIF情報を再取得"
-                        >
-                            <span className="text-xs">EXIF同期</span>
-                        </button>
-
-                        {/* Bulk Edit Button */}
-                        <button
-                            onClick={() => setIsBulkEditModalOpen(true)}
-                            className="bg-neutral-700 hover:bg-neutral-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
-                            title="一括編集 (モデル名・場所など)"
-                        >
-                            <Edit className="w-4 h-4" />
-                            <span className="text-xs hidden sm:inline">編集</span>
-                        </button>
-
-                        {/* 一括削除 */}
-                        <div className="flex gap-3 items-center">
+                            {/* Bulk Edit Button */}
                             <button
-                                onClick={() => setSelectedIds(new Set())}
-                                className="text-sm text-gray-400 hover:text-white transition-colors"
+                                onClick={() => setIsBulkEditModalOpen(true)}
+                                className="bg-neutral-700 hover:bg-neutral-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
+                                title="一括編集 (モデル名・場所など)"
                             >
-                                クリア
+                                <Edit className="w-4 h-4" />
+                                <span className="text-xs hidden sm:inline">編集</span>
                             </button>
-                            <button
-                                onClick={handleBulkDelete}
-                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-900/20"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                削除
-                            </button>
+
+                            {/* 一括削除 */}
+                            <div className="flex gap-3 items-center">
+                                <button
+                                    onClick={() => setSelectedIds(new Set())}
+                                    className="text-sm text-gray-400 hover:text-white transition-colors"
+                                >
+                                    クリア
+                                </button>
+                                <button
+                                    onClick={handleBulkDelete}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-900/20"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    削除
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
             {/* Bulk Edit Modal */}
             <BulkEditModal
                 isOpen={isBulkEditModalOpen}
@@ -590,6 +607,6 @@ export default function PhotosPage() {
                     setIsBulkEditModalOpen(false);
                 }}
             />
-        </div>
+        </div >
     );
 }
