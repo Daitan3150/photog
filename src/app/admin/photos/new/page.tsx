@@ -14,10 +14,11 @@ import { motion } from 'framer-motion';
 
 // ✅ ファイル検証定数
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
-const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_MB = 50; // アップロード時に選択できる最大サイズ（UI上）
+const CLOUDINARY_MAX_MB = 10; // CloudinaryのFreeプランの1ファイル容量限界
 const MAX_FILES = 20;
 const MAX_RETRY = 5;
-const CHUNK_SIZE = 6 * 1024 * 1024; // 6MB チャンク
+const CHUNK_SIZE = 6 * 1024 * 1024; // Cloudinary要件「最後のチャンク以外は最低5MB以上必要」に対応
 const HISTORY_KEY = 'upload_history';
 const LENS_HISTORY_KEY = 'lens_history';
 
@@ -453,6 +454,12 @@ export default function NewPhotoPage() {
 
                 const fileSizeMB = (fileToUpload instanceof Blob ? fileToUpload.size : file.size) / (1024 * 1024);
                 console.log(`[Upload] ${file.name}: リサイズ後 ${fileSizeMB.toFixed(1)}MB`);
+
+                // 🚨 サーバー（Cloudinary無料枠）の絶対限界をチェック
+                if (fileSizeMB > CLOUDINARY_MAX_MB) {
+                    updateStatus('error', 0, `圧縮後も${fileSizeMB.toFixed(1)}MBあり、サーバーの上限(${CLOUDINARY_MAX_MB}MB)を超えています。エラーになるため送信を中止しました。`);
+                    return; // 10MB越えは絶対に失敗するので無駄なトライを防ぐ
+                }
 
                 for (let attempt = 1; attempt <= MAX_RETRY; attempt++) {
                     try {
