@@ -1046,6 +1046,9 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         delete updates.uploaderId;
         delete updates.createdAt;
 
+        // 🔥 CRITICAL FIX: Actually update the document in Firestore
+        await photoRef.update(updates);
+
         revalidatePath('/');
         revalidatePath('/portfolio');
         revalidatePath('/search');
