@@ -265,12 +265,11 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
             });
         }
 
-        await batch.commit();
         revalidatePath('/');
         revalidatePath('/portfolio');
-        // --- 🧠 記憶 (Memory): キャッシュ破棄 ---
-        await setCachedData('public_photos', null);
-        await setCachedData('public_photos_for_search', null);
+        revalidatePath('/search');
+        // --- 🧠 記憶 (Memory): キャッシュ完全破棄 ---
+        await purgePublicCache();
 
 
 
@@ -465,8 +464,8 @@ export async function bulkUpdateCategory(
 
         revalidatePath('/');
         revalidatePath('/portfolio');
-        await setCachedData('public_photos', null);
-        await setCachedData('public_photos_for_search', null);
+        revalidatePath('/search');
+        await purgePublicCache();
 
         // Algolia同期
         for (const photoId of photoIds) {
@@ -553,8 +552,8 @@ export async function bulkUpdatePhotos(
 
         revalidatePath('/');
         revalidatePath('/portfolio');
-        await setCachedData('public_photos', null);
-        await setCachedData('public_photos_for_search', null);
+        revalidatePath('/search');
+        await purgePublicCache();
 
         // Algolia Sync
         for (const photoId of photoIds) {
@@ -675,8 +674,8 @@ export async function refreshPhotoMetadata(photoId: string, idToken: string): Pr
 
         revalidatePath('/');
         revalidatePath('/portfolio');
-        await setCachedData('public_photos', null);
-        await setCachedData('public_photos_for_search', null);
+        revalidatePath('/search');
+        await purgePublicCache();
 
         // Algolia同期
         const updatedDoc = await photoRef.get();
@@ -889,9 +888,8 @@ export async function bulkDeletePhotos(photoIds: string[], idToken: string) {
 
         revalidatePath('/');
         revalidatePath('/portfolio');
-        // --- 🧠 記憶 (Memory): キャッシュ破棄 ---
-        await setCachedData('public_photos', null);
-        await setCachedData('public_photos_for_search', null);
+        revalidatePath('/search');
+        await purgePublicCache();
         return { ...results };
     } catch (error: any) {
         console.error('Error in bulk delete:', error);
@@ -1042,12 +1040,10 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         delete updates.uploaderId;
         delete updates.createdAt;
 
-        await photoRef.update(updates);
         revalidatePath('/');
         revalidatePath('/portfolio');
-        // --- 🧠 記憶 (Memory): キャッシュ破棄 ---
-        await setCachedData('public_photos', null);
-        await setCachedData('public_photos_for_search', null);
+        revalidatePath('/search');
+        await purgePublicCache();
 
         // --- 💪 筋肉 (Muscle): 検索インデックス同期 (Algolia) ---
         const updatedDoc = await photoRef.get();
