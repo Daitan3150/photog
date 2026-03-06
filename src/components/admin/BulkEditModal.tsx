@@ -22,6 +22,9 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
     const [location, setLocation] = useState('');
     const [tagsInput, setTagsInput] = useState('');
     const [shotAt, setShotAt] = useState('');
+    const [event, setEvent] = useState('');
+    const [characterName, setCharacterName] = useState('');
+    const [displayMode, setDisplayMode] = useState<'title' | 'character' | ''>('');
 
     if (!isOpen) return null;
 
@@ -47,6 +50,9 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
             if (location.trim()) data.location = location.trim();
             if (tagsInput.trim()) data.tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
             if (shotAt) data.shotAt = shotAt; // YYYY-MM-DD 形式のままサーバーへ
+            if (event.trim()) data.event = event.trim();
+            if (characterName.trim()) data.characterName = characterName.trim();
+            if (displayMode) data.displayMode = displayMode;
 
             if (Object.keys(data).length === 0) {
                 alert('変更する項目を入力してください。');
@@ -158,6 +164,50 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                             onChange={(e) => setShotAt(e.target.value)}
                             className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all [color-scheme:dark]"
                         />
+                    </div>
+
+                    {/* Event Name */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                            <Tag className="w-4 h-4 text-indigo-400" /> イベント名 (Event Name)
+                        </label>
+                        <input
+                            type="text"
+                            value={event}
+                            onChange={(e) => setEvent(e.target.value)}
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600"
+                            placeholder="例: コミケ105"
+                        />
+                    </div>
+
+                    {/* Character Name */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                            <User className="w-4 h-4 text-pink-400" /> キャラクター名 (Character)
+                        </label>
+                        <input
+                            type="text"
+                            value={characterName}
+                            onChange={(e) => setCharacterName(e.target.value)}
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600"
+                            placeholder="例: 博麗霊夢"
+                        />
+                    </div>
+
+                    {/* Display Mode */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                            <Type className="w-4 h-4 text-amber-400" /> 表示優先 (Display Mode)
+                        </label>
+                        <select
+                            value={displayMode}
+                            onChange={(e) => setDisplayMode(e.target.value as any)}
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        >
+                            <option value="">変更しない</option>
+                            <option value="title">タイトル表示 (A)</option>
+                            <option value="character">キャラクター名表示 (B)</option>
+                        </select>
                     </div>
                 </div>
 

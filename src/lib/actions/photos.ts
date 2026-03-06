@@ -496,8 +496,10 @@ export async function bulkUpdatePhotos(
         subjectName?: string; // Model
         tags?: string[];
         shotAt?: string; // ISO string
-        title?: string; // Only if 1 photo or applying same title? Usually for bulk edit we might skip title or append.
-        // For now, let's allow setting same value if user wants, or just ignore if empty.
+        title?: string;
+        event?: string;
+        characterName?: string;
+        displayMode?: 'title' | 'character';
     },
     idToken: string
 ): Promise<{ success: boolean; count?: number; error?: string }> {
@@ -543,6 +545,9 @@ export async function bulkUpdatePhotos(
         // Let's safe-guard title to not be wiped if passed as empty string unintentionally, 
         // but if valid string is passed, apply it (e.g. setting same series title).
         if (data.title) updateData.title = data.title;
+        if (data.event !== undefined) updateData.event = data.event;
+        if (data.characterName !== undefined) updateData.characterName = data.characterName;
+        if (data.displayMode !== undefined) updateData.displayMode = data.displayMode;
 
         for (const photoId of photoIds) {
             const ref = db.collection('photos').doc(photoId);
@@ -974,6 +979,7 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         if (data.snsUrl !== undefined) updates.snsUrl = data.snsUrl;
         if (data.categoryId !== undefined) updates.categoryId = data.categoryId;
         if (data.displayMode !== undefined) updates.displayMode = data.displayMode;
+        if (data.event !== undefined) updates.event = data.event; // Missing field added here
         if (data.shotAt !== undefined) {
             if (data.shotAt && String(data.shotAt).length > 0) {
                 const parsed = new Date(data.shotAt);
