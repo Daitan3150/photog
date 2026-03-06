@@ -3,7 +3,7 @@ import { getPhotoPublic } from '@/lib/actions/photos';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Share2, Camera, MapPin, Tag, User, Calendar, Grid, Sparkles } from 'lucide-react';
+import { ArrowLeft, Share2, Camera, MapPin, Hash, User, Calendar, Grid, Sparkles } from 'lucide-react';
 import { clsx } from 'clsx';
 import { getRelatedPhotos } from '@/lib/algolia';
 import LikeButton from '@/components/gallery/LikeButton';
@@ -102,25 +102,25 @@ export default async function PhotoPage({ params }: Props) {
     };
 
     return (
-        <div className="min-h-screen bg-black text-white selection:bg-white/20">
+        <div className="min-h-screen bg-[#fcfcfc] text-[#1a1a1a] selection:bg-black/10 transition-colors duration-500">
             {/* Header / Navigation */}
             <div className="fixed top-0 left-0 right-0 z-50 p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent backdrop-blur-[2px]">
                 <Link
                     href="/portfolio"
-                    className="flex items-center gap-2 text-white/60 hover:text-white transition-all group"
+                    className="flex items-center gap-2 text-black/40 hover:text-black transition-all group"
                 >
-                    <div className="p-2 rounded-full border border-white/10 group-hover:bg-white/10 transition-colors">
+                    <div className="p-2 rounded-full border border-black/5 group-hover:bg-black/5 transition-colors">
                         <ArrowLeft className="w-4 h-4" />
                     </div>
-                    <span className="text-xs uppercase tracking-[0.2em] font-light">Gallery</span>
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold">Gallery</span>
                 </Link>
 
                 <div className="flex items-center gap-6">
                     <div className="text-center">
-                        <h1 className="text-sm font-light tracking-[0.3em] uppercase opacity-80">
+                        <h1 className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-40">
                             {photo.category}
                         </h1>
-                        <div className="h-[1px] w-4 bg-white/20 mx-auto mt-1" />
+                        <div className="h-[1px] w-4 bg-black/10 mx-auto mt-1" />
                     </div>
                 </div>
 
@@ -135,14 +135,14 @@ export default async function PhotoPage({ params }: Props) {
                     "relative w-full max-w-5xl aspect-[2/3] md:aspect-[3/2] overflow-hidden group p-[2px] md:p-[4px]",
                     (photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && "bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 rounded-2xl shadow-2xl shadow-purple-500/40"
                 )}>
-                    <div className="relative w-full h-full overflow-hidden bg-black/40 rounded-xl">
+                    <div className="relative w-full h-full overflow-hidden bg-white/50 rounded-xl shadow-inner border border-black/5">
                         <Image
                             loader={cloudinaryLoader as any}
                             src={photo.url}
                             alt={photo.title || 'Portfolio Photography'}
                             fill
                             priority
-                            className="object-contain shadow-2xl transition-transform duration-700 group-hover:scale-[1.02]"
+                            className="object-contain shadow-2xl transition-transform duration-700 group-hover:scale-[1.01]"
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
                         />
 
@@ -150,71 +150,94 @@ export default async function PhotoPage({ params }: Props) {
                         {(photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && (
                             <div className="absolute inset-0 pointer-events-none">
                                 <div className="absolute top-4 right-4 animate-pulse">
-                                    <Sparkles className="w-8 h-8 text-white fill-amber-300 drop-shadow-glow" />
+                                    <Sparkles className="w-8 h-8 text-amber-400 fill-amber-300 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
                                 </div>
                                 <div className="absolute bottom-10 left-10 animate-pulse delay-1000">
-                                    <Sparkles className="w-6 h-6 text-white/60 fill-purple-300 drop-shadow-glow" />
+                                    <Sparkles className="w-6 h-6 text-purple-400/60 fill-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)]" />
                                 </div>
                             </div>
                         )}
                     </div>
                 </div>
 
+                {/* Gorgeous Cosplay Event Banner */}
+                {(photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && photo.event && (
+                    <div className="relative w-full max-w-lg mt-8 mb-4 group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 via-pink-500 to-amber-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                        <div className="relative p-6 bg-white border border-indigo-100 rounded-2xl flex flex-col items-center">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="h-[1px] w-6 bg-gradient-to-r from-transparent to-pink-500/30"></div>
+                                <span className="text-[9px] uppercase tracking-[0.5em] text-pink-500 font-black flex items-center gap-2">
+                                    <Sparkles className="w-3 h-3 fill-pink-500" />
+                                    Special Event
+                                </span>
+                                <div className="h-[1px] w-6 bg-gradient-to-l from-transparent to-pink-500/30"></div>
+                            </div>
+                            <h3 className="text-3xl md:text-4xl font-black text-center tracking-tight leading-none py-2">
+                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-pink-600 to-amber-600 italic">
+                                    {photo.event}
+                                </span>
+                            </h3>
+                            <div className="absolute -top-3 -right-3">
+                                <div className="bg-amber-100 p-2 rounded-xl shadow-lg border border-amber-200 animate-bounce">
+                                    <Calendar className="w-5 h-5 text-amber-600" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Info Section */}
-                <div className="mt-16 w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-white/10 pt-12 text-balance">
+                <div className="mt-12 w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-black/5 pt-12 text-balance">
                     {/* Left: Metadata */}
-                    <div className="space-y-8">
+                    <div className="space-y-8 text-center md:text-left">
                         <div>
-                            <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-bold mb-4">Details</p>
-                            <h2 className="text-3xl md:text-4xl font-light tracking-tight mb-2">
+                            <p className="text-[9px] uppercase tracking-[0.4em] text-black/30 font-bold mb-4">Photo Title</p>
+                            <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-2">
                                 {photo.displayMode === 'character' ? photo.characterName : (photo.title || '無題')}
                             </h2>
                             {photo.displayMode === 'character' && photo.title && (
-                                <p className="text-white/60 text-lg font-light italic">{photo.title}</p>
+                                <p className="text-black/40 text-lg font-medium italic underline underline-offset-8 decoration-pink-500/20">{photo.title}</p>
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4">
-                            <div className="flex items-center gap-4 text-white/60 group">
+                        <div className="grid grid-cols-1 gap-6">
+                            <div className="flex items-center gap-4 text-black/60 group">
                                 <div className={clsx(
-                                    "p-2 rounded-lg border transition-all",
-                                    (photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') ? "bg-purple-900/40 border-purple-500/50 text-purple-200" : "bg-white/5 border-white/5 group-hover:border-white/20"
+                                    "p-2.5 rounded-full border transition-all",
+                                    (photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') ? "bg-purple-50 border-purple-200 text-purple-600" : "bg-black/5 border-transparent"
                                 )}>
-                                    <User className="w-4 h-4" />
+                                    <User className="w-5 h-5" />
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] uppercase tracking-widest opacity-50 font-bold">
+                                <div className="flex flex-col flex-1 items-start">
+                                    <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold">
                                         {(photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') ? 'Cosplayer' : 'Model'}
                                     </span>
                                     <span className={clsx(
-                                        "text-sm tracking-wide",
-                                        (photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && "text-purple-100 font-medium"
+                                        "text-base tracking-wide font-bold",
+                                        (photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && "text-purple-600"
                                     )}>{photo.subjectName}</span>
                                 </div>
                             </div>
 
-                            {/* Cosplay Event Details */}
-                            {(photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && photo.event && (
-                                <div className="flex items-center gap-4 text-white/60 group">
-                                    <div className="p-2 rounded-lg bg-amber-900/40 border border-amber-500/50 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                                        <Calendar className="w-4 h-4" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] uppercase tracking-widest opacity-50 font-bold">Event</span>
-                                        <span className="text-sm tracking-wide text-amber-100 font-bold underline underline-offset-4 decoration-amber-500/30">
-                                            {photo.event}
-                                        </span>
-                                    </div>
+                            {/* Legacy Event Row (Hidden if Banner is shown above) - but let's remove it and add Location/Category */}
+                            <div className="flex items-center gap-4 text-black/60 group">
+                                <div className="p-2.5 rounded-full bg-black/5 border border-transparent group-hover:bg-black/10 transition-all">
+                                    <MapPin className="w-5 h-5" />
                                 </div>
-                            )}
+                                <div className="flex flex-col items-start">
+                                    <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold">Location</span>
+                                    <span className="text-base tracking-wide font-bold">{photo.location}</span>
+                                </div>
+                            </div>
 
-                            <div className="flex items-center gap-4 text-white/60 group">
-                                <div className="p-2 rounded-lg bg-white/5 border border-white/5 group-hover:border-white/20 transition-all">
-                                    <MapPin className="w-4 h-4" />
+                            <div className="flex items-center gap-4 text-black/60 group">
+                                <div className="p-2.5 rounded-full bg-black/5 border border-transparent group-hover:bg-black/10 transition-all">
+                                    <Hash className="w-5 h-5" />
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] uppercase tracking-widest opacity-50 font-bold">Location</span>
-                                    <span className="text-sm tracking-wide">{photo.location}</span>
+                                <div className="flex flex-col items-start">
+                                    <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold">Category</span>
+                                    <span className="text-base tracking-wide font-black border-b-2 border-black/10 uppercase italic">{photo.category}</span>
                                 </div>
                             </div>
 
@@ -235,55 +258,55 @@ export default async function PhotoPage({ params }: Props) {
                     </div>
 
                     {/* Right: Technical Data (EXIF) */}
-                    <div className="space-y-8">
+                    <div className="space-y-8 bg-black/5 p-8 rounded-3xl border border-black/5">
                         <div>
-                            <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-bold mb-6">Shooting Data</p>
+                            <p className="text-[9px] uppercase tracking-[0.4em] text-black/40 font-bold mb-6">Shooting Data</p>
                             {photo.exif ? (
                                 <div className="space-y-6">
-                                    <div className="flex flex-col gap-1">
-                                        <p className="text-[10px] text-white/30 uppercase tracking-widest">Camera & Lens</p>
-                                        <p className="text-sm font-light text-white/90">
+                                    <div className="flex flex-col gap-1 items-center md:items-start text-center md:text-left">
+                                        <p className="text-[9px] text-black/30 uppercase tracking-widest font-bold">Camera & Lens</p>
+                                        <p className="text-sm font-bold text-black/90">
                                             {photo.exif.Model || 'Generic Camera'}
                                         </p>
-                                        <p className="text-[11px] text-white/60 leading-relaxed">
+                                        <p className="text-[11px] text-black/60 font-medium leading-relaxed">
                                             {photo.exif.LensModel || 'Prime Lens'}
                                         </p>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-x-8 gap-y-4 pt-4 border-t border-white/5">
+                                    <div className="grid grid-cols-2 gap-x-8 gap-y-4 pt-6 border-t border-black/5">
                                         <div className="space-y-1">
-                                            <p className="text-[10px] text-white/30 uppercase tracking-widest">Aperture</p>
-                                            <p className="text-sm font-medium">ƒ/{photo.exif.FNumber || '-'}</p>
+                                            <p className="text-[9px] text-black/30 uppercase tracking-widest font-bold">Aperture</p>
+                                            <p className="text-sm font-black">ƒ/{photo.exif.FNumber || '-'}</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-[10px] text-white/30 uppercase tracking-widest">Shutter</p>
-                                            <p className="text-sm font-medium">{formatShutterSpeed(photo.exif.ExposureTime) || '-'}</p>
+                                            <p className="text-[9px] text-black/30 uppercase tracking-widest font-bold">Shutter</p>
+                                            <p className="text-sm font-black">{formatShutterSpeed(photo.exif.ExposureTime) || '-'}</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-[10px] text-white/30 uppercase tracking-widest">ISO</p>
-                                            <p className="text-sm font-medium">{photo.exif.ISO || '-'}</p>
+                                            <p className="text-[9px] text-black/30 uppercase tracking-widest font-bold">ISO</p>
+                                            <p className="text-sm font-black">{photo.exif.ISO || '-'}</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-[10px] text-white/30 uppercase tracking-widest">Focal Length</p>
-                                            <p className="text-sm font-medium">{photo.exif.FocalLength ? `${Math.round(photo.exif.FocalLength)}mm` : '-'}</p>
+                                            <p className="text-[9px] text-black/30 uppercase tracking-widest font-bold">Focal Length</p>
+                                            <p className="text-sm font-black">{photo.exif.FocalLength ? `${Math.round(photo.exif.FocalLength)}mm` : '-'}</p>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="p-8 bg-white/5 border border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center text-center">
-                                    <Camera className="w-8 h-8 text-white/20 mb-3" />
-                                    <p className="text-xs text-white/40 tracking-wider">No technical data available</p>
+                                <div className="p-8 bg-black/5 border border-dashed border-black/10 rounded-2xl flex flex-col items-center justify-center text-center">
+                                    <Camera className="w-8 h-8 text-black/20 mb-3" />
+                                    <p className="text-xs text-black/40 tracking-wider">No technical data available</p>
                                 </div>
                             )}
                         </div>
 
                         {photo.snsUrl && (
-                            <div className="pt-6 border-t border-white/5">
+                            <div className="pt-6 border-t border-black/5 text-center md:text-left">
                                 <a
                                     href={photo.snsUrl.startsWith('http') ? photo.snsUrl : `https://x.com/${photo.snsUrl.replace('@', '')}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-black rounded-full text-xs font-bold hover:bg-white/90 transition-all border border-transparent shadow-[0_10px_30px_rgba(255,255,255,0.1)]"
+                                    className="inline-flex items-center gap-2 px-8 py-3 bg-black text-white rounded-full text-xs font-black hover:bg-black/90 transition-all border border-transparent shadow-[0_10px_30px_rgba(0,0,0,0.1)] hover:-translate-y-1 active:scale-95"
                                 >
                                     <Share2 className="w-3.5 h-3.5" />
                                     View on SNS
@@ -291,8 +314,8 @@ export default async function PhotoPage({ params }: Props) {
                             </div>
                         )}
 
-                        <div className="pt-6 border-t border-white/5 flex items-center justify-between">
-                            <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-bold">Feedback</p>
+                        <div className="pt-6 border-t border-black/5 flex items-center justify-between">
+                            <p className="text-[9px] uppercase tracking-[0.3em] text-black/40 font-bold">Feedback</p>
                             <LikeButton photoId={id} />
                         </div>
 

@@ -262,10 +262,11 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
 
         setSaving(true);
         const token = await user.getIdToken();
+        const isCosplay = formData.categoryId?.toLowerCase() === 'cosplay';
         const result = await updatePhoto(photoId, {
             ...formData,
             shotAt: shotAtEnabled ? formData.shotAt : '', // 撮影日なしの場合は空文字列
-            event: formData.categoryId === 'cosplay' ? formData.event : '', // コスプレ以外はイベント空
+            event: isCosplay ? formData.event : '', // コスプレ以外はイベント空
         }, token);
 
         if (result.success) {
@@ -428,18 +429,21 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                     ))}
                                 </select>
 
-                                {/* コスプレ限定: イベント入力 */}
-                                {formData.categoryId === 'cosplay' && (
-                                    <div className="mt-3 p-3 bg-indigo-50/50 rounded-lg border border-indigo-100 animate-in fade-in duration-300">
-                                        <label className="block text-sm font-bold text-indigo-700 mb-1.5">コスプレイベント名</label>
+                                {formData.categoryId?.toLowerCase() === 'cosplay' && (
+                                    <div className={`mt-3 p-4 rounded-xl border-2 transition-all duration-500 ${formData.event ? 'bg-gradient-to-br from-indigo-50 to-blue-50 border-indigo-200 shadow-lg scale-[1.01]' : 'bg-gray-50 border-gray-100'}`}>
+                                        <label className={`block text-sm font-bold mb-1.5 transition-colors ${formData.event ? 'text-indigo-600' : 'text-indigo-700'}`}>
+                                            {formData.event ? '✨ コスプレイベント名' : 'コスプレイベント名'}
+                                        </label>
                                         <input
                                             type="text"
                                             value={formData.event}
                                             onChange={(e) => setFormData({ ...formData, event: e.target.value })}
-                                            className="w-full border-2 border-indigo-100 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                                            className={`w-full p-3 rounded-lg outline-none transition-all ${formData.event ? 'text-xl font-black text-indigo-900 bg-white shadow-inner border-indigo-200 focus:ring-4 focus:ring-indigo-200' : 'w-full border-2 border-indigo-100 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white'}`}
                                             placeholder="例: コミケ105, アコスタ池袋"
                                         />
-                                        <p className="text-[10px] text-indigo-400 mt-1">※ コスプレカテゴリー選択時のみ有効です。</p>
+                                        <p className={`text-[10px] mt-1.5 transition-colors ${formData.event ? 'text-indigo-500 font-bold' : 'text-indigo-400'}`}>
+                                            {formData.event ? '🌟 ポートフォリオでこのイベント名が強調表示されます' : '※ コスプレカテゴリー選択時のみ有効です。'}
+                                        </p>
                                     </div>
                                 )}
                             </div>

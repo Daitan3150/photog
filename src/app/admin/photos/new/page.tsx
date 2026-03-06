@@ -641,7 +641,7 @@ export default function NewPhotoPage() {
                     shotAt: finalShotAt,
                     snsUrl,
                     categoryId,
-                    event: categoryId === 'cosplay' ? event : '',
+                    event: categoryId?.toLowerCase() === 'cosplay' ? event : '',
                     displayMode,
 
                     exif: {
@@ -974,21 +974,27 @@ export default function NewPhotoPage() {
                             </select>
                         </div>
 
-                        {categoryId === 'cosplay' && (
+                        {categoryId?.toLowerCase() === 'cosplay' && (
                             <motion.div
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 className="space-y-2 overflow-hidden"
                             >
-                                <label className="block text-sm font-bold text-indigo-700">コスプレイベント名</label>
-                                <input
-                                    type="text"
-                                    value={event}
-                                    onChange={(e) => setEvent(e.target.value)}
-                                    className="w-full border-2 border-indigo-100 p-2 rounded focus:ring-2 focus:ring-indigo-500 outline-none bg-indigo-50/30"
-                                    placeholder="例: コミケ105, アコスタ池袋"
-                                />
-                                <p className="text-[10px] text-indigo-400">※ コスプレカテゴリー選択時のみ有効です。</p>
+                                <div className={`p-4 rounded-xl border-2 transition-all duration-500 ${event ? 'bg-gradient-to-br from-indigo-50 to-blue-50 border-indigo-200 shadow-lg scale-[1.01]' : 'bg-gray-50 border-gray-100'}`}>
+                                    <label className={`block text-sm font-bold mb-1.5 transition-colors ${event ? 'text-indigo-600' : 'text-indigo-700'}`}>
+                                        {event ? '✨ コスプレイベント名' : 'コスプレイベント名'}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={event}
+                                        onChange={(e) => setEvent(e.target.value)}
+                                        className={`w-full p-3 rounded-lg outline-none transition-all ${event ? 'text-xl font-black text-indigo-900 bg-white shadow-inner border-indigo-200 focus:ring-4 focus:ring-indigo-200' : 'w-full border-2 border-indigo-100 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white'}`}
+                                        placeholder="例: コミケ105, アコスタ池袋"
+                                    />
+                                    <p className={`text-[10px] mt-1.5 transition-colors ${event ? 'text-indigo-500 font-bold' : 'text-indigo-400'}`}>
+                                        {event ? '🌟 ポートフォリオでこのイベント名が強調表示されます' : '※ コスプレカテゴリー選択時のみ有効です。'}
+                                    </p>
+                                </div>
                             </motion.div>
                         )}
 
