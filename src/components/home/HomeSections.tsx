@@ -16,7 +16,7 @@ export default function HomeFeaturedSection({ portraitCoverUrl, snapshotCoverUrl
     return (
         <>
             {/* Featured Genres Section */}
-            <section className="py-16 md:py-24 bg-neutral-50 px-4 md:px-12">
+            <section className="py-16 md:py-24 bg-transparent px-4 md:px-12">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-12 border-b border-black/10 pb-8">
                         <h2 className="text-2xl md:text-3xl font-serif mb-3 tracking-wide">{t.home.featuredGenres}</h2>

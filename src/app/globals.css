@@ -13,8 +13,7 @@
 }
 
 body {
-  background: white; /* Fallback */
-  background: linear-gradient(to bottom, #ffffff, #fdfbfb);
+  background: transparent;
   color: var(--foreground);
   font-family: var(--font-sans);
 }
@@ -24,10 +23,16 @@ body::before {
   position: fixed;
   inset: 0;
   background: white;
-  z-index: -2; /* 背景アニメーション(-1)よりさらに後ろ */
+  z-index: -2;
+  /* 背景アニメーション(-1)よりさらに後ろ */
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-serif);
 }
 

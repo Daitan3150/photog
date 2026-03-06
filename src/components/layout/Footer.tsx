@@ -27,7 +27,7 @@ export default function Footer() {
     }, []);
 
     return (
-        <footer className="w-full py-12 px-6 flex flex-col items-center justify-center bg-white text-gray-500 text-sm font-sans tracking-widest border-t border-gray-100">
+        <footer className="w-full py-12 px-6 flex flex-col items-center justify-center bg-transparent text-gray-500 text-sm font-sans tracking-widest border-t border-gray-100">
             <div className="flex gap-8 mb-6">
                 <a
                     href={snsUrls.instagram}
