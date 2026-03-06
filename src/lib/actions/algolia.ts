@@ -88,6 +88,9 @@ export async function rebuildAlgoliaIndex() {
                     attributesForFaceting: [
                         'category',
                         'tags',
+                        'subjectName',
+                        'event',
+                        'location',
                     ],
                 },
             });

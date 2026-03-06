@@ -64,7 +64,8 @@ function SearchButton() {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+            // InstantSearch の URL routing 形式に合わせる
+            router.push(`/search?photos%5Bquery%5D=${encodeURIComponent(searchQuery)}`);
             setIsSearchOpen(false);
             setSearchQuery("");
             setSearchResults([]);
