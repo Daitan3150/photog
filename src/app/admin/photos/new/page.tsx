@@ -58,6 +58,7 @@ function xhrUpload(
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', url);
+        xhr.timeout = 120000; // 2分タイムアウト
         xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) {
                 onProgress(Math.round((e.loaded / e.total) * 100));
@@ -67,14 +68,20 @@ function xhrUpload(
             if (xhr.status >= 200 && xhr.status < 300) {
                 resolve(JSON.parse(xhr.responseText));
             } else {
-                const err = JSON.parse(xhr.responseText);
-                reject(new Error(err?.error?.message || 'Upload failed'));
+                try {
+                    const err = JSON.parse(xhr.responseText);
+                    reject(new Error(err?.error?.message || `アップロード失敗 (HTTP ${xhr.status})`));
+                } catch {
+                    reject(new Error(`アップロード失敗 (HTTP ${xhr.status})`));
+                }
             }
         };
-        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.onerror = () => reject(new Error('ネットワークエラー: 接続を確認してください'));
+        xhr.ontimeout = () => reject(new Error('タイムアウト: ファイルが大きすぎる可能性があります'));
         xhr.send(formData);
     });
 }
+
 
 export default function NewPhotoPage() {
     const { user } = useAuth();

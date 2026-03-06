@@ -76,6 +76,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         shotAt: '',
         snsUrl: '',
         categoryId: '',
+        event: '',
         displayMode: 'title' as 'title' | 'character',
         url: '',
         publicId: '',
@@ -122,6 +123,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 shotAt: data.shotAt ? data.shotAt.split('T')[0] : '',
                 snsUrl: data.snsUrl || '',
                 categoryId: data.categoryId || 'Works',
+                event: data.event || '',
                 displayMode: data.displayMode || 'title',
                 url: data.url,
                 publicId: data.publicId,
@@ -262,7 +264,8 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         const token = await user.getIdToken();
         const result = await updatePhoto(photoId, {
             ...formData,
-            shotAt: shotAtEnabled ? formData.shotAt : '' // 撮影日なしの場合は空文字列
+            shotAt: shotAtEnabled ? formData.shotAt : '', // 撮影日なしの場合は空文字列
+            event: formData.categoryId === 'cosplay' ? formData.event : '', // コスプレ以外はイベント空
         }, token);
 
         if (result.success) {
@@ -424,6 +427,21 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                         </option>
                                     ))}
                                 </select>
+
+                                {/* コスプレ限定: イベント入力 */}
+                                {formData.categoryId === 'cosplay' && (
+                                    <div className="mt-3 p-3 bg-indigo-50/50 rounded-lg border border-indigo-100 animate-in fade-in duration-300">
+                                        <label className="block text-sm font-bold text-indigo-700 mb-1.5">コスプレイベント名</label>
+                                        <input
+                                            type="text"
+                                            value={formData.event}
+                                            onChange={(e) => setFormData({ ...formData, event: e.target.value })}
+                                            className="w-full border-2 border-indigo-100 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                                            placeholder="例: コミケ105, アコスタ池袋"
+                                        />
+                                        <p className="text-[10px] text-indigo-400 mt-1">※ コスプレカテゴリー選択時のみ有効です。</p>
+                                    </div>
+                                )}
                             </div>
 
                             <div>
