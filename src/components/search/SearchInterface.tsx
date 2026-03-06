@@ -164,7 +164,7 @@ function SidebarFilter({ title, attribute, icon: Icon }: { title: string, attrib
 
 export default function SearchInterface({ initialQuery = '' }: { initialQuery?: string }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [searchMode, setSearchMode] = useState<'all' | 'model' | 'event'>('all');
+    const [searchMode, setSearchMode] = useState<'model' | 'event' | 'location'>('model');
     const { t } = useLanguage();
 
     // 💡 Stabilize initial UI state to prevent flashing when URL syncs back
@@ -186,7 +186,8 @@ export default function SearchInterface({ initialQuery = '' }: { initialQuery?: 
                 restrictSearchableAttributes={
                     searchMode === 'model' ? ['subjectName'] :
                         searchMode === 'event' ? ['event'] :
-                            undefined
+                            searchMode === 'location' ? ['location'] :
+                                undefined
                 }
             />
 
@@ -243,9 +244,9 @@ export default function SearchInterface({ initialQuery = '' }: { initialQuery?: 
                         {/* Search Mode Toggle */}
                         <div className="flex gap-2 mb-6 p-1 bg-gray-100 rounded-lg w-fit">
                             {[
-                                { id: 'all', label: t.search.modeAll, icon: SearchIcon },
                                 { id: 'model', label: t.search.modeModel, icon: User },
                                 { id: 'event', label: t.search.modeEvent, icon: Calendar },
+                                { id: 'location', label: t.search.modeLocation, icon: MapPin },
                             ].map((mode) => (
                                 <button
                                     key={mode.id}
@@ -269,10 +270,11 @@ export default function SearchInterface({ initialQuery = '' }: { initialQuery?: 
                                 placeholder={
                                     searchMode === 'model' ? t.search.modelPlaceholder :
                                         searchMode === 'event' ? t.search.eventPlaceholder :
-                                            t.search.placeholder
+                                            searchMode === 'location' ? t.search.locationPlaceholder :
+                                                t.search.placeholder
                                 }
                                 onSubmit={(e) => {
-                                    e.preventDefault(); // Enter押下時のページ遷移を防止
+                                    e.preventDefault();
                                 }}
                                 classNames={{
                                     root: "relative w-full",
