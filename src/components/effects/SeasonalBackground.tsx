@@ -99,7 +99,7 @@ const SeasonalBackground: React.FC = () => {
                             opacity: [0, p.opacity, p.opacity, 0],
                             rotate: [p.rotate, p.rotate + 180, p.rotate + 360],
                             rotateY: [0, 180, 360],
-                            skew: [0, 10, -10, 0],
+                            skewX: [0, 10, -10, 0],
                         }}
                         transition={{
                             duration: p.duration,
