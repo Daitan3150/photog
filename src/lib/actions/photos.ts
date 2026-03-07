@@ -121,9 +121,10 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
         const role = userData?.role || (isSuperAdminByEmail ? 'admin' : null);
 
         // [GEOCODING] Fetch coordinates from location string
-        let latitude = null;
-        let longitude = null;
-        if (data.location) {
+        let latitude = data.latitude ?? null;
+        let longitude = data.longitude ?? null;
+
+        if (data.location && latitude === null && longitude === null) {
             const coords = await getCoordinates(data.location);
             if (coords) {
                 latitude = coords.lat;
@@ -230,9 +231,10 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
         const photoIds: string[] = [];
         for (const data of dataList) {
             // [GEOCODING] Fetch coordinates from location string
-            let latitude = null;
-            let longitude = null;
-            if (data.location) {
+            let latitude = data.latitude ?? null;
+            let longitude = data.longitude ?? null;
+
+            if (data.location && latitude === null && longitude === null) {
                 const coords = await getCoordinates(data.location);
                 if (coords) {
                     latitude = coords.lat;
@@ -1100,8 +1102,12 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         if (data.tags !== undefined) updates.tags = data.tags;
         if (data.focalPoint !== undefined) updates.focalPoint = data.focalPoint;
 
-        // [GEOCODING] re-fetch if location changed
-        if (data.location !== undefined && data.location !== photoData?.location) {
+        if (data.latitude !== undefined) updates.latitude = data.latitude;
+        if (data.longitude !== undefined) updates.longitude = data.longitude;
+
+        // [GEOCODING] re-fetch if location changed AND manual coordinates not provided
+        if (data.location !== undefined && data.location !== photoData?.location &&
+            data.latitude === undefined && data.longitude === undefined) {
             const coords = await getCoordinates(data.location || '');
             updates.latitude = coords ? coords.lat : null;
             updates.longitude = coords ? coords.lng : null;

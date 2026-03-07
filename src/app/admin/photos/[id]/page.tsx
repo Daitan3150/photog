@@ -84,7 +84,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         exif: {} as any,
         exifRequest: false,
         tags: [] as string[],
-        focalPoint: undefined as { x: number, y: number } | undefined
+        focalPoint: undefined as { x: number, y: number } | undefined,
+        latitude: null as number | null,
+        longitude: null as number | null
     });
     const [categories, setCategories] = useState<Category[]>([]);
     const [originalPhoto, setOriginalPhoto] = useState<any>(null);
@@ -135,7 +137,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 },
                 exifRequest: data.exifRequest || false,
                 tags: data.tags || [],
-                focalPoint: data.focalPoint || undefined
+                focalPoint: data.focalPoint || undefined,
+                latitude: data.latitude || null,
+                longitude: data.longitude || null
             });
         }
         setLoading(false);
@@ -491,12 +495,76 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                     <MapPin className="w-4 h-4 mr-2 text-green-500" />
                                     撮影場所
                                 </label>
-                                <input
-                                    type="text"
-                                    value={formData.location}
-                                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                    className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
-                                />
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={formData.location}
+                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                        className="flex-1 border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="住所、建物名など"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            const { getCoordinates } = await import('@/lib/utils/location');
+                                            const coords = await getCoordinates(formData.location);
+                                            if (coords) {
+                                                setFormData(prev => ({ ...prev, latitude: coords.lat, longitude: coords.lng }));
+                                                alert(`位置情報を取得しました: ${coords.lat}, ${coords.lng}`);
+                                            } else {
+                                                alert('位置情報の取得に失敗しました。');
+                                            }
+                                        }}
+                                        className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold transition-all"
+                                    >
+                                        検索
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 mt-3">
+                                    <div>
+                                        <p className="text-[10px] text-gray-400 mb-1">緯度 (Latitude)</p>
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            value={formData.latitude || ''}
+                                            onChange={(e) => setFormData({ ...formData, latitude: e.target.value ? parseFloat(e.target.value) : null })}
+                                            className="w-full border-gray-100 border bg-gray-50/50 rounded-lg p-2 text-xs outline-none focus:ring-1 focus:ring-blue-300"
+                                            placeholder="35.6895"
+                                        />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-gray-400 mb-1">経度 (Longitude)</p>
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            value={formData.longitude || ''}
+                                            onChange={(e) => setFormData({ ...formData, longitude: e.target.value ? parseFloat(e.target.value) : null })}
+                                            className="w-full border-gray-100 border bg-gray-50/50 rounded-lg p-2 text-xs outline-none focus:ring-1 focus:ring-blue-300"
+                                            placeholder="139.6917"
+                                        />
+                                    </div>
+                                </div>
+                                {formData.latitude && formData.longitude && (
+                                    <div className="mt-4 rounded-xl overflow-hidden border border-gray-100 bg-gray-50 h-48 relative group">
+                                        <iframe
+                                            width="100%"
+                                            height="100%"
+                                            frameBorder="0"
+                                            src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}&q=${formData.latitude},${formData.longitude}&zoom=15`}
+                                            className="grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500"
+                                        />
+                                        <div className="absolute inset-0 pointer-events-none border-2 border-transparent group-hover:border-blue-500/20 transition-all rounded-xl" />
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${formData.latitude},${formData.longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-gray-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            Google Mapsで開く
+                                        </a>
+                                    </div>
+                                )}
+                                <p className="text-[10px] text-gray-400 mt-2 italic">※ 「検索」ボタンで住所からGPS座標を取得できます。座標は手動入力も可能です。</p>
                             </div>
 
                             <div>

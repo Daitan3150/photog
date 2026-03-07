@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Menu, Camera, Home, User, Mail, AlertTriangle, Globe, LogOut, FileText, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Camera, Home, User, Mail, AlertTriangle, Globe, LogOut, FileText, Settings, ClipboardList, CheckSquare } from 'lucide-react';
 import { useAuth } from '@/components/admin/AuthProvider';
 
 
@@ -185,6 +185,16 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                         <Globe size={20} className="text-slate-400 group-hover:text-white transition-transform group-hover:rotate-12" />
                         {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">サイトを見る ↗</span>}
                     </Link>
+                    <Link
+                        href="/admin/tasks"
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/tasks')
+                            ? `${accentColor} text-white ${glowClass}`
+                            : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
+                            } ${isCollapsed ? 'justify-center' : ''}`}
+                    >
+                        <ClipboardList size={20} className={pathname.startsWith('/admin/tasks') ? '' : 'text-slate-400 group-hover:text-white'} />
+                        {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">タスク管理</span>}
+                    </Link>
                 </nav>
 
                 <div className={`mt-auto pt-6 pb-6 shrink-0 ${isCollapsed ? 'w-full flex justify-center' : 'w-full'}`}>
@@ -199,6 +209,56 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
             </div>
 
         </aside>
+    );
+}
+
+function AdminTopBar() {
+    const { role, user } = useAuth();
+    const isAdmin = role === 'admin';
+    const accentColor = isAdmin ? 'bg-blue-600' : 'bg-fuchsia-600';
+
+    return (
+        <header className="h-16 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-40 px-6 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-4">
+                <div className="md:hidden w-8" /> {/* Placeholder for mobile toggle spacing */}
+                <h2 className="text-xs font-black text-gray-400 uppercase tracking-[0.3em] hidden sm:block">
+                    {isAdmin ? 'DAITAN ADMIN' : 'MODEL STUDIO'}
+                </h2>
+            </div>
+
+            <div className="flex items-center gap-2 md:gap-4">
+                <Link
+                    href="/admin/tasks"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all group relative border border-transparent hover:border-gray-200"
+                >
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest hidden md:block group-hover:text-gray-900 transition-colors">
+                        Tasks
+                    </span>
+                    <div className="relative">
+                        <CheckSquare size={18} className="text-gray-400 group-hover:text-amber-500 transition-colors" />
+                        <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 text-[8px] text-white flex items-center justify-center rounded-full font-black ring-2 ring-white">
+                            3
+                        </span>
+                    </div>
+                </Link>
+
+                <div className="h-6 w-px bg-gray-200 mx-1 md:mx-2"></div>
+
+                <div className="flex items-center gap-2 md:gap-3 pl-2">
+                    <div className="flex flex-col items-end hidden md:flex">
+                        <span className="text-xs font-black text-gray-900 leading-none mb-0.5">
+                            {user?.displayName || 'User'}
+                        </span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                            {role === 'admin' ? 'Super Admin' : 'Model'}
+                        </span>
+                    </div>
+                    <div className={`w-8 h-8 md:w-9 md:h-9 rounded-full ${accentColor} flex items-center justify-center text-white font-black text-xs md:text-sm shadow-lg shadow-blue-500/10 active:scale-95 transition-all cursor-pointer ring-2 ring-offset-2 ring-transparent hover:ring-blue-100`}>
+                        {user?.displayName?.charAt(0) || 'U'}
+                    </div>
+                </div>
+            </div>
+        </header>
     );
 }
 
@@ -252,14 +312,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         )}
                     </>
                 )}
-                <main
-                    className={`flex-1 transition-all duration-300 ${!isPublicPage
-                        ? (isCollapsed ? 'ml-0 md:ml-20 p-4 md:p-8' : 'ml-0 md:ml-64 p-4 md:p-8')
-                        : ''
-                        }`}
-                >
-                    {children}
-                </main>
+                <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${!isPublicPage
+                    ? (isCollapsed ? 'ml-0 md:ml-20' : 'ml-0 md:ml-64')
+                    : ''
+                    }`}>
+                    {!isPublicPage && <AdminTopBar />}
+                    <main className="flex-1 p-4 md:p-8">
+                        {children}
+                    </main>
+                </div>
             </div>
         </AuthProvider>
     );

@@ -124,9 +124,9 @@ export default async function PhotoPage({ params }: Props) {
             <div className="fixed top-0 left-0 right-0 z-50 p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent backdrop-blur-[2px]">
                 <Link
                     href="/portfolio"
-                    className="flex items-center gap-2 text-black/40 hover:text-black transition-all group"
+                    className="flex items-center gap-2 text-white/60 hover:text-white transition-all group"
                 >
-                    <div className="p-2 rounded-full border border-black/5 group-hover:bg-black/5 transition-colors">
+                    <div className="p-2 rounded-full border border-white/10 group-hover:bg-white/10 transition-colors">
                         <ArrowLeft className="w-4 h-4" />
                     </div>
                     <span className="text-[10px] uppercase tracking-[0.2em] font-bold">Gallery</span>
@@ -134,10 +134,10 @@ export default async function PhotoPage({ params }: Props) {
 
                 <div className="flex items-center gap-6">
                     <div className="text-center">
-                        <h1 className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-40">
+                        <h1 className="text-[10px] font-bold tracking-[0.3em] uppercase text-white/60">
                             {photo.category}
                         </h1>
-                        <div className="h-[1px] w-4 bg-black/10 mx-auto mt-1" />
+                        <div className="h-[1px] w-4 bg-white/20 mx-auto mt-1" />
                     </div>
                 </div>
 
@@ -237,15 +237,28 @@ export default async function PhotoPage({ params }: Props) {
                                 </div>
                             </div>
 
-                            {/* Legacy Event Row (Hidden if Banner is shown above) - but let's remove it and add Location/Category */}
-                            <div className="flex items-center gap-4 text-black/60 group">
-                                <div className="p-2.5 rounded-full bg-black/5 border border-transparent group-hover:bg-black/10 transition-all">
-                                    <MapPin className="w-5 h-5" />
+                            <div className="flex flex-col items-start gap-4">
+                                <div className="flex items-center gap-4 text-black/60 group">
+                                    <div className="p-2.5 rounded-full bg-black/5 border border-transparent group-hover:bg-black/10 transition-all">
+                                        <MapPin className="w-5 h-5" />
+                                    </div>
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold">Location</span>
+                                        <span className="text-base tracking-wide font-bold">{photo.location}</span>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col items-start">
-                                    <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold">Location</span>
-                                    <span className="text-base tracking-wide font-bold">{photo.location}</span>
-                                </div>
+                                {photo.latitude && photo.longitude && (
+                                    <div className="w-full h-32 rounded-xl overflow-hidden border border-black/5 bg-black/5 transition-all hover:border-black/10">
+                                        <iframe
+                                            width="100%"
+                                            height="100%"
+                                            style={{ border: 0, filter: 'grayscale(1) contrast(1.2) opacity(0.8)' }}
+                                            loading="lazy"
+                                            allowFullScreen
+                                            src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}&q=${photo.latitude},${photo.longitude}&zoom=15`}
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex items-center gap-4 text-black/60 group">
@@ -259,13 +272,13 @@ export default async function PhotoPage({ params }: Props) {
                             </div>
 
                             {photo.shotAt && (
-                                <div className="flex items-center gap-4 text-white/60 group">
-                                    <div className="p-2 rounded-lg bg-white/5 border border-white/5 group-hover:border-white/20 transition-all">
-                                        <Calendar className="w-4 h-4" />
+                                <div className="flex items-center gap-4 text-black/60 group">
+                                    <div className="p-2.5 rounded-full bg-black/5 border border-transparent group-hover:bg-black/10 transition-all">
+                                        <Calendar className="w-5 h-5" />
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] uppercase tracking-widest opacity-50 font-bold">Date</span>
-                                        <span className="text-sm tracking-wide">
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-[9px] uppercase tracking-widest opacity-50 font-bold">Date</span>
+                                        <span className="text-base tracking-wide font-bold">
                                             {new Date(photo.shotAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
                                         </span>
                                     </div>
@@ -335,60 +348,57 @@ export default async function PhotoPage({ params }: Props) {
                             <p className="text-[9px] uppercase tracking-[0.3em] text-black/40 font-bold">Feedback</p>
                             <LikeButton photoId={id} />
                         </div>
-
                     </div>
                 </div>
 
                 {/* Related Photos Section */}
-                {
-                    relatedPhotos.length > 0 && (
-                        <div className="mt-32 w-full max-w-6xl border-t border-white/10 pt-20">
-                            <div className="flex flex-col items-center mb-12">
-                                <Grid className="w-5 h-5 text-white/30 mb-4" />
-                                <h2 className="text-2xl font-serif font-light tracking-[0.2em] uppercase">Related Works</h2>
-                                <p className="text-[10px] text-white/40 tracking-[0.4em] uppercase mt-2">Discover more</p>
-                            </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                                {relatedPhotos.map((item: any) => (
-                                    <Link
-                                        key={item.objectID}
-                                        href={`/photo/${item.objectID}`}
-                                        className="group block space-y-3"
-                                    >
-                                        <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-white/5">
-                                            <Image
-                                                loader={cloudinaryLoader}
-                                                src={item.url}
-                                                alt={item.title}
-                                                fill
-                                                className="object-cover transition-transform duration-1000 group-hover:scale-110"
-                                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 15vw"
-                                            />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
-                                                <span className="text-[9px] uppercase tracking-[0.3em] font-bold border border-white/40 px-3 py-1.5 backdrop-blur-sm">View Work</span>
-                                            </div>
-                                        </div>
-                                        <div className="px-1 text-center md:text-left">
-                                            <p className="text-[9px] text-white/40 uppercase tracking-widest truncate">{item.category}</p>
-                                            <h3 className="text-[11px] font-medium tracking-wider truncate mt-1 group-hover:text-white transition-colors">{item.title}</h3>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
+                {relatedPhotos.length > 0 && (
+                    <div className="mt-32 w-full max-w-6xl border-t border-black/5 pt-20">
+                        <div className="flex flex-col items-center mb-12">
+                            <Grid className="w-5 h-5 text-black/30 mb-4" />
+                            <h2 className="text-2xl font-black tracking-[0.2em] uppercase">Related Works</h2>
+                            <p className="text-[10px] text-black/40 tracking-[0.4em] uppercase mt-2">Discover more</p>
                         </div>
-                    )
-                }
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                            {relatedPhotos.map((item: any) => (
+                                <Link
+                                    key={item.objectID}
+                                    href={`/photo/${item.objectID}`}
+                                    className="group block space-y-3"
+                                >
+                                    <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-gray-100 shadow-lg">
+                                        <Image
+                                            loader={cloudinaryLoader as any}
+                                            src={item.url}
+                                            alt={item.title}
+                                            fill
+                                            className="object-cover transition-transform duration-1000 group-hover:scale-110"
+                                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 15vw"
+                                        />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
+                                            <span className="text-[9px] uppercase tracking-[0.3em] font-bold border border-white/40 px-3 py-1.5 backdrop-blur-sm text-white rounded-full">View Work</span>
+                                        </div>
+                                    </div>
+                                    <div className="px-1 text-center md:text-left">
+                                        <p className="text-[9px] text-black/40 uppercase tracking-widest truncate">{item.category}</p>
+                                        <h3 className="text-[11px] font-bold tracking-wider truncate mt-1 group-hover:text-blue-600 transition-colors uppercase">{item.title}</h3>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div className="mt-24 pb-12">
                     <Link
                         href="/portfolio"
-                        className="text-[10px] uppercase tracking-[0.4em] text-white/30 hover:text-white transition-colors border border-white/10 px-8 py-4 rounded-full hover:bg-white/5"
+                        className="text-[10px] uppercase tracking-[0.4em] text-black/30 hover:text-black transition-colors border border-black/10 px-8 py-4 rounded-full hover:bg-black/5 font-bold"
                     >
                         Explore All Works
                     </Link>
                 </div>
-            </main >
-        </div >
+            </main>
+        </div>
     );
 }
