@@ -513,9 +513,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                     setFormData(prev => ({
                                                         ...prev,
                                                         latitude: coords.lat,
-                                                        longitude: coords.lng
+                                                        longitude: coords.lng,
+                                                        location: coords.displayName || prev.location
                                                     }));
-                                                    alert(`位置情報を取得しました: ${coords.lat}, ${coords.lng}`);
                                                 } else {
                                                     alert('位置情報が見つかりませんでした。別の言葉で試してみてください。');
                                                 }
@@ -524,7 +524,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                 alert('検索中にエラーが発生しました。');
                                             }
                                         }}
-                                        className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold transition-all"
+                                        className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-lg text-xs font-bold transition-all border border-blue-100"
                                     >
                                         検索
                                     </button>
@@ -559,7 +559,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                             width="100%"
                                             height="100%"
                                             frameBorder="0"
-                                            src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}&q=${formData.latitude},${formData.longitude}&zoom=15`}
+                                            src={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
+                                                ? `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${formData.latitude},${formData.longitude}&zoom=15`
+                                                : `https://www.openstreetmap.org/export/embed.html?bbox=${formData.longitude - 0.005},${formData.latitude - 0.005},${formData.longitude + 0.005},${formData.latitude + 0.005}&layer=mapnik&marker=${formData.latitude},${formData.longitude}`}
                                             className="grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500"
                                         />
                                         <div className="absolute inset-0 pointer-events-none border-2 border-transparent group-hover:border-blue-500/20 transition-all rounded-xl" />

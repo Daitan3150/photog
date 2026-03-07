@@ -20,7 +20,7 @@ export function parseManualGPS(input: string): { lat: number; lng: number } | nu
     return null;
 }
 
-export async function getCoordinates(locationName: string): Promise<{ lat: number; lng: number } | null> {
+export async function getCoordinates(locationName: string): Promise<{ lat: number; lng: number; displayName?: string } | null> {
     if (!locationName || locationName.trim() === '') return null;
 
     // Check if it's already a manual GPS coordinate
@@ -49,7 +49,8 @@ export async function getCoordinates(locationName: string): Promise<{ lat: numbe
         if (data && data.length > 0) {
             return {
                 lat: parseFloat(data[0].lat),
-                lng: parseFloat(data[0].lon)
+                lng: parseFloat(data[0].lon),
+                displayName: data[0].display_name
             };
         }
 
