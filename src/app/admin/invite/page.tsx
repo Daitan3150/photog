@@ -5,6 +5,7 @@ import { createInvitationCode, getInvitationCodes, deleteInvitationCode } from '
 import { motion, AnimatePresence } from 'framer-motion';
 import { Copy, Check, Sparkles, RefreshCw, ArrowRight, Trash2 } from 'lucide-react';
 import IssuanceMascot from '@/components/admin/IssuanceMascot';
+import { useAuth } from '@/components/admin/AuthProvider';
 
 type Invitation = {
     id: string;
@@ -21,6 +22,7 @@ export default function InvitePage() {
     const [lastIssuedCode, setLastIssuedCode] = useState<string | undefined>();
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [isShaking, setIsShaking] = useState(false);
+    const { user } = useAuth();
 
     useEffect(() => {
         loadInvitations();
@@ -73,12 +75,19 @@ export default function InvitePage() {
 
     const handleDelete = async (id: string) => {
         if (!confirm('この招待コードを削除してもよろしいですか？')) return;
+        if (!user) return;
 
-        const result = await deleteInvitationCode(id);
-        if (result.success) {
-            await loadInvitations();
-        } else {
-            alert('削除に失敗しました: ' + result.error);
+        try {
+            const idToken = await user.getIdToken();
+            const result = await deleteInvitationCode(id, idToken);
+            if (result.success) {
+                await loadInvitations();
+            } else {
+                alert('削除に失敗しました: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert('削除エラーが発生しました。');
         }
     };
 

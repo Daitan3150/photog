@@ -9,6 +9,9 @@ interface CreateInvitationResult {
     error?: string;
 }
 
+// Authorized Super Admin Emails
+const SUPER_ADMIN_EMAILS = ['daitan10618@icloud.com', 'daitan10618@gmail.com', 'new.sasuke.sakura@gmail.com'];
+
 export async function createInvitationCode(): Promise<CreateInvitationResult> {
     try {
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
@@ -71,9 +74,17 @@ export async function checkInvitationCode(code: string) {
     }
 }
 
-export async function deleteInvitationCode(id: string) {
+export async function deleteInvitationCode(id: string, idToken: string) {
     try {
-        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const { getAdminFirestore, getAdminAuth } = await import('@/lib/firebaseAdmin');
+
+        // Authorization check
+        const auth = getAdminAuth();
+        const decodedToken = await auth.verifyIdToken(idToken);
+        if (!SUPER_ADMIN_EMAILS.includes(decodedToken.email || '')) {
+            return { success: false, error: '権限がありません。最上位管理者のみ実行可能です。' };
+        }
+
         const db = getAdminFirestore();
         const docRef = db.collection('invitation_codes').doc(id);
         const doc = await docRef.get();
@@ -82,7 +93,7 @@ export async function deleteInvitationCode(id: string) {
             return { success: false, error: '招待コードが見つかりません。' };
         }
 
-        const data = doc.data();
+        const data: any = doc.data();
         if (data?.isUsed) {
             return { success: false, error: '既に使用されたコードは削除できません。' };
         }
@@ -91,6 +102,42 @@ export async function deleteInvitationCode(id: string) {
         return { success: true };
     } catch (error: any) {
         console.error('Error deleting invitation code:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * [最高管理者限定] ユーザーの削除
+ */
+export async function removeUser(uid: string, idToken: string) {
+    try {
+        const { getAdminAuth, getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const auth = getAdminAuth();
+
+        // Authorization check
+        const decodedToken = await auth.verifyIdToken(idToken);
+        if (!SUPER_ADMIN_EMAILS.includes(decodedToken.email || '')) {
+            return { success: false, error: '権限がありません。最上位管理者のみ実行可能です。' };
+        }
+
+        if (uid === decodedToken.uid) {
+            return { success: false, error: '自分自身を削除することはできません。' };
+        }
+
+        // 1. Delete from Firebase Auth
+        await auth.deleteUser(uid);
+
+        // 2. Delete from Firestore 'users'
+        const db = getAdminFirestore();
+        await db.collection('users').doc(uid).delete();
+
+        // 3. Mark photos as anonymous or delete? (Usually safer to anonymize or keep for history)
+        // For now, we just leave them or you can add logic to delete them if needed.
+
+        console.log(`[Admin Action] User ${uid} removed by ${decodedToken.email}`);
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error removing user:', error);
         return { success: false, error: error.message };
     }
 }
