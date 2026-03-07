@@ -193,7 +193,9 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                                     const uploaderLabel = photo.uploaderName?.includes('@')
                                                         ? photo.uploaderName.split('@')[0]
                                                         : photo.uploaderName;
-                                                    const displayAttributionName = photo.subjectName || uploaderLabel || 'Member';
+
+                                                    // 【修正】投稿者名を最優先にする
+                                                    const displayAttributionName = uploaderLabel || photo.subjectName || 'Member';
                                                     const initial = displayAttributionName.charAt(0).toUpperCase();
 
                                                     return (
