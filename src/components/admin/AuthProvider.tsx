@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (fbUser: any) => {
             setUser(fbUser);
             if (fbUser) {
                 // Try checking cache immediately for faster rendering

@@ -276,7 +276,8 @@ export default function InvitePage() {
                 </div>
             </div>
 
-            <style jsx global>{`
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;
                 }
@@ -290,7 +291,7 @@ export default function InvitePage() {
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
                     background: #E5E7EB;
                 }
-            `}</style>
+            ` }} />
         </motion.div>
     );
 }

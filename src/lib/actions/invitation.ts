@@ -37,7 +37,7 @@ export async function getInvitationCodes() {
             .orderBy('createdAt', 'desc')
             .get();
 
-        return snapshot.docs.map(doc => ({
+        return snapshot.docs.map((doc: any) => ({
             id: doc.id,
             ...doc.data()
         })) as { id: string; code: string; isUsed: boolean; createdAt: string; usedBy?: string }[];
