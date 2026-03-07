@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, Suspense } from 'react';
 import { registerWithInvitation } from '@/lib/actions/register';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Lock, Ticket, Camera, Send, X, Instagram, Info } from 'lucide-react';
 import InvitationMascot from '@/components/mascot/InvitationMascot';
 
-export default function RegisterPage() {
+function RegisterForm() {
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -258,5 +258,21 @@ export default function RegisterPage() {
                 </motion.div>
             </section>
         </main>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-8 h-8 border-2 border-pink-200 border-t-pink-500 rounded-full"
+                />
+            </div>
+        }>
+            <RegisterForm />
+        </Suspense>
     );
 }
