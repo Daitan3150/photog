@@ -140,15 +140,19 @@ export async function removeUser(uid: string, idToken: string) {
 
         if (!userPhotos.empty) {
             const batch = db.batch();
-            userPhotos.docs.forEach(doc => {
+            const { syncPhotoToAlgolia } = await import('../algolia');
+
+            for (const doc of userPhotos.docs) {
                 batch.update(doc.ref, {
                     categoryId: 'archived',
                     uploaderId: '__DELETED_USER__', // Mark as orphaned
                     updatedAt: new Date()
                 });
-            });
+                // Remove from Algolia
+                await syncPhotoToAlgolia({ id: doc.id, categoryId: 'archived' });
+            }
             await batch.commit();
-            console.log(`[Admin Action] Moved ${userPhotos.size} photos of deleted user ${uid} to archived.`);
+            console.log(`[Admin Action] Moved ${userPhotos.size} photos of deleted user ${uid} to archived and synced with Algolia.`);
         }
 
         revalidatePath('/admin/users');

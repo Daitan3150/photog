@@ -56,10 +56,10 @@ export async function syncPhotoToAlgolia(
     try {
         const client = getIndexClient();
 
-        if (action === 'delete') {
+        if (action === 'delete' || photo.category === 'archived' || photo.categoryId === 'archived') {
             await client.deleteObject({
                 indexName: INDEX_NAME,
-                objectID: photo.id
+                objectID: photo.id || photo.objectID
             });
             return true;
         }
@@ -112,7 +112,7 @@ export async function getRelatedPhotos(params: {
 
     try {
         const client = getSearchClient();
-        const filters = `NOT objectID:${photoId}`;
+        const filters = `NOT objectID:${photoId} AND NOT category:archived`;
         const optionalFilters = [];
         if (category) optionalFilters.push(`category:${category}`);
         tags.forEach(tag => optionalFilters.push(`tags:${tag}`));
