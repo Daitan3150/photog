@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { getEmailHint, requestPasswordResetServer } from '@/lib/actions/auth-recovery';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, Mail, Key, HelpCircle, ArrowLeft, Send, CheckCircle2 } from 'lucide-react';
@@ -31,14 +33,25 @@ export default function AdminHelpPage() {
         e.preventDefault();
         setLoading(true);
         setError('');
-        const result = await requestPasswordResetServer(input);
-        if (result.success) {
-            setSuccessMessage(result.method === 'email'
-                ? '再設定メールを送信しました。メールボックスを確認してください。'
-                : 'リクエストを受け付けました。管理者に連絡してください。');
+        try {
+            await sendPasswordResetEmail(auth, input);
+            setSuccessMessage('再設定メールを送信しました。メールボックスを確認してください。');
             setStep('success');
-        } else {
-            setError(result.error || 'エラーが発生しました。');
+        } catch (fbErr: any) {
+            console.error('Firebase Reset failed, fallback to server:', fbErr);
+            const result = await requestPasswordResetServer(input);
+            if (result.success) {
+                setSuccessMessage(result.method === 'email'
+                    ? '再設定メールを送信しました。メールボックスを確認してください。'
+                    : 'リクエストを受け付けました。管理者に連絡してください。');
+                setStep('success');
+            } else {
+                if (result.error?.includes('verify a domain')) {
+                    setError('メールシステム設定エラー: テスト用メールアドレスにしか送信できない状態です（Resendのドメイン未承認）。Firebase設定またはResendドメイン設定をご確認ください。');
+                } else {
+                    setError(result.error || 'エラーが発生しました。');
+                }
+            }
         }
         setLoading(false);
     };

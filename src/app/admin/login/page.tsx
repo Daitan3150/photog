@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithCustomToken, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUserRole } from '@/lib/firebase/user';
 import { emergencySignIn } from '@/lib/actions/auth-recovery';
@@ -62,19 +62,32 @@ export default function AdminLoginPage() {
         setSuccessMessage(null);
 
         try {
-            const { requestPasswordResetServer } = await import('@/lib/actions/auth-recovery');
-            const result = await requestPasswordResetServer(resetEmail);
+            // First, try Firebase's built-in reset email function
+            await sendPasswordResetEmail(auth, resetEmail);
+            setSuccessMessage('パスワード再設定メールを送信しました。メールボックスを確認してください。');
+        } catch (fbErr: any) {
+            console.error('Firebase Auth Reset failed, attempting server fallback:', fbErr);
+            // Fallback to server action (Resend) if Firebase client auth fails
+            try {
+                const { requestPasswordResetServer } = await import('@/lib/actions/auth-recovery');
+                const result = await requestPasswordResetServer(resetEmail);
 
-            if (result.success) {
-                setSuccessMessage('パスワード再設定メールを送信しました。メールボックスを確認してください。');
-                if (result.method === 'debug') {
-                    setError('注意: APIキー未設定のためサーバーログを確認してください。');
+                if (result.success) {
+                    setSuccessMessage('パスワード再設定メールを送信しました（サーバー経由）。メールボックスを確認してください。');
+                    if (result.method === 'debug') {
+                        setError('注意: APIキー未設定のためサーバーログを確認してください。');
+                    }
+                } else {
+                    // if it fails and it's from Resend's domain error, we can catch that.
+                    if (result.error?.includes('verify a domain')) {
+                        setError('メールシステム設定エラー: テスト用メールアドレスにしか送信できない状態です（Resendのドメイン未承認）。Firebase設定またはResendドメイン設定をご確認ください。');
+                    } else {
+                        setError(result.error || '再設定のリクエストに失敗しました。');
+                    }
                 }
-            } else {
-                setError(result.error || '再設定のリクエストに失敗しました。');
+            } catch (err: any) {
+                setError('システムエラーが発生しました。時間を置いて再度お試しください。');
             }
-        } catch (err: any) {
-            setError('システムエラーが発生しました。時間を置いて再度お試しください。');
         } finally {
             setLoading(false);
         }
