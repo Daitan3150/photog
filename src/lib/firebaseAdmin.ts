@@ -68,7 +68,12 @@ export function getAdminFirestore() {
 
     const db = admin.firestore(app);
     // 🔥 CRITICAL: Prevent "Cannot use undefined as a Firestore value" errors
-    db.settings({ ignoreUndefinedProperties: true });
+    // Settings can only be applied once per session.
+    try {
+        db.settings({ ignoreUndefinedProperties: true });
+    } catch (e) {
+        // Settings already applied or instance already used, ignore
+    }
     return db;
 }
 

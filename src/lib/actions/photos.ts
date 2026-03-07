@@ -349,7 +349,7 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
                 aspectRatio: data.aspectRatio || 1.5,
                 tags: data.tags || [],
                 exif: safeExif,
-                shotAt: null, // 全て「なし」に固定
+                shotAt: serializeData(data.shotAt),
                 createdAt: serializeData(data.createdAt) || new Date().toISOString(),
                 updatedAt: serializeData(data.updatedAt) || new Date().toISOString(),
             };
