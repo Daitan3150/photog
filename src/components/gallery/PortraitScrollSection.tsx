@@ -55,9 +55,12 @@ export default function PortraitScrollSection({ modelName, photos }: PortraitScr
 
             {/* Horizontal Scroll Container */}
             <div className="relative group/container">
+                {/* Fade Edges */}
+                <div className="absolute inset-y-0 left-0 w-12 md:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+                <div className="absolute inset-y-0 right-0 w-12 md:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
                 <div
-                    ref={containerRef}
-                    className="flex overflow-x-auto pb-12 gap-8 md:gap-12 px-6 md:px-0 no-scrollbar snap-x snap-mandatory scroll-smooth cursor-grab active:cursor-grabbing"
+                    className="flex overflow-x-auto pb-12 gap-8 md:gap-12 px-12 md:px-0 no-scrollbar snap-x snap-mandatory scroll-smooth cursor-grab active:cursor-grabbing"
                 >
                     {photos.map((photo, index) => (
                         <PortraitPhotoItem
@@ -66,7 +69,6 @@ export default function PortraitScrollSection({ modelName, photos }: PortraitScr
                             index={index}
                             searchParams={searchParams}
                             modelName={modelName}
-                            containerRef={containerRef}
                         />
                     ))}
 
@@ -98,30 +100,18 @@ export default function PortraitScrollSection({ modelName, photos }: PortraitScr
     );
 }
 
-function PortraitPhotoItem({ photo, index, searchParams, modelName, containerRef }: {
+function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
     photo: Photo,
     index: number,
     searchParams: any,
-    modelName: string,
-    containerRef: React.RefObject<HTMLDivElement | null>
+    modelName: string
 }) {
-    const itemRef = useRef<HTMLDivElement>(null);
-    const { scrollXProgress } = useScroll({
-        target: itemRef,
-        container: containerRef,
-        axis: "x",
-        offset: ["start end", "end start"]
-    });
-
-    // 儚く消えるアニメーション: スクロール位置に応じて透明度とスケールを変化
-    // [0, 0.4, 0.6, 1] -> 入ってきて、中央付近で1になり、出ていくときに0になる
-    const opacity = useTransform(scrollXProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0]);
-    const scale = useTransform(scrollXProgress, [0, 0.3, 0.7, 1], [0.95, 1, 1, 0.95]);
-
     return (
         <motion.div
-            ref={itemRef}
-            style={{ opacity, scale }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.1 }}
+            transition={{ duration: 1, delay: index * 0.05, ease: "easeOut" }}
             className="flex-shrink-0 w-[85vw] md:w-[600px] snap-center first:ml-0"
         >
             <Link
@@ -135,14 +125,14 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName, containerRef
                     fill
                     className="object-cover transition-transform duration-[2s] ease-out group-hover/item:scale-105"
                     sizes="(max-width: 768px) 85vw, 600px"
-                    priority={index === 0}
+                    priority={index < 2}
                 />
 
                 {/* Soft Overlay for Hover */}
                 <div className="absolute inset-0 bg-neutral-900/10 opacity-0 group-hover/item:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
                 {/* Uploader Mini-icon & Name at Bottom-Right on Hover (Desktop) / Constant (Mobile) */}
-                <div className="absolute bottom-0 right-0 left-0 p-6 md:p-8 flex items-end justify-between transition-all duration-500 md:translate-y-4 md:opacity-0 group-hover/item:translate-y-0 group-hover/item:opacity-100">
+                <div className="absolute bottom-0 right-0 left-0 p-6 md:p-8 flex items-end justify-between transition-all duration-500 md:translate-y-4 md:opacity-0 group-hover/item:translate-y-0 group-hover/item:opacity-100 z-10">
                     <div className="flex flex-col gap-1">
                         <p className="text-white text-[10px] md:text-xs font-serif tracking-[0.2em] uppercase drop-shadow-md">
                             {photo.title || "Untitled"}
@@ -150,7 +140,7 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName, containerRef
                     </div>
 
                     <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-2 rounded-full border border-white/20 shadow-lg">
-                        <span className="text-white text-[9px] md:text-[10px] font-bold tracking-wider leading-none">
+                        <span className="text-white text-[9px] md:text-[10px] font-bold tracking-wider leading-none text-white">
                             {photo.uploaderName || "Creator"}
                         </span>
                         <div className="relative w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border border-white/40 bg-white/10 shrink-0">
