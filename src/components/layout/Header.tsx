@@ -161,7 +161,7 @@ export default function Header() {
 
     const navItems = [
         { name: t.nav.home === 'ホーム' ? 'Portfolio' : 'Portfolio', href: "/portfolio" },
-        { name: 'Blog', href: "/blog" },
+        // { name: 'Blog', href: "/blog" }, // Temporarily disabled
         { name: t.about.title, href: "/about" },
         { name: t.hero.contact, href: "/contact" },
     ];

@@ -103,6 +103,7 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                         {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">写真管理</span>}
                     </Link>
 
+                    {/* Temporarily disabled Blog feature
                     <Link
                         href="/admin/blog"
                         className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/blog')
@@ -113,6 +114,7 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                         <FileText size={20} className={pathname.startsWith('/admin/blog') ? '' : 'text-slate-400 group-hover:text-white'} />
                         {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">ブログ管理</span>}
                     </Link>
+                    */}
 
                     {/* Admin Only Menus */}
                     {isAdmin && (
