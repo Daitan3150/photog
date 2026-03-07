@@ -1,11 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import cloudinaryLoader from "@/lib/cloudinary-loader";
 import { User, ChevronRight } from "lucide-react";
-import { useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRef } from "react";
 
 interface Photo {
     id: string;
@@ -24,89 +25,145 @@ interface PortraitScrollSectionProps {
 
 export default function PortraitScrollSection({ modelName, photos }: PortraitScrollSectionProps) {
     const searchParams = useSearchParams();
-    const pathname = usePathname();
-
-    const uploaderPhoto = photos[0]?.uploaderPhotoURL;
-    const uploaderName = photos[0]?.uploaderName;
+    const containerRef = useRef<HTMLDivElement>(null);
 
     return (
-        <section className="mb-20 last:mb-0">
-            {/* Model Header */}
-            <div className="flex items-center justify-between mb-6 px-4 md:px-0">
-                <div className="flex items-center gap-4">
-                    <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border-2 border-gray-100 bg-gray-50 flex-shrink-0 shadow-sm">
-                        {uploaderPhoto ? (
-                            <img
-                                src={uploaderPhoto}
-                                alt={uploaderName || modelName}
-                                className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-neutral-100 text-neutral-400">
-                                <User size={24} />
-                            </div>
-                        )}
-                    </div>
-                    <div>
-                        <h2 className="text-xl md:text-2xl font-serif tracking-[0.1em] text-neutral-900">
+        <section className="mb-32 last:mb-0 overflow-hidden">
+            {/* Model Header - Elegant and Premium */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 px-6 md:px-0 gap-4">
+                <div className="relative">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                    >
+                        <span className="text-[10px] md:text-xs text-neutral-400 uppercase tracking-[0.5em] block mb-2 font-light">
+                            Featured Model
+                        </span>
+                        <h2 className="text-3xl md:text-5xl font-serif tracking-[0.05em] text-neutral-900 lowercase italic first-letter:uppercase leading-none">
                             {modelName}
                         </h2>
-                    </div>
+                        <div className="w-12 h-[1px] bg-neutral-900 mt-4 opacity-20" />
+                    </motion.div>
                 </div>
 
-                <div className="hidden md:flex items-center gap-2 text-neutral-300 text-[10px] uppercase tracking-widest font-bold">
-                    Scroll to explore <ChevronRight size={14} className="animate-pulse" />
+                <div className="flex items-center gap-3 text-neutral-300 text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-medium opacity-60">
+                    Slide to view gallery <ChevronRight size={14} className="animate-pulse" />
                 </div>
             </div>
 
             {/* Horizontal Scroll Container */}
-            <div className="relative group">
-                <div className="flex overflow-x-auto pb-8 gap-4 px-4 md:px-0 no-scrollbar snap-x snap-mandatory scroll-smooth">
+            <div className="relative group/container" ref={containerRef}>
+                <div className="flex overflow-x-auto pb-12 gap-8 md:gap-12 px-6 md:px-0 no-scrollbar snap-x snap-mandatory scroll-smooth cursor-grab active:cursor-grabbing">
                     {photos.map((photo, index) => (
-                        <motion.div
+                        <PortraitPhotoItem
                             key={photo.id}
-                            initial={{ opacity: 0, x: 20 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6, delay: index * 0.1 }}
-                            className="flex-shrink-0 w-[280px] md:w-[400px] snap-start"
-                        >
-                            <Link
-                                href={`/portfolio?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), img: photo.id }).toString()}`}
-                                className="block relative aspect-[2/3] overflow-hidden rounded-sm shadow-md group/item"
-                            >
-                                <Image
-                                    loader={cloudinaryLoader}
-                                    src={photo.url}
-                                    alt={photo.title || modelName}
-                                    fill
-                                    className="object-cover transition-transform duration-[1.5s] ease-out group-hover/item:scale-105"
-                                    sizes="(max-width: 768px) 280px, 400px"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
-                                    <p className="text-white text-xs font-serif tracking-widest uppercase truncate">
-                                        {photo.title || 'Untitled'}
-                                    </p>
-                                </div>
-                            </Link>
-                        </motion.div>
+                            photo={photo}
+                            index={index}
+                            searchParams={searchParams}
+                            modelName={modelName}
+                        />
                     ))}
 
-                    {/* End Spacer */}
-                    <div className="flex-shrink-0 w-8 md:w-20" />
+                    {/* End Spacer to allow final photo to be centered or well-aligned */}
+                    <div className="flex-shrink-0 w-20 md:w-32" />
                 </div>
 
-                {/* Scroll Indicators (Custom Styling) */}
-                <style jsx global>{`
-                    .no-scrollbar::-webkit-scrollbar {
-                        display: none;
-                    }
-                    .no-scrollbar {
-                        -ms-overflow-style: none;
-                        scrollbar-width: none;
-                    }
-                `}</style>
+                {/* Scroll Indicator line at bottom */}
+                <div className="absolute bottom-4 left-6 md:left-0 right-6 md:right-0 h-[1px] bg-neutral-100 overflow-hidden">
+                    <motion.div
+                        className="h-full bg-neutral-400 w-full origin-left"
+                        initial={{ scaleX: 0 }}
+                        whileInView={{ scaleX: 1 }}
+                        transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
+                </div>
             </div>
+
+            <style jsx global>{`
+                .no-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .no-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+            `}</style>
         </section>
+    );
+}
+
+function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
+    photo: Photo,
+    index: number,
+    searchParams: any,
+    modelName: string
+}) {
+    const itemRef = useRef<HTMLDivElement>(null);
+    const { scrollXProgress } = useScroll({
+        target: itemRef,
+        offset: ["start end", "end start"]
+    });
+
+    // 儚く消えるアニメーション: スクロール位置に応じて透明度とスケールを変化
+    const opacity = useTransform(scrollXProgress, [0, 0.4, 0.6, 1], [0, 1, 1, 0]);
+    const scale = useTransform(scrollXProgress, [0, 0.4, 0.6, 1], [0.95, 1, 1, 0.95]);
+
+    return (
+        <motion.div
+            ref={itemRef}
+            style={{ opacity, scale }}
+            className="flex-shrink-0 w-[85vw] md:w-[600px] snap-center first:ml-0"
+        >
+            <Link
+                href={`/portfolio?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), img: photo.id }).toString()}`}
+                className="block relative aspect-[2/3] md:aspect-[4/5] overflow-hidden rounded-sm shadow-[0_20px_50px_rgba(0,0,0,0.1)] group/item bg-neutral-50"
+            >
+                <Image
+                    loader={cloudinaryLoader}
+                    src={photo.url}
+                    alt={photo.title || modelName}
+                    fill
+                    className="object-cover transition-transform duration-[2s] ease-out group-hover/item:scale-105"
+                    sizes="(max-width: 768px) 85vw, 600px"
+                    priority={index === 0}
+                />
+
+                {/* Soft Overlay for Hover */}
+                <div className="absolute inset-0 bg-neutral-900/10 opacity-0 group-hover/item:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+                {/* Uploader Mini-icon & Name at Bottom-Right on Hover */}
+                <div className="absolute bottom-0 right-0 left-0 p-6 md:p-8 flex items-end justify-between transition-all duration-500 translate-y-4 opacity-0 group-hover/item:translate-y-0 group-hover/item:opacity-100">
+                    <div className="flex flex-col gap-1">
+                        <p className="text-white text-[10px] md:text-xs font-serif tracking-[0.2em] uppercase">
+                            {photo.title || "Untitled"}
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 bg-black/20 backdrop-blur-md px-3 py-2 rounded-full border border-white/20">
+                        <span className="text-white text-[9px] md:text-[10px] font-bold tracking-wider leading-none">
+                            {photo.uploaderName || "Creator"}
+                        </span>
+                        <div className="relative w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border border-white/40 bg-white/10 shrink-0">
+                            {photo.uploaderPhotoURL ? (
+                                <img
+                                    src={photo.uploaderPhotoURL}
+                                    alt={photo.uploaderName}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[8px] text-white/50">
+                                    <User size={12} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Aesthetic Corner Border on Hover */}
+                <div className="absolute top-6 right-6 w-8 h-8 border-t border-r border-white/40 opacity-0 group-hover/item:opacity-100 transition-all duration-700 scale-90 group-hover/item:scale-100" />
+            </Link>
+        </motion.div>
     );
 }
