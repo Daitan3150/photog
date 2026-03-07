@@ -25,9 +25,12 @@ export function parseManualGPS(input: string): { lat: number; lng: number } | nu
  * Crucial for Japanese address searching on OSM/Nominatim.
  */
 function zenkakuToHankaku(str: string): string {
-    return str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => {
-        return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-    });
+    return str
+        .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => {
+            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+        })
+        .replace(/　/g, ' ')      // Zenkaku space
+        .replace(/[－ー]/g, '-');  // Zenkaku hyphens
 }
 
 export async function getCoordinates(locationName: string): Promise<{ lat: number; lng: number; displayName?: string } | null> {

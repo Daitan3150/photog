@@ -134,6 +134,10 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             if (coords) {
                 latitude = coords.lat;
                 longitude = coords.lng;
+                // If a clean address was found, use it for the location field
+                if (coords.displayName) {
+                    data.location = coords.displayName;
+                }
             }
         }
 
@@ -244,6 +248,10 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 if (coords) {
                     latitude = coords.lat;
                     longitude = coords.lng;
+                    // If a clean address was found, use it
+                    if (coords.displayName) {
+                        data.location = coords.displayName;
+                    }
                 }
             }
 
@@ -1116,6 +1124,9 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
             const coords = await getCoordinates(data.location || '');
             updates.latitude = coords ? coords.lat : null;
             updates.longitude = coords ? coords.lng : null;
+            if (coords?.displayName) {
+                updates.location = coords.displayName;
+            }
         }
 
         // Handle image replacement

@@ -319,31 +319,33 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                             {(photo.location || (photo.latitude && photo.longitude)) && (
                                 <div className="pt-2">
                                     <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-2">Location Map</p>
-                                    <div className="w-full h-40 rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50 relative pointer-events-auto">
+                                    <div className="w-full h-40 rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50 relative pointer-events-auto group">
                                         <iframe
                                             width="100%"
                                             height="100%"
                                             frameBorder="0"
-                                            style={{ border: 0 }}
-                                            src={photo.latitude && photo.longitude
-                                                ? `https://maps.google.com/maps?q=${photo.latitude},${photo.longitude}&z=17&t=k&output=embed`
-                                                : `https://maps.google.com/maps?q=${encodeURIComponent(photo.location)}&z=15&output=embed`
+                                            style={{ border: 0, filter: 'grayscale(0.5) contrast(1.1)' }}
+                                            src={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY && photo.latitude && photo.longitude
+                                                ? `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${photo.latitude},${photo.longitude}&zoom=15`
+                                                : photo.latitude && photo.longitude
+                                                    ? `https://www.openstreetmap.org/export/embed.html?bbox=${photo.longitude - 0.005},${photo.latitude - 0.005},${photo.longitude + 0.005},${photo.latitude + 0.005}&layer=mapnik&marker=${photo.latitude},${photo.longitude}`
+                                                    : `https://www.openstreetmap.org/export/embed.html?bbox=122.9,20.4,153.9,45.5&layer=mapnik&q=${encodeURIComponent(photo.location || '')}`
                                             }
                                             allowFullScreen
+                                            className="group-hover:grayscale-0 transition-opacity duration-500"
                                         ></iframe>
+                                        <a
+                                            href={photo.latitude && photo.longitude
+                                                ? `https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`
+                                                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(photo.location || '')}`
+                                            }
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[9px] font-bold text-gray-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            Google Mapsで開く
+                                        </a>
                                     </div>
-                                    <a
-                                        href={photo.latitude && photo.longitude
-                                            ? `https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`
-                                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(photo.location)}`
-                                        }
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[10px] text-gray-400 mt-2 flex items-center gap-1 hover:text-blue-500 transition-colors pointer-events-auto"
-                                    >
-                                        <MapPin size={10} />
-                                        <span>Open in Google Maps</span>
-                                    </a>
                                 </div>
                             )}
 
