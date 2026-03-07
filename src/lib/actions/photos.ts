@@ -372,8 +372,8 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
         }
 
         // 🔄 Fetch uploader profiles
-        const uploaderIds = Array.from(new Set(photos.map((p: any) => p.uploaderId).filter(Boolean)));
-        const missingIds = uploaderIds.filter(id => !userProfileCache.has(id));
+        const uploaderIds = Array.from(new Set(photos.map((p: any) => p.uploaderId).filter(Boolean))) as string[];
+        const missingIds = uploaderIds.filter((id: string) => !userProfileCache.has(id));
 
         if (missingIds.length > 0) {
             try {
@@ -847,8 +847,8 @@ export async function searchPhotos(query: string, options: { category?: string; 
             }
 
             // 🔄 一人一人の投稿者プロファイルを紐付け（N+1を避けるためキャッシュ活用 & 一括取得）
-            const uploaderIds = Array.from(new Set(photos.map(p => p.uploaderId).filter(Boolean)));
-            const missingIds = uploaderIds.filter(id => !userProfileCache.has(id));
+            const uploaderIds = Array.from(new Set(photos.map((p: any) => p.uploaderId).filter(Boolean))) as string[];
+            const missingIds = uploaderIds.filter((id: string) => !userProfileCache.has(id));
 
             if (missingIds.length > 0) {
                 try {
@@ -1272,8 +1272,8 @@ export async function getRecentPhotos(limit: number = 6) {
         }
 
         // 🔄 Fetch uploader profiles
-        const uploaderIds = Array.from(new Set(photosRaw.map(p => p.uploaderId).filter(Boolean)));
-        const missingIds = uploaderIds.filter(id => !userProfileCache.has(id));
+        const uploaderIds = Array.from(new Set(photosRaw.map((p: any) => (p as any).uploaderId).filter(Boolean))) as string[];
+        const missingIds = uploaderIds.filter((id: string) => !userProfileCache.has(id));
 
         if (missingIds.length > 0) {
             try {
