@@ -147,7 +147,7 @@ function ClaimInviteContent() {
                                 </div>
 
                                 <Link
-                                    href={`/register/form?code=${validCode}`}
+                                    href={`/register/terms?code=${validCode}`}
                                     className="block w-full bg-gray-900 text-white py-5 px-6 rounded-3xl font-bold text-lg shadow-xl hover:bg-black transition-all flex items-center justify-center gap-3"
                                 >
                                     このまま登録を続ける
