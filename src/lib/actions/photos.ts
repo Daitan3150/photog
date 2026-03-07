@@ -154,7 +154,7 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             categoryId: data.categoryId || null,
             displayMode: data.displayMode || 'title',
             focalPoint: data.focalPoint || null,
-            exif: data.exif || null,
+            exif: serializeData(data.exif),
             tags: data.tags || [],
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -263,7 +263,7 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 categoryId: data.categoryId || null,
                 displayMode: data.displayMode || 'title',
                 focalPoint: data.focalPoint || null,
-                exif: data.exif || null,
+                exif: serializeData(data.exif),
                 tags: data.tags || [],
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -1093,24 +1093,8 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
             }
         }
         if (data.exif !== undefined) {
-            // exifオブジェクト内のTimestamp風オブジェクトやDate文字列をクリーンアップ
-            const cleanExif: any = {};
-            for (const [key, value] of Object.entries(data.exif || {})) {
-                if (value === null || value === undefined) {
-                    cleanExif[key] = null;
-                } else if (typeof value === 'object' && value !== null && ('seconds' in value || '_seconds' in value || 'toDate' in value)) {
-                    // Timestamp風オブジェクトはISO文字列に変換
-                    try {
-                        const secs = (value as any).seconds || (value as any)._seconds;
-                        cleanExif[key] = typeof secs === 'number' ? new Date(secs * 1000).toISOString() : String(value);
-                    } catch {
-                        cleanExif[key] = String(value);
-                    }
-                } else {
-                    cleanExif[key] = value;
-                }
-            }
-            updates.exif = cleanExif;
+            // Use deep serialization to clean up undefined values, Timestamps, and nested objects
+            updates.exif = serializeData(data.exif);
         }
         if (data.exifRequest !== undefined) updates.exifRequest = data.exifRequest;
         if (data.tags !== undefined) updates.tags = data.tags;

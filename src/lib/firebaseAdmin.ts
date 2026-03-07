@@ -66,7 +66,10 @@ export function getAdminFirestore() {
         privateKey: process.env.FIREBASE_PRIVATE_KEY!,
     });
 
-    return admin.firestore(app);
+    const db = admin.firestore(app);
+    // 🔥 CRITICAL: Prevent "Cannot use undefined as a Firestore value" errors
+    db.settings({ ignoreUndefinedProperties: true });
+    return db;
 }
 
 export function getAdminAuth() {

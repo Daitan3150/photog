@@ -14,8 +14,11 @@
  * @returns A strictly serializable version of the input
  */
 export function serializeData(obj: any): any {
-    if (obj === null || obj === undefined) {
-        return obj;
+    if (obj === undefined) {
+        return null;
+    }
+    if (obj === null) {
+        return null;
     }
 
     // Handle primitive types
