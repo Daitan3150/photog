@@ -25,7 +25,29 @@ export async function getCoordinates(locationName: string): Promise<{ lat: numbe
 
     // Check if it's already a manual GPS coordinate
     const manual = parseManualGPS(locationName);
-    if (manual) return manual;
+    if (manual) {
+        try {
+            // Reverse geocode to get a clean address from coordinates
+            const url = `https://nominatim.openstreetmap.org/reverse?lat=${manual.lat}&lon=${manual.lng}&format=json&addressdetails=1`;
+            const res = await fetch(url, { headers: { 'User-Agent': 'NextPortfolio/1.0' } });
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.address) {
+                    const addr = data.address;
+                    let jpnAddr = '';
+                    if (addr.postcode) jpnAddr += `〒${addr.postcode} `;
+                    if (addr.province || addr.state) jpnAddr += (addr.province || addr.state);
+                    if (addr.city || addr.town || addr.village) jpnAddr += (addr.city || addr.town || addr.village);
+                    if (addr.suburb || addr.city_district) jpnAddr += (addr.suburb || addr.city_district);
+                    if (addr.neighbourhood) jpnAddr += addr.neighbourhood;
+                    if (addr.road) jpnAddr += addr.road;
+                    if (addr.house_number) jpnAddr += addr.house_number;
+                    return { ...manual, displayName: jpnAddr.trim() || data.display_name };
+                }
+            }
+        } catch (e) { console.error(e); }
+        return manual;
+    }
 
     try {
         // nominatim works best with structured queries. 

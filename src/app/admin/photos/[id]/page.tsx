@@ -500,8 +500,8 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                         type="text"
                                         value={formData.location}
                                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                        className="flex-1 border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="住所、建物名など"
+                                        className="flex-1 border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                                        placeholder="住所、建物名、または GPS(緯度,経度)"
                                     />
                                     <button
                                         type="button"
@@ -529,31 +529,52 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                         検索
                                     </button>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4 mt-3">
+                                <div className="grid grid-cols-2 gap-4 mt-3 relative">
                                     <div>
-                                        <p className="text-[10px] text-gray-400 mb-1">緯度 (Latitude)</p>
+                                        <p className="text-[10px] text-gray-400 mb-1 font-bold">緯度 (Latitude)</p>
                                         <input
                                             type="number"
                                             step="any"
-                                            value={formData.latitude || ''}
+                                            value={formData.latitude ?? ''}
                                             onChange={(e) => setFormData({ ...formData, latitude: e.target.value ? parseFloat(e.target.value) : null })}
-                                            className="w-full border-gray-100 border bg-gray-50/50 rounded-lg p-2 text-xs outline-none focus:ring-1 focus:ring-blue-300"
+                                            className="w-full border-gray-200 border bg-white rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                                             placeholder="35.6895"
                                         />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] text-gray-400 mb-1">経度 (Longitude)</p>
+                                        <p className="text-[10px] text-gray-400 mb-1 font-bold">経度 (Longitude)</p>
                                         <input
                                             type="number"
                                             step="any"
-                                            value={formData.longitude || ''}
+                                            value={formData.longitude ?? ''}
                                             onChange={(e) => setFormData({ ...formData, longitude: e.target.value ? parseFloat(e.target.value) : null })}
-                                            className="w-full border-gray-100 border bg-gray-50/50 rounded-lg p-2 text-xs outline-none focus:ring-1 focus:ring-blue-300"
+                                            className="w-full border-gray-200 border bg-white rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                                             placeholder="139.6917"
                                         />
                                     </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, latitude: null, longitude: null })}
+                                        className="absolute -right-2 top-0 bg-white border border-gray-200 rounded-full p-1 text-gray-400 hover:text-red-500 hover:border-red-200 shadow-sm transition-all"
+                                        title="座標をクリア"
+                                    >
+                                        <Tag size={12} className="rotate-45" />
+                                    </button>
                                 </div>
-                                {formData.latitude && formData.longitude && (
+
+                                <div className="mt-2 flex justify-between items-center px-1">
+                                    <p className="text-[10px] text-gray-400 italic">※ 直接入力も可能です</p>
+                                    <a
+                                        href="https://www.google.com/maps"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[10px] text-blue-500 hover:underline font-bold"
+                                    >
+                                        Google Mapで座標を探す ↗
+                                    </a>
+                                </div>
+
+                                {(formData.latitude !== null && formData.longitude !== null) && (
                                     <div className="mt-4 rounded-xl overflow-hidden border border-gray-100 bg-gray-50 h-48 relative group">
                                         <iframe
                                             width="100%"
