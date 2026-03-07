@@ -164,3 +164,52 @@ export async function removeUser(uid: string, idToken: string) {
         return { success: false, error: error.message };
     }
 }
+
+/**
+ * [ユーザー自身用] 退会（アカウント削除）
+ */
+export async function deleteMyAccount(idToken: string) {
+    try {
+        const { getAdminAuth, getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const auth = getAdminAuth();
+
+        // Verify user identity
+        const decodedToken = await auth.verifyIdToken(idToken);
+        const uid = decodedToken.uid;
+
+        const db = getAdminFirestore();
+
+        // 1. Move photos to 'archived' and sync with Algolia
+        const photosRef = db.collection('photos');
+        const userPhotos = await photosRef.where('uploaderId', '==', uid).get();
+
+        if (!userPhotos.empty) {
+            const batch = db.batch();
+            const { syncPhotoToAlgolia } = await import('../algolia');
+
+            for (const doc of userPhotos.docs) {
+                batch.update(doc.ref, {
+                    categoryId: 'archived',
+                    uploaderId: '__DELETED_USER_SELF__', // Mark as self-deleted
+                    updatedAt: new Date()
+                });
+                // Remove from Algolia
+                await syncPhotoToAlgolia({ id: doc.id, categoryId: 'archived' });
+            }
+            await batch.commit();
+        }
+
+        // 2. Delete from Firestore 'users'
+        await db.collection('users').doc(uid).delete();
+
+        // 3. Delete from Firebase Auth
+        await auth.deleteUser(uid);
+
+        console.log(`[User Action] User ${uid} (${decodedToken.email}) deleted their own account.`);
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error in self-deletion:', error);
+        return { success: false, error: error.message };
+    }
+}
+

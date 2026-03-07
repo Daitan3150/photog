@@ -143,6 +143,32 @@ export async function getAllSnsCandidates(): Promise<{ success: boolean; candida
     }
 }
 
+export async function updateMyProfile(data: { displayName?: string; photoURL?: string }, idToken: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { getAdminAuth, getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const auth = getAdminAuth();
+        const decodedToken = await auth.verifyIdToken(idToken);
+        const db = getAdminFirestore();
+
+        await db.collection('users').doc(decodedToken.uid).update({
+            ...(data.displayName ? { displayName: data.displayName } : {}),
+            ...(data.photoURL ? { photoURL: data.photoURL } : {}),
+            updatedAt: new Date().toISOString()
+        });
+
+        // Also update Firebase Auth profile for consistency
+        await auth.updateUser(decodedToken.uid, {
+            ...(data.displayName ? { displayName: data.displayName } : {}),
+            ...(data.photoURL ? { photoURL: data.photoURL } : {})
+        });
+
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error updating my profile:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 /**
  * 管理者が指定したユーザーのパスワードを強制変更するためのサーバーアクション。
  */

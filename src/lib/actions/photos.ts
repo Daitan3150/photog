@@ -724,6 +724,9 @@ const CATEGORY_MAP: Record<string, string> = {
     'archived': 'ARCHIVED',
 };
 
+// 🏛️ Cache for user profiles to avoid N+1 queries during photo fetch
+const userProfileCache = new Map<string, { displayName: string, photoURL: string }>();
+
 export async function searchPhotos(query: string, options: { category?: string; limit?: number } = {}) {
     const { category, limit = 50 } = options;
     try {
@@ -783,12 +786,38 @@ export async function searchPhotos(query: string, options: { category?: string; 
                 if (photos.length > limit) photos = photos.slice(0, limit);
             }
 
+            // 🔄 一人一人の投稿者プロファイルを紐付け（N+1を避けるためキャッシュ活用 & 一括取得）
+            const uploaderIds = Array.from(new Set(photos.map(p => p.uploaderId).filter(Boolean)));
+            const missingIds = uploaderIds.filter(id => !userProfileCache.has(id));
+
+            if (missingIds.length > 0) {
+                try {
+                    // split missingIds into chunks of 10 for 'in' query
+                    for (let i = 0; i < missingIds.length; i += 10) {
+                        const chunk = missingIds.slice(i, i + 10);
+                        const userDocs = await db.collection('users').where('__name__', 'in', chunk).get();
+                        userDocs.forEach((doc: any) => {
+                            const d = doc.data();
+                            userProfileCache.set(doc.id, {
+                                displayName: d.displayName || 'Anonymous',
+                                photoURL: d.photoURL || ''
+                            });
+                        });
+                    }
+                } catch (e) {
+                    console.error('[searchPhotos] Error fetching uploader profiles:', e);
+                }
+            }
+
             const results_data = photos.map((data: any) => {
                 const catId = String(data.categoryId || '');
+                const uploader = userProfileCache.get(data.uploaderId) || { displayName: '', photoURL: '' };
                 return {
                     ...data,
                     categoryId: catId,
                     category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
+                    uploaderName: uploader.displayName,
+                    uploaderPhotoURL: uploader.photoURL
                 };
             }).filter((p: any) =>
                 p.categoryId &&

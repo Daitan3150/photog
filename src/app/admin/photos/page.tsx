@@ -385,8 +385,8 @@ export default function PhotosPage() {
                             </div>
                             <div className="p-4">
                                 <div className="flex justify-between items-start mb-1">
-                                    <h3 className="font-bold text-lg truncate flex-1" title={photo.title || '見出し未設定'}>
-                                        {photo.title || <span className="text-gray-300 font-normal italic">見出し未設定</span>}
+                                    <h3 className="font-bold text-lg truncate flex-1" title={photo.title || photo.characterName || '見出し未設定'}>
+                                        {photo.title ? photo.title : photo.characterName ? <span className="text-gray-600 font-medium italic">{photo.characterName} <span className="text-xs text-gray-400 font-normal ml-1">(キャラクター名)</span></span> : <span className="text-gray-300 font-normal italic">見出し未設定</span>}
                                     </h3>
                                 </div>
                                 <div className="flex justify-between items-end">

@@ -33,6 +33,8 @@ interface Photo {
     displayMode?: 'title' | 'character';
     aspectRatio?: "portrait" | "landscape" | "square";
     href?: string;
+    uploaderName?: string;
+    uploaderPhotoURL?: string;
     exif?: {
         Model?: string;
         LensModel?: string;
@@ -179,11 +181,35 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                             )}
 
 
-                                            <h3 className="text-[11px] md:text-sm font-serif tracking-[0.1em] mt-2 border-t border-white/10 pt-2 line-clamp-1">
-                                                {photo.displayMode === 'character' && photo.characterName
-                                                    ? photo.characterName
-                                                    : (photo.title || '無題')}
-                                            </h3>
+                                            <div className="flex justify-between items-center mt-2 border-t border-white/10 pt-2 pb-1">
+                                                <h3 className="text-[11px] md:text-sm font-serif tracking-[0.1em] line-clamp-1">
+                                                    {photo.displayMode === 'character' && photo.characterName
+                                                        ? photo.characterName
+                                                        : (photo.title || '無題')}
+                                                </h3>
+
+                                                {/* Uploader Attribution (Producer Icon) */}
+                                                {photo.uploaderName && (
+                                                    <div className="flex items-center gap-1.5 ml-2 shrink-0 group/uploader" title={`Uploader: ${photo.uploaderName}`}>
+                                                        <div className="relative w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border border-white/40 bg-white/20">
+                                                            {photo.uploaderPhotoURL ? (
+                                                                <img
+                                                                    src={photo.uploaderPhotoURL}
+                                                                    alt={photo.uploaderName}
+                                                                    className="w-full h-auto object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-white/70">
+                                                                    {photo.uploaderName[0]}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-[8px] md:text-[9px] font-bold opacity-0 group-hover/uploader:opacity-100 transition-opacity whitespace-nowrap hidden md:inline">
+                                                            {photo.uploaderName}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </motion.div>
                                 </div>

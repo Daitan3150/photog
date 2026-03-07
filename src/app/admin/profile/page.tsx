@@ -322,6 +322,50 @@ export default function AdminProfilePage() {
                     </button>
                 </div>
 
+                {/* Account Withdrawal - Warning Section */}
+                {!isAdmin && (
+                    <div className="bg-red-50/50 p-8 rounded-2xl border border-red-100 flex flex-col mt-8">
+                        <div className="flex items-center gap-2 mb-4">
+                            <h2 className="text-xl font-bold text-red-600">退会手続き</h2>
+                            <span className="bg-red-100 text-red-600 text-[10px] px-2 py-0.5 rounded-full font-bold">CAUTION</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+                            アカウントを削除すると、ログインができなくなります。<br />
+                            また、あなたが投稿した写真は<strong>自動的に「アーカイブ（非公開）」</strong>に移動されます。
+                        </p>
+
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                if (confirm('本当に退会しますか？\nこの操作は取り消せません。投稿した写真はアーカイブに移動されます。')) {
+                                    try {
+                                        setSaving(true);
+                                        const { deleteMyAccount } = await import('@/lib/actions/invitation');
+                                        const idToken = await user.getIdToken();
+                                        const result = await deleteMyAccount(idToken);
+                                        if (result.success) {
+                                            alert('退会手続きが完了しました。ご利用ありがとうございました。');
+                                            // Force sign out from client side
+                                            const { getAuth, signOut } = await import('firebase/auth');
+                                            await signOut(getAuth());
+                                            window.location.href = '/';
+                                        } else {
+                                            alert('エラーが発生しました: ' + result.error);
+                                            setSaving(false);
+                                        }
+                                    } catch (e: any) {
+                                        alert('エラー: ' + e.message);
+                                        setSaving(false);
+                                    }
+                                }
+                            }}
+                            className="w-full sm:w-auto self-start px-6 py-3 border-2 border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-600 hover:text-white hover:border-red-600 transition-all active:scale-95"
+                        >
+                            アカウントを削除（退会）する
+                        </button>
+                    </div>
+                )}
+
                 <div className="flex items-center gap-6">
                     <button
                         type="submit"
