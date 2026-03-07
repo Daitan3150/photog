@@ -135,6 +135,8 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
         const photoId = photoRef.id;
         const photoDataToSave = {
             uploaderId,
+            uploaderEmail: decodedToken.email || null,
+            uploaderName: userData?.displayName || decodedToken.name || null,
             modelId, // Link photo to Model ID
             url: data.url,
             publicId: data.publicId,

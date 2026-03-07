@@ -12,21 +12,34 @@ export async function GET() {
         const adminName = siteProfile?.name || 'Daitan';
         const adminIcon = siteProfile?.imageUrl || '';
 
-        // Update all photos in the collection
-        const photoSnap = await db.collection('photos').get();
         const batch = db.batch();
+
+        // 1. Create/Update the Admin User explicitly
+        // We use the email as the Document ID for this specific manual fix if UID is unknown, 
+        // but typically it should be the Firebase UID. 
+        // For the fix, we will target the photo uploaderId to match this.
+        const userRef = db.collection('users').doc(adminEmail);
+        batch.set(userRef, {
+            email: adminEmail,
+            displayName: adminName,
+            photoURL: adminIcon,
+            role: 'admin',
+            updatedAt: new Date()
+        }, { merge: true });
+
+        // 2. Update all photos in the collection
+        const photoSnap = await db.collection('photos').get();
         let count = 0;
         photoSnap.forEach(doc => {
             batch.update(doc.ref, {
+                uploaderId: adminEmail, // Hard-link to our manual user doc
                 uploaderEmail: adminEmail,
                 uploaderName: adminName,
-                // Optional: set uploaderPhotoURL direct to the doc just in case uploaderProfile cache misses
                 uploaderPhotoURL: adminIcon
             });
             count++;
         });
 
-        // Also ensure user profile cache isn't stale - though we're doing a total doc update
         await batch.commit();
 
         // One-time cache purge (could be done in the app later but here's faster)
