@@ -31,8 +31,19 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
         limit: 100 // より多くの写真を表示可能に
     });
 
-    const filteredPhotos = allPhotos; // 既にサーバー側でフィルタリング済み
+    const filteredPhotos = allPhotos;
 
+    // ポートレートカテゴリーの場合のみ、モデル名（subjectName）ごとにグループ化する
+    const isPortrait = currentCategory === 'portrait';
+    const groupedPhotos: Record<string, typeof filteredPhotos> = {};
+
+    if (isPortrait) {
+        filteredPhotos.forEach(photo => {
+            const modelName = photo.subjectName || 'Unknown Model';
+            if (!groupedPhotos[modelName]) groupedPhotos[modelName] = [];
+            groupedPhotos[modelName].push(photo);
+        });
+    }
 
     return (
         <main className="min-h-screen pt-32 pb-20 bg-white">
@@ -44,7 +55,19 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
                 <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gray-200 border-t-black rounded-full animate-spin" /></div>}>
                     <div className="mt-12">
                         {filteredPhotos.length > 0 ? (
-                            <PhotoGrid photos={filteredPhotos} />
+                            isPortrait ? (
+                                <div className="space-y-24">
+                                    {Object.entries(groupedPhotos).map(([modelName, photos]) => (
+                                        <PortraitScrollSection
+                                            key={modelName}
+                                            modelName={modelName}
+                                            photos={photos}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <PhotoGrid photos={filteredPhotos} />
+                            )
                         ) : (
                             <EmptyPortfolio />
                         )}
@@ -54,3 +77,10 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
         </main>
     );
 }
+
+// 動的インポートを使用してクライアントコンポーネントを読み込む
+import dynamic from 'next/dynamic';
+const PortraitScrollSection = dynamic(() => import('@/components/gallery/PortraitScrollSection'), {
+    ssr: false,
+});
+
