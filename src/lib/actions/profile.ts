@@ -17,8 +17,10 @@ export async function updateProfile(data: Profile, idToken: string): Promise<Sav
         const email = decodedToken.email;
 
         // Super Admin Email Check (from environment variable for security)
-        const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'daitan10618@icloud.com';
-        if (email !== SUPER_ADMIN_EMAIL) {
+        const SUPER_ADMIN_EMAILS = ['daitan10618@icloud.com', 'daitan10618@gmail.com', 'new.sasuke.sakura@gmail.com'];
+        const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(email || '');
+
+        if (!isSuperAdmin) {
             return { success: false, error: 'Unauthorized: Admin access only' };
         }
 

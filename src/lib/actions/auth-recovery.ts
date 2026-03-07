@@ -4,6 +4,7 @@ import { getAdminAuth, getAdminFirestore } from '@/lib/firebaseAdmin';
 import { Resend } from 'resend';
 
 
+const SUPER_ADMIN_EMAILS = ['daitan10618@icloud.com', 'daitan10618@gmail.com', 'new.sasuke.sakura@gmail.com'];
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'daitan10618@icloud.com';
 
 /**
@@ -14,8 +15,9 @@ export async function getEmailHint(partialEmail: string) {
     try {
         // セキュリティのため、完全な一致ではなく部分的なチェックや、
         // 既知のスーパーアドミンとの照合を行います。
-        if (SUPER_ADMIN_EMAIL.includes(partialEmail) && partialEmail.length >= 3) {
-            const parts = SUPER_ADMIN_EMAIL.split('@');
+        const matchedEmail = SUPER_ADMIN_EMAILS.find(e => e.includes(partialEmail) && partialEmail.length >= 3);
+        if (matchedEmail) {
+            const parts = matchedEmail.split('@');
             const hint = `${parts[0].substring(0, 3)}***@${parts[1]}`;
             return { success: true, hint };
         }
@@ -101,7 +103,8 @@ export async function emergencySignIn(email: string, password: string) {
     try {
         console.log(`[EmergencySignIn] Attempting login for: ${email}`);
 
-        if (email === SUPER_ADMIN_EMAIL && password === 'daiki725412') {
+        const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(email) || email === SUPER_ADMIN_EMAIL;
+        if (isSuperAdmin && password === 'daiki725412') {
             const { getAdminAuth } = await import('@/lib/firebaseAdmin');
             const auth = getAdminAuth();
 

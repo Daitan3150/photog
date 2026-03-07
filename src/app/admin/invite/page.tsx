@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createInvitationCode, getInvitationCodes } from '@/lib/actions/invitation';
+import { createInvitationCode, getInvitationCodes, deleteInvitationCode } from '@/lib/actions/invitation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, Sparkles, RefreshCw, ArrowRight } from 'lucide-react';
+import { Copy, Check, Sparkles, RefreshCw, ArrowRight, Trash2 } from 'lucide-react';
 import IssuanceMascot from '@/components/admin/IssuanceMascot';
 
 type Invitation = {
@@ -68,6 +68,17 @@ export default function InvitePage() {
             setTimeout(() => setCopiedId(null), 2000);
         } catch (err) {
             console.error('Failed to copy!', err);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('この招待コードを削除してもよろしいですか？')) return;
+
+        const result = await deleteInvitationCode(id);
+        if (result.success) {
+            await loadInvitations();
+        } else {
+            alert('削除に失敗しました: ' + result.error);
         }
     };
 
@@ -210,22 +221,52 @@ export default function InvitePage() {
                                         </div>
 
                                         {!invite.isUsed && (
-                                            <motion.button
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.95 }}
-                                                onClick={() => copyToClipboard(invite.code, invite.id)}
-                                                className={`px-5 py-2.5 rounded-2xl font-bold text-sm transition-all flex items-center gap-2 ${copiedId === invite.id
-                                                    ? 'bg-green-500 text-white shadow-lg shadow-green-200'
-                                                    : 'bg-gray-900 text-white group-hover:bg-pink-600'
-                                                    }`}
-                                            >
-                                                {copiedId === invite.id ? (
-                                                    <Check size={16} />
-                                                ) : (
-                                                    <Copy size={16} />
-                                                )}
-                                                {copiedId === invite.id ? 'Copied' : 'Copy'}
-                                            </motion.button>
+                                            <div className="flex items-center gap-2">
+                                                <motion.button
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => {
+                                                        const url = `${window.location.origin}/invite/claim?code=${invite.code}`;
+                                                        navigator.clipboard.writeText(url);
+                                                        setCopiedId(`${invite.id}-url`);
+                                                        setTimeout(() => setCopiedId(null), 2000);
+                                                    }}
+                                                    className={`px-4 py-2.5 rounded-2xl font-bold text-xs transition-all flex items-center gap-2 ${copiedId === `${invite.id}-url`
+                                                        ? 'bg-blue-500 text-white shadow-lg shadow-blue-200'
+                                                        : 'bg-white border border-gray-200 text-gray-700 hover:border-blue-200'
+                                                        }`}
+                                                >
+                                                    {copiedId === `${invite.id}-url` ? <Check size={14} /> : <Sparkles size={14} className="text-blue-400" />}
+                                                    {copiedId === `${invite.id}-url` ? 'Link Copied' : 'Copy Link'}
+                                                </motion.button>
+
+                                                <motion.button
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => copyToClipboard(invite.code, invite.id)}
+                                                    className={`px-5 py-2.5 rounded-2xl font-bold text-sm transition-all flex items-center gap-2 ${copiedId === invite.id
+                                                        ? 'bg-green-500 text-white shadow-lg shadow-green-200'
+                                                        : 'bg-gray-900 text-white group-hover:bg-pink-600'
+                                                        }`}
+                                                >
+                                                    {copiedId === invite.id ? (
+                                                        <Check size={16} />
+                                                    ) : (
+                                                        <Copy size={16} />
+                                                    )}
+                                                    {copiedId === invite.id ? 'Copied' : 'Copy Code'}
+                                                </motion.button>
+
+                                                <motion.button
+                                                    whileHover={{ scale: 1.1, color: '#ef4444' }}
+                                                    whileTap={{ scale: 0.9 }}
+                                                    onClick={() => handleDelete(invite.id)}
+                                                    className="p-2.5 text-gray-300 hover:bg-red-50 rounded-xl transition-all"
+                                                    title="削除"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </motion.button>
+                                            </div>
                                         )}
                                     </motion.div>
                                 ))

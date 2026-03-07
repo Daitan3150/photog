@@ -315,8 +315,8 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                 </div>
                             )}
 
-                            {/* Map Display (for photos with location data) */}
-                            {photo.latitude && photo.longitude && (
+                            {/* Map Display (for photos with location or coordinate data) */}
+                            {(photo.location || (photo.latitude && photo.longitude)) && (
                                 <div className="pt-2">
                                     <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-2">Location Map</p>
                                     <div className="w-full h-40 rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50 relative pointer-events-auto">
@@ -325,12 +325,18 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                             height="100%"
                                             frameBorder="0"
                                             style={{ border: 0 }}
-                                            src={`https://maps.google.com/maps?q=${photo.latitude},${photo.longitude}&z=17&t=k&output=embed`}
+                                            src={photo.latitude && photo.longitude
+                                                ? `https://maps.google.com/maps?q=${photo.latitude},${photo.longitude}&z=17&t=k&output=embed`
+                                                : `https://maps.google.com/maps?q=${encodeURIComponent(photo.location)}&z=15&output=embed`
+                                            }
                                             allowFullScreen
                                         ></iframe>
                                     </div>
                                     <a
-                                        href={`https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`}
+                                        href={photo.latitude && photo.longitude
+                                            ? `https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`
+                                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(photo.location)}`
+                                        }
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-[10px] text-gray-400 mt-2 flex items-center gap-1 hover:text-blue-500 transition-colors pointer-events-auto"

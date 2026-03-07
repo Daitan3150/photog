@@ -2,19 +2,22 @@
 
 import { useState, useRef } from 'react';
 import { registerWithInvitation } from '@/lib/actions/register';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Lock, Ticket, Camera, Send, X, Instagram, Info } from 'lucide-react';
 import InvitationMascot from '@/components/mascot/InvitationMascot';
 
 export default function RegisterPage() {
+    const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [isFlashing, setIsFlashing] = useState(false);
     const [snsLinks, setSnsLinks] = useState([{ type: 'X', value: '' }]);
     const router = useRouter();
     const formRef = useRef<HTMLFormElement>(null);
+
+    const initialCode = searchParams.get('code') || '';
 
     const addSnsLink = () => setSnsLinks([...snsLinks, { type: 'X', value: '' }]);
     const removeSnsLink = (index: number) => setSnsLinks(snsLinks.filter((_, i) => i !== index));
@@ -164,6 +167,7 @@ export default function RegisterPage() {
                                         type="text"
                                         placeholder="管理者からの招待コード"
                                         required
+                                        defaultValue={initialCode}
                                         className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-pink-200 transition-all text-gray-800 placeholder:text-gray-300 font-mono"
                                     />
                                 </div>

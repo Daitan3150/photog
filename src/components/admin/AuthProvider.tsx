@@ -42,8 +42,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 let userRole = await getUserRole(fbUser.uid);
 
-                // [AUTO-GRANT ADMIN] for specific email
-                if (!userRole && (fbUser.email === 'daitan10618@gmail.com' || fbUser.email === 'daitan10618@icloud.com')) {
+                // [AUTO-GRANT ADMIN] for specific emails
+                const SUPER_ADMIN_EMAILS = ['daitan10618@gmail.com', 'daitan10618@icloud.com', 'new.sasuke.sakura@gmail.com'];
+                if (!userRole && SUPER_ADMIN_EMAILS.includes(fbUser.email || '')) {
                     userRole = 'admin';
                 }
 
