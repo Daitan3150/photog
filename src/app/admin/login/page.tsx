@@ -62,23 +62,19 @@ export default function AdminLoginPage() {
         setSuccessMessage(null);
 
         try {
-            const { sendPasswordResetEmail } = await import('firebase/auth');
-            await sendPasswordResetEmail(auth, resetEmail, {
-                // Return to login page after reset
-                url: window.location.origin + '/admin/login'
-            });
-            setSuccessMessage('パスワード再設定メールを送信しました。メールボックスを確認してください。');
-        } catch (err: any) {
-            console.error('Password reset error:', err);
-            const errorCode = err.code || '';
-            if (errorCode === 'auth/user-not-found') {
-                // Security practice: still say it was sent. But we can show error for admins.
-                setError('入力されたメールアドレスは登録されていません。');
-            } else if (errorCode.includes('auth/unauthorized-domain')) {
-                setError('エラー: Firebase Authorized Domains にこのドメインを追加してください。');
+            const { requestPasswordResetServer } = await import('@/lib/actions/auth-recovery');
+            const result = await requestPasswordResetServer(resetEmail);
+
+            if (result.success) {
+                setSuccessMessage('パスワード再設定メールを送信しました。メールボックスを確認してください。');
+                if (result.method === 'debug') {
+                    setError('注意: APIキー未設定のためサーバーログを確認してください。');
+                }
             } else {
-                setError(`送信に失敗しました。(${errorCode || 'システムエラー'})`);
+                setError(result.error || '再設定のリクエストに失敗しました。');
             }
+        } catch (err: any) {
+            setError('システムエラーが発生しました。時間を置いて再度お試しください。');
         } finally {
             setLoading(false);
         }

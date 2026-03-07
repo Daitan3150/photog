@@ -3,7 +3,7 @@
 import { getAdminAuth, getAdminFirestore } from '@/lib/firebaseAdmin';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'daitan10618@icloud.com';
 
 /**
@@ -50,7 +50,9 @@ export async function requestPasswordResetServer(email: string) {
         });
 
         // Resendを使用してメール送信
-        if (process.env.RESEND_API_KEY && !process.env.RESEND_API_KEY.startsWith('re_')) {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (apiKey && apiKey.startsWith('re_')) {
+            const resend = new Resend(apiKey);
             const { error } = await resend.emails.send({
                 from: 'onboarding@resend.dev',
                 to: email,
