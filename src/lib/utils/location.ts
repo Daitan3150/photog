@@ -61,14 +61,29 @@ export async function getCoordinates(locationName: string): Promise<{ lat: numbe
 
     // Prepare search variations
     const normalized = zenkakuToHankaku(locationName.trim());
-    const searchQueries = [
-        normalized, // 1. Normalized version (half-width)
-        normalized.replace(/\d+$/, '').trim(), // 2. Strip trailing house number (e.g. "6丁目2" -> "6丁目")
-        normalized.split(/[\s,、　]/).join(' '), // 3. Ensure simple spaces
-    ];
+
+    // Create a list of potential search terms
+    const searchQueries: string[] = [];
+    searchQueries.push(normalized); // 1. Original (half-width)
+
+    // 2. If it contains slashes or special separators, try parts
+    if (normalized.includes('/') || normalized.includes('／') || normalized.includes('・')) {
+        const parts = normalized.split(/[/／・]/).map(p => p.trim()).filter(Boolean);
+        searchQueries.push(...parts);
+    }
+
+    // 3. Strip trailing house numbers or floor info
+    searchQueries.push(normalized.replace(/(\d+[-－]\d+.*$)|(\d+丁目\d+.*$)/, '').trim());
+
+    // 4. Split by spaces/commas and take the first few parts (most significant)
+    const blocks = normalized.split(/[\s,、　]/).filter(Boolean);
+    if (blocks.length > 1) {
+        searchQueries.push(blocks[0]); // First block only
+        searchQueries.push(blocks.slice(0, 2).join(' ')); // First two blocks
+    }
 
     for (const query of [...new Set(searchQueries)]) {
-        if (!query) continue;
+        if (!query || query.length < 2) continue;
         try {
             // nominatim works best with structured queries. 
             // We append 'Japan' to narrow it down.
