@@ -252,7 +252,10 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                     </div>
                                     <div>
                                         <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Location</p>
-                                        <p className="text-sm font-medium">{photo.location}</p>
+                                        <p className="text-sm font-medium leading-tight">{photo.location}</p>
+                                        {photo.address && (
+                                            <p className="text-[10px] text-gray-400 mt-0.5 leading-snug">{photo.address}</p>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -325,11 +328,9 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                             height="100%"
                                             frameBorder="0"
                                             style={{ border: 0, filter: 'grayscale(0.5) contrast(1.1)' }}
-                                            src={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY && photo.latitude && photo.longitude
-                                                ? `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${photo.latitude},${photo.longitude}&zoom=15`
-                                                : photo.latitude && photo.longitude
-                                                    ? `https://www.openstreetmap.org/export/embed.html?bbox=${photo.longitude - 0.005},${photo.latitude - 0.005},${photo.longitude + 0.005},${photo.latitude + 0.005}&layer=mapnik&marker=${photo.latitude},${photo.longitude}`
-                                                    : `https://www.openstreetmap.org/export/embed.html?bbox=122.9,20.4,153.9,45.5&layer=mapnik&q=${encodeURIComponent(photo.location || '')}`
+                                            src={photo.latitude && photo.longitude
+                                                ? `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}&q=${photo.latitude},${photo.longitude}&zoom=15`
+                                                : `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}&q=${encodeURIComponent(photo.location || '')}&zoom=15`
                                             }
                                             allowFullScreen
                                             className="group-hover:grayscale-0 transition-opacity duration-500"

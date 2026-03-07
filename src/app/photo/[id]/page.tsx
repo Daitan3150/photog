@@ -245,6 +245,9 @@ export default async function PhotoPage({ params }: Props) {
                                     <div className="flex flex-col items-start">
                                         <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold">Location</span>
                                         <span className="text-base tracking-wide font-bold">{photo.location}</span>
+                                        {photo.address && (
+                                            <span className="text-[10px] opacity-60 leading-tight mt-0.5">{photo.address}</span>
+                                        )}
                                     </div>
                                 </div>
                                 {photo.latitude && photo.longitude && (
@@ -255,9 +258,7 @@ export default async function PhotoPage({ params }: Props) {
                                             style={{ border: 0, filter: 'grayscale(0.5) contrast(1.1)' }}
                                             loading="lazy"
                                             allowFullScreen
-                                            src={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
-                                                ? `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${photo.latitude},${photo.longitude}&zoom=15`
-                                                : `https://www.openstreetmap.org/export/embed.html?bbox=${photo.longitude - 0.005},${photo.latitude - 0.005},${photo.longitude + 0.005},${photo.latitude + 0.005}&layer=mapnik&marker=${photo.latitude},${photo.longitude}`}
+                                            src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}&q=${photo.latitude},${photo.longitude}&zoom=15`}
                                             className="group-hover:grayscale-0 transition-all duration-500"
                                         />
                                         <a

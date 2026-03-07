@@ -6,6 +6,7 @@ export interface Photo {
     title: string;
     subjectName: string; // Model or Layer name
     location: string;
+    address?: string; // [NEW] Formal address from geocoding
     characterName?: string; // [NEW] For cosplayers
     event?: string; // [NEW] Event name (especially for cosplay)
     shotAt: Date; // Will be stored as Timestamp in Firestore

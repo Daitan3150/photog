@@ -40,6 +40,7 @@ export interface AlgoliaPhoto {
     characterName: string;
     event: string;
     location: string;
+    address: string;
     category: string;
     tags: string[];
     shotAt: number;
@@ -72,6 +73,7 @@ export async function syncPhotoToAlgolia(
             characterName: photo.characterName || '',
             event: photo.event || '',
             location: photo.location || '',
+            address: photo.address || '',
             category: photo.category || '',
             tags: photo.tags || [],
             shotAt:

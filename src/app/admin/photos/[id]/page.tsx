@@ -74,6 +74,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         subjectName: '',
         characterName: '',
         location: '',
+        address: '', // [NEW] Formal address
         shotAt: '',
         snsUrl: '',
         categoryId: '',
@@ -139,7 +140,8 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 tags: data.tags || [],
                 focalPoint: data.focalPoint || undefined,
                 latitude: data.latitude || null,
-                longitude: data.longitude || null
+                longitude: data.longitude || null,
+                address: data.address || ''
             });
         }
         setLoading(false);
@@ -514,7 +516,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                         ...prev,
                                                         latitude: coords.lat,
                                                         longitude: coords.lng,
-                                                        location: coords.displayName || prev.location
+                                                        address: coords.displayName || ''
                                                     }));
                                                 } else {
                                                     alert('位置情報が見つかりませんでした。別の言葉で試してみてください。');
@@ -529,6 +531,13 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                         検索
                                     </button>
                                 </div>
+
+                                {formData.address && (
+                                    <div className="mt-2 p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+                                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">取得された正式な住所</p>
+                                        <p className="text-xs text-gray-600 leading-relaxed">{formData.address}</p>
+                                    </div>
+                                )}
                                 <div className="grid grid-cols-2 gap-4 mt-3 relative">
                                     <div>
                                         <p className="text-[10px] text-gray-400 mb-1 font-bold">緯度 (Latitude)</p>

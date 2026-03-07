@@ -134,9 +134,9 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             if (coords) {
                 latitude = coords.lat;
                 longitude = coords.lng;
-                // If a clean address was found, use it for the location field
+                // [NEW] Store the formal address in a separate field instead of overwriting location
                 if (coords.displayName) {
-                    data.location = coords.displayName;
+                    (data as any).address = coords.displayName;
                 }
             }
         }
@@ -155,6 +155,7 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             characterName: data.characterName || null,
             event: data.event || null,
             location: data.location || null,
+            address: (data as any).address || null,
             latitude,
             longitude,
             shotAt: (data.shotAt && !isNaN(new Date(String(data.shotAt).replace(/:/g, '-')).getTime()))
@@ -248,9 +249,9 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 if (coords) {
                     latitude = coords.lat;
                     longitude = coords.lng;
-                    // If a clean address was found, use it
+                    // [NEW] Store formal address separately
                     if (coords.displayName) {
-                        data.location = coords.displayName;
+                        (data as any).address = coords.displayName;
                     }
                 }
             }
@@ -271,6 +272,7 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 characterName: data.characterName || null,
                 event: data.event || null,
                 location: data.location || null,
+                address: (data as any).address || null,
                 latitude,
                 longitude,
                 shotAt: shotAtDate,
@@ -356,6 +358,7 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
                 subjectName: data.subjectName || '',
                 characterName: data.characterName || '',
                 location: data.location || '',
+                address: data.address || '',
                 categoryId: data.categoryId || null,
                 category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
                 snsUrl: data.snsUrl || '',
@@ -1098,7 +1101,8 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         if (data.snsUrl !== undefined) updates.snsUrl = data.snsUrl;
         if (data.categoryId !== undefined) updates.categoryId = data.categoryId;
         if (data.displayMode !== undefined) updates.displayMode = data.displayMode;
-        if (data.event !== undefined) updates.event = data.event; // Missing field added here
+        if (data.event !== undefined) updates.event = data.event;
+        if (data.address !== undefined) updates.address = data.address;
         if (data.shotAt !== undefined) {
             if (data.shotAt && String(data.shotAt).length > 0) {
                 const parsed = new Date(data.shotAt);
@@ -1125,7 +1129,7 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
             updates.latitude = coords ? coords.lat : null;
             updates.longitude = coords ? coords.lng : null;
             if (coords?.displayName) {
-                updates.location = coords.displayName;
+                updates.address = coords.displayName;
             }
         }
 
@@ -1235,6 +1239,7 @@ export async function getPublicPhotoById(photoId: string): Promise<any> {
         const photo = {
             id: photoId,
             ...data,
+            address: data?.address || '',
             category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
             shotAt: serializeData(data?.shotAt),
             createdAt: serializeData(data?.createdAt),
@@ -1271,6 +1276,7 @@ export async function getRecentPhotos(limit: number = 6) {
                 const catId = data.categoryId || '';
                 return {
                     ...data,
+                    address: data.address || '',
                     category: CATEGORY_MAP[String(catId)] || String(catId).toUpperCase() || 'OTHER',
                     shotAt: serializeData(data.shotAt),
                     createdAt: serializeData(data.createdAt),
