@@ -6,8 +6,10 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import cloudinaryLoader from "@/lib/cloudinary-loader";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function RecentWorksSlider({ photos }: { photos: any[] }) {
+    const { t } = useLanguage();
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
@@ -49,10 +51,12 @@ export default function RecentWorksSlider({ photos }: { photos: any[] }) {
             <div className="flex items-center justify-between px-6 md:px-16 mb-12 relative z-20">
                 <div className="flex items-center gap-6">
                     <h2 className="text-2xl md:text-4xl font-serif text-white tracking-[0.3em] uppercase">
-                        Recent Works
+                        {t.home.recentWorks}
                     </h2>
                     <span className="hidden md:block w-16 h-px bg-white/30"></span>
-                    <span className="hidden md:block text-[10px] text-white/40 tracking-widest font-mono uppercase">A collection of stories</span>
+                    <span className="hidden md:block text-[10px] text-white/40 tracking-widest font-mono uppercase">
+                        {t.home.recentWorksSub}
+                    </span>
                 </div>
 
                 <div className="flex items-center gap-3 opacity-0 md:opacity-100 transition-opacity">
@@ -134,8 +138,8 @@ export default function RecentWorksSlider({ photos }: { photos: any[] }) {
             </div>
 
             <div className="flex justify-center mt-16 relative z-20">
-                <Link href="/portfolio" className="inline-flex items-center gap-6 text-[10px] md:text-xs tracking-[0.4em] uppercase text-white/50 hover:text-white transition-all duration-500 group">
-                    <span>Explore All Works</span>
+                <Link href="/portfolio" className="inline-flex items-center gap-4 text-[10px] md:text-xs tracking-[0.4em] uppercase text-white/50 hover:text-white transition-all duration-500 group">
+                    <span>{t.home.viewAllWorks}</span>
                     <span className="w-16 h-px bg-white/20 group-hover:bg-white group-hover:w-24 transition-all duration-700"></span>
                 </Link>
             </div>
