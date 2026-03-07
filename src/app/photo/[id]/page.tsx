@@ -248,15 +248,26 @@ export default async function PhotoPage({ params }: Props) {
                                     </div>
                                 </div>
                                 {photo.latitude && photo.longitude && (
-                                    <div className="w-full h-32 rounded-xl overflow-hidden border border-black/5 bg-black/5 transition-all hover:border-black/10">
+                                    <div className="w-full h-40 rounded-xl overflow-hidden border border-black/5 bg-black/5 transition-all hover:border-black/10 relative group">
                                         <iframe
                                             width="100%"
                                             height="100%"
-                                            style={{ border: 0, filter: 'grayscale(1) contrast(1.2) opacity(0.8)' }}
+                                            style={{ border: 0, filter: 'grayscale(0.5) contrast(1.1)' }}
                                             loading="lazy"
                                             allowFullScreen
-                                            src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}&q=${photo.latitude},${photo.longitude}&zoom=15`}
+                                            src={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
+                                                ? `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${photo.latitude},${photo.longitude}&zoom=15`
+                                                : `https://www.openstreetmap.org/export/embed.html?bbox=${photo.longitude - 0.005},${photo.latitude - 0.005},${photo.longitude + 0.005},${photo.latitude + 0.005}&layer=mapnik&marker=${photo.latitude},${photo.longitude}`}
+                                            className="group-hover:grayscale-0 transition-all duration-500"
                                         />
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[9px] font-bold text-gray-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            Google Mapsで開く
+                                        </a>
                                     </div>
                                 )}
                             </div>
