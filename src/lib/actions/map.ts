@@ -2,7 +2,7 @@
 
 export async function getMapEmbedUrl(lat: number, lng: number): Promise<string | null> {
     try {
-        const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+        const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "AIzaSyBdhiREiTTViaDBXSvfkjxCKi71Bi0232A";
 
         if (!apiKey) {
             console.error("Map API Key is not configured on the server.");

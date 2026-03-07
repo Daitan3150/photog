@@ -16,7 +16,7 @@ export default function MapEmbed({ lat, lng }: { lat: number; lng: number }) {
 
                 // Fallback to client-side NEXT_PUBLIC_ fallback if server action returned null
                 if (!url) {
-                    const fallbackKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+                    const fallbackKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "AIzaSyBdhiREiTTViaDBXSvfkjxCKi71Bi0232A";
                     if (fallbackKey) {
                         url = `https://www.google.com/maps/embed/v1/place?key=${fallbackKey}&q=${lat},${lng}&zoom=15`;
                     }
