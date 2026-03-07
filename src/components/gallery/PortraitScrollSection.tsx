@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import cloudinaryLoader from "@/lib/cloudinary-loader";
-import { User, ChevronRight } from "lucide-react";
+import { User, ChevronRight, Camera, Sparkles } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useRef } from "react";
 import Lightbox from "./Lightbox";
@@ -199,29 +199,54 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
                 <div className="absolute inset-0 bg-neutral-900/10 opacity-0 group-hover/item:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
                 {/* Uploader Mini-icon & Name at Bottom-Right on Hover (Desktop) / Constant (Mobile) */}
-                <div className="absolute bottom-0 right-0 left-0 p-6 md:p-8 flex items-end justify-between transition-all duration-500 md:translate-y-4 md:opacity-0 group-hover/item:translate-y-0 group-hover/item:opacity-100 z-10">
-                    <div className="flex flex-col gap-1">
-                        <p className="text-white text-[10px] md:text-xs font-serif tracking-[0.2em] uppercase drop-shadow-md">
-                            {photo.title || "Untitled"}
-                        </p>
-                    </div>
+                <div className="absolute bottom-0 right-0 left-0 p-6 md:p-8 flex flex-col gap-4 transition-all duration-500 md:translate-y-4 md:opacity-0 group-hover/item:translate-y-0 group-hover/item:opacity-100 z-10">
+                    <div className="flex flex-col gap-1.5 flex-1">
+                        {/* Camera & Lens Details (EXIF) */}
+                        {photo.exif && (
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 opacity-60 text-[8px] md:text-[9px] uppercase tracking-[0.2em] font-light text-white mb-1">
+                                <span className="flex items-center gap-1.5">
+                                    <Camera size={10} className="opacity-50" />
+                                    {photo.exif.Model}
+                                </span>
+                                {photo.exif.LensModel && (
+                                    <span className="flex items-center gap-1.5">
+                                        <Sparkles size={10} className="opacity-50" />
+                                        {photo.exif.LensModel}
+                                    </span>
+                                )}
+                            </div>
+                        )}
 
-                    <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-2 rounded-full border border-white/20 shadow-lg">
-                        <span className="text-white text-[9px] md:text-[10px] font-bold tracking-wider leading-none text-white">
-                            {photo.uploaderName || "Creator"}
-                        </span>
-                        <div className="relative w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border border-white/40 bg-white/10 shrink-0">
-                            {photo.uploaderPhotoURL ? (
-                                <img
-                                    src={photo.uploaderPhotoURL}
-                                    alt={photo.uploaderName}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[8px] text-white/50">
-                                    <User size={12} />
+                        <div className="flex items-end justify-between">
+                            <div className="flex flex-col">
+                                <p className="text-white text-[11px] md:text-sm font-serif tracking-[0.2em] uppercase drop-shadow-md">
+                                    {photo.title || "Untitled"}
+                                </p>
+                                {photo.location && (
+                                    <p className="text-white/40 text-[8px] md:text-[9px] uppercase tracking-widest mt-1">
+                                        Near {photo.location}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-2 rounded-full border border-white/20 shadow-lg">
+                                <span className="text-white text-[9px] md:text-[10px] font-bold tracking-wider leading-none text-white">
+                                    {photo.uploaderName || "Creator"}
+                                </span>
+                                <div className="relative w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border border-white/40 bg-white/10 shrink-0">
+                                    {photo.uploaderPhotoURL ? (
+                                        <img
+                                            src={photo.uploaderPhotoURL}
+                                            alt={photo.uploaderName}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-[8px] text-white/50">
+                                            <User size={12} />
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                 </div>
