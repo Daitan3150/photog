@@ -13,6 +13,7 @@ import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import exifr from 'exifr';
 import { formatShutterSpeed, validateShutterSpeed, STANDARD_APERTURES, getMinApertureFromLens } from '@/lib/utils/exif';
+import SmartDatePicker from '@/components/admin/SmartDatePicker';
 
 // ✅ 署名取得
 const fetchSignature = async (paramsToSign: Record<string, any>, token: string) => {
@@ -515,12 +516,11 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                         撮影日なし
                                     </label>
                                 </div>
-                                <input
-                                    type="date"
+                                <SmartDatePicker
                                     value={formData.shotAt}
-                                    onChange={(e) => setFormData({ ...formData, shotAt: e.target.value })}
+                                    onChange={(val) => setFormData({ ...formData, shotAt: val })}
                                     disabled={!shotAtEnabled}
-                                    className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                                    className="w-full"
                                 />
                             </div>
 

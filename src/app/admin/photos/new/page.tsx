@@ -11,6 +11,8 @@ import Image from 'next/image';
 import exifr from 'exifr';
 import { formatShutterSpeed, validateShutterSpeed, STANDARD_APERTURES, getMinApertureFromLens } from '@/lib/utils/exif';
 import { motion } from 'framer-motion';
+import SmartDatePicker from '@/components/admin/SmartDatePicker';
+import { Calendar, User, MapPin, Tag, Link2 } from 'lucide-react';
 
 // ✅ ファイル検証定数
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
@@ -682,23 +684,29 @@ export default function NewPhotoPage() {
             // const result = await savePhotosBulk(dataList, idToken);
 
             const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL;
-            if (!workerUrl) throw new Error('Worker URL not configured');
+            let result;
 
-            const res = await fetch(`${workerUrl}/api/save-photos`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
-                },
-                body: JSON.stringify({ photos: dataList })
-            });
+            if (workerUrl && workerUrl.startsWith('http')) {
+                const res = await fetch(`${workerUrl}/api/save-photos`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify({ photos: dataList })
+                });
 
-            if (!res.ok) {
-                const errData = await res.json() as { error?: string };
-                throw new Error(errData.error || 'Worker API error');
+                if (!res.ok) {
+                    const errData = await res.json() as { error?: string };
+                    throw new Error(errData.error || 'Worker API error');
+                }
+
+                result = await res.json() as { success: boolean; count?: number; error?: string };
+            } else {
+                // Fallback to Server Action if Worker is not configured
+                console.log('Worker URL not configured. Using Server Action fallback.');
+                result = await savePhotosBulk(dataList, idToken);
             }
-
-            const result = await res.json() as { success: boolean; count?: number; error?: string };
 
             if (result.success) {
                 setMessage(`✅ ${uploadedFiles.length}枚の写真を保存しました！一覧ページに移動します...`);
@@ -1198,12 +1206,11 @@ export default function NewPhotoPage() {
                                         撮影日なし
                                     </label>
                                 </div>
-                                <input
-                                    type="date"
+                                <SmartDatePicker
                                     value={shotAt}
-                                    onChange={(e) => setShotAt(e.target.value)}
+                                    onChange={(val) => setShotAt(val)}
                                     disabled={!shotAtEnabled}
-                                    className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                                    className="w-full"
                                 />
                                 {shotAtEnabled && camera && (
                                     <p className="text-[10px] text-blue-500">📷 EXIFから自動取得済み</p>
