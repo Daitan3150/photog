@@ -188,27 +188,36 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                                         : (photo.title || '無題')}
                                                 </h3>
 
-                                                {/* Uploader Attribution (Producer Icon) */}
-                                                {photo.uploaderName && (
-                                                    <div className="flex items-center gap-1.5 ml-2 shrink-0 group/uploader" title={`Uploader: ${photo.uploaderName}`}>
-                                                        <div className="relative w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border border-white/40 bg-white/20">
-                                                            {photo.uploaderPhotoURL ? (
-                                                                <img
-                                                                    src={photo.uploaderPhotoURL}
-                                                                    alt={photo.uploaderName}
-                                                                    className="w-full h-auto object-cover"
-                                                                />
-                                                            ) : (
-                                                                <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-white/70">
-                                                                    {photo.uploaderName[0]}
-                                                                </div>
-                                                            )}
+                                                {/* Uploader / Model Attribution */}
+                                                {(photo.uploaderName || photo.subjectName) && (() => {
+                                                    const uploaderLabel = photo.uploaderName?.includes('@')
+                                                        ? photo.uploaderName.split('@')[0]
+                                                        : photo.uploaderName;
+                                                    const displayAttributionName = photo.subjectName || uploaderLabel || 'Member';
+                                                    const initial = displayAttributionName.charAt(0).toUpperCase();
+
+                                                    return (
+                                                        <div className="flex items-center gap-1.5 ml-2 shrink-0 group/uploader" title={`Creator: ${displayAttributionName}`}>
+                                                            <div className="relative w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border border-white/40 bg-white/20">
+                                                                {/* Only use uploaderPhotoURL if the uploader is being displayed, or if we fallback to it for aesthetics */}
+                                                                {photo.uploaderPhotoURL && !photo.subjectName ? (
+                                                                    <img
+                                                                        src={photo.uploaderPhotoURL}
+                                                                        alt={displayAttributionName}
+                                                                        className="w-full h-auto object-cover"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-white/70">
+                                                                        {initial}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <span className="text-[8px] md:text-[9px] font-bold opacity-0 group-hover/uploader:opacity-100 transition-opacity whitespace-nowrap hidden md:inline">
+                                                                {displayAttributionName}
+                                                            </span>
                                                         </div>
-                                                        <span className="text-[8px] md:text-[9px] font-bold opacity-0 group-hover/uploader:opacity-100 transition-opacity whitespace-nowrap hidden md:inline">
-                                                            {photo.uploaderName}
-                                                        </span>
-                                                    </div>
-                                                )}
+                                                    );
+                                                })()}
                                             </div>
                                         </div>
                                     </motion.div>
