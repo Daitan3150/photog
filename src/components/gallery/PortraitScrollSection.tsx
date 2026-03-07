@@ -54,8 +54,11 @@ export default function PortraitScrollSection({ modelName, photos }: PortraitScr
             </div>
 
             {/* Horizontal Scroll Container */}
-            <div className="relative group/container" ref={containerRef}>
-                <div className="flex overflow-x-auto pb-12 gap-8 md:gap-12 px-6 md:px-0 no-scrollbar snap-x snap-mandatory scroll-smooth cursor-grab active:cursor-grabbing">
+            <div className="relative group/container">
+                <div
+                    ref={containerRef}
+                    className="flex overflow-x-auto pb-12 gap-8 md:gap-12 px-6 md:px-0 no-scrollbar snap-x snap-mandatory scroll-smooth cursor-grab active:cursor-grabbing"
+                >
                     {photos.map((photo, index) => (
                         <PortraitPhotoItem
                             key={photo.id}
