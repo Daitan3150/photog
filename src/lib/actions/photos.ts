@@ -333,6 +333,9 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
 
             return {
                 id: doc.id,
+                uploaderId: data.uploaderId || '',
+                uploaderEmail: data.uploaderEmail || '',
+                uploaderName: data.uploaderName || '',
                 url: data.url || '',
                 title: data.title || '',
                 subjectName: data.subjectName || '',
