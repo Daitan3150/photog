@@ -164,7 +164,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                                 <Link
                                                     href={`/photo/${photo.id}`}
                                                     className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
-                                                    onClick={(e) => e.stopPropagation()}
+                                                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                                 >
                                                     <Share2 className="w-3.5 h-3.5" />
                                                 </Link>
@@ -263,7 +263,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                         whileHover={{ scale: 1.1, borderColor: "#000", color: "#000", backgroundColor: "#f9fafb" }}
                                         whileTap={{ scale: 0.95 }}
                                         className="w-14 h-14 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 transition-all duration-300 hover:shadow-md"
-                                        onClick={(e) => e.stopPropagation()}
+                                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                     >
                                         {getSnsIcon(photo.snsUrl)}
                                     </motion.a>

@@ -16,8 +16,8 @@ export default function MapEmbed({ lat, lng }: { lat: number; lng: number }) {
 
                 if (!res.ok) return;
 
-                const data = await res.json();
-                setMapUrl(data.mapUrl);
+                const data = (await res.json()) as { mapUrl?: string };
+                setMapUrl(data.mapUrl || null);
             } catch (err) {
                 console.error("Failed to load map URL", err);
             }

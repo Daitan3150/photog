@@ -111,7 +111,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                         drag="x"
                         dragConstraints={{ left: 0, right: 0 }}
                         dragElastic={0.2}
-                        onDragEnd={(_, info) => {
+                        onDragEnd={(_: any, info: any) => {
                             const threshold = 50;
                             if (info.offset.x < -threshold && onNext) {
                                 onNext();
@@ -430,7 +430,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
             {/* Global Overlay Controls (For larger screens) */}
             {onPrev && (
                 <button
-                    onClick={(e) => { e.stopPropagation(); onPrev(); }}
+                    onClick={(e: React.MouseEvent) => { e.stopPropagation(); onPrev(); }}
                     className="hidden lg:flex absolute left-8 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full items-center justify-center text-gray-300 hover:text-gray-900 transition-colors"
                 >
                     <ChevronLeft size={48} strokeWidth={1} />
@@ -438,7 +438,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
             )}
             {onNext && (
                 <button
-                    onClick={(e) => { e.stopPropagation(); onNext(); }}
+                    onClick={(e: React.MouseEvent) => { e.stopPropagation(); onNext(); }}
                     className="hidden lg:flex absolute right-8 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full items-center justify-center text-gray-300 hover:text-gray-900 transition-colors"
                 >
                     <ChevronRight size={48} strokeWidth={1} />
@@ -453,7 +453,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[150] bg-black/40 backdrop-blur-md flex items-center justify-center p-4 cursor-default"
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
                             setShareConfirmType(null);
                         }}
@@ -463,7 +463,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
                             className="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-sm"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         >
                             {/* Banner Preview Area */}
                             <div
