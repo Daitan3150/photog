@@ -84,3 +84,89 @@ export async function registerWithInvitation(formData: FormData): Promise<Regist
         return { success: false, error: error.message || 'Registration failed.' };
     }
 }
+
+export async function checkInvitationCode(code: string): Promise<{ success: boolean; error?: string }> {
+    if (!code) return { success: false, error: 'Code is required.' };
+    try {
+        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const db = getAdminFirestore();
+
+        const codesSnapshot = await db.collection('invitation_codes')
+            .where('code', '==', code)
+            .where('isUsed', '==', false)
+            .limit(1)
+            .get();
+
+        if (codesSnapshot.empty) {
+            return { success: false, error: 'Invalid or already used invitation code.' };
+        }
+
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message || 'Error checking code.' };
+    }
+}
+
+export async function registerSocialUser(data: { uid: string; email: string; displayName: string; code: string; snsLinksJson?: string }): Promise<RegisterUserResult> {
+    const { uid, email, displayName, code, snsLinksJson } = data;
+
+    if (!uid || !code) {
+        return { success: false, error: 'User ID and code are required.' };
+    }
+
+    try {
+        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const db = getAdminFirestore();
+
+        // 1. Verify Invitation Code
+        const codesSnapshot = await db.collection('invitation_codes')
+            .where('code', '==', code)
+            .where('isUsed', '==', false)
+            .limit(1)
+            .get();
+
+        if (codesSnapshot.empty) {
+            return { success: false, error: 'Invalid or already used invitation code.' };
+        }
+
+        const codeDoc = codesSnapshot.docs[0];
+
+        // 2. Mark Code as Used & Create User Profile in Firestore
+        await db.runTransaction(async (transaction) => {
+            // Check if user already has a profile (to prevent duplicate processing)
+            const userRef = db.collection('users').doc(uid);
+            const userDoc = await transaction.get(userRef);
+
+            if (!userDoc.exists) {
+                // Generate a unique model ID
+                const randomId = Math.random().toString(36).substring(2, 6).toUpperCase();
+                const modelId = `M-${randomId}`;
+
+                transaction.set(userRef, {
+                    uid,
+                    email: email || '',
+                    displayName: displayName || 'Social User',
+                    role: 'model',
+                    modelId,
+                    snsLinks: snsLinksJson ? JSON.parse(snsLinksJson) : [],
+                    createdAt: new Date().toISOString(),
+                    invitedByCode: codeDoc.id,
+                });
+            }
+
+            // Mark code used
+            transaction.update(codeDoc.ref, {
+                isUsed: true,
+                usedBy: uid,
+                usedAt: new Date().toISOString(),
+            });
+        });
+
+        revalidatePath('/admin/users');
+        return { success: true };
+
+    } catch (error: any) {
+        console.error('Social registration failed:', error);
+        return { success: false, error: error.message || 'Social registration failed.' };
+    }
+}
