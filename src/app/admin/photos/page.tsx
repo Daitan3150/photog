@@ -390,9 +390,32 @@ export default function PhotosPage() {
                                     </h3>
                                 </div>
                                 <div className="flex justify-between items-end">
-                                    <div className="text-sm text-gray-600">
-                                        <p className="font-medium text-pink-600">{photo.subjectName || <span className="opacity-0">-</span>}</p>
-                                        <p className="text-xs text-gray-400 mt-1">{photo.location || <span className="opacity-0">-</span>}</p>
+                                    <div className="text-sm text-gray-600 flex flex-col gap-1.5 flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="relative w-6 h-6 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0">
+                                                {photo.uploaderPhotoURL ? (
+                                                    <img
+                                                        src={photo.uploaderPhotoURL}
+                                                        alt={photo.uploaderName}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-gray-300">
+                                                        {(photo.uploaderName || 'A').charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">Post by</span>
+                                                <span className="text-xs font-bold truncate text-gray-800" title={`Creator: ${photo.uploaderName}`}>
+                                                    {photo.uploaderName || 'Member'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="pl-8">
+                                            <p className="font-medium text-pink-600 text-sm truncate">{photo.subjectName || <span className="opacity-0">-</span>}</p>
+                                            <p className="text-[10px] text-gray-400">{photo.location || <span className="opacity-0">-</span>}</p>
+                                        </div>
                                     </div>
                                     <div className="text-right text-xs text-gray-400 font-mono space-y-0.5">
                                         {photo.shotAt && (
