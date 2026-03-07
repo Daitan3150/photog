@@ -31,7 +31,7 @@ export async function getCoordinates(locationName: string): Promise<{ lat: numbe
             const url = `https://nominatim.openstreetmap.org/reverse?lat=${manual.lat}&lon=${manual.lng}&format=json&addressdetails=1`;
             const res = await fetch(url, { headers: { 'User-Agent': 'NextPortfolio/1.0' } });
             if (res.ok) {
-                const data = await res.json();
+                const data = await res.json() as any;
                 if (data && data.address) {
                     const addr = data.address;
                     let jpnAddr = '';
