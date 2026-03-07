@@ -47,10 +47,27 @@ export async function getCoordinates(locationName: string): Promise<{ lat: numbe
         const data = await response.json() as any;
 
         if (data && data.length > 0) {
+            const addr = data[0].address;
+            // Build a clean Japanese address format: 〒123-4567 〇〇県〇〇市...
+            let jpnAddress = '';
+            if (addr.postcode) jpnAddress += `〒${addr.postcode} `;
+            if (addr.province || addr.state) jpnAddress += (addr.province || addr.state);
+            if (addr.city || addr.town || addr.village) jpnAddress += (addr.city || addr.town || addr.village);
+            if (addr.suburb || addr.city_district) jpnAddress += (addr.suburb || addr.city_district);
+            if (addr.neighbourhood) jpnAddress += addr.neighbourhood;
+            if (addr.road) jpnAddress += addr.road;
+            if (addr.house_number) jpnAddress += addr.house_number;
+
+            // If the building name isn't already in the string, prepend it
+            const building = addr.building || addr.amenity || addr.tourism || addr.historic;
+            if (building && !jpnAddress.includes(building)) {
+                jpnAddress = `${building} (${jpnAddress.trim()})`;
+            }
+
             return {
                 lat: parseFloat(data[0].lat),
                 lng: parseFloat(data[0].lon),
-                displayName: data[0].display_name
+                displayName: jpnAddress.trim() || data[0].display_name
             };
         }
 
