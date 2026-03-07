@@ -109,6 +109,37 @@ export async function deleteInvitationCode(id: string, idToken: string) {
     }
 }
 
+export async function deleteUsedInvitationCodes(idToken: string) {
+    try {
+        const { getAdminFirestore, getAdminAuth } = await import('@/lib/firebaseAdmin');
+
+        // Authorization check
+        const auth = getAdminAuth();
+        const decodedToken = await auth.verifyIdToken(idToken);
+        if (!SUPER_ADMIN_EMAILS.includes(decodedToken.email || '')) {
+            return { success: false, error: '権限がありません。最上位管理者のみ実行可能です。' };
+        }
+
+        const db = getAdminFirestore();
+        const snapshot = await db.collection('invitation_codes').where('isUsed', '==', true).get();
+
+        if (snapshot.empty) {
+            return { success: true, message: '使用済みコードはありません。' };
+        }
+
+        const batch = db.batch();
+        snapshot.docs.forEach((doc: any) => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error deleting used invitation codes:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 /**
  * [最高管理者限定] ユーザーの削除
  */

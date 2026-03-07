@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createInvitationCode, getInvitationCodes, deleteInvitationCode } from '@/lib/actions/invitation';
+import { createInvitationCode, getInvitationCodes, deleteInvitationCode, deleteUsedInvitationCodes } from '@/lib/actions/invitation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, Sparkles, RefreshCw, ArrowRight, Trash2 } from 'lucide-react';
+import { Copy, Check, Sparkles, RefreshCw, ArrowRight, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import IssuanceMascot from '@/components/admin/IssuanceMascot';
 import { useAuth } from '@/components/admin/AuthProvider';
 
@@ -22,6 +22,7 @@ export default function InvitePage() {
     const [lastIssuedCode, setLastIssuedCode] = useState<string | undefined>();
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [isShaking, setIsShaking] = useState(false);
+    const [isUsedExpanded, setIsUsedExpanded] = useState(false);
     const { user } = useAuth();
 
     useEffect(() => {
@@ -90,6 +91,27 @@ export default function InvitePage() {
             alert('削除エラーが発生しました。');
         }
     };
+
+    const handleDeleteUsed = async () => {
+        if (!confirm('使用済み招待コードをすべて削除してもよろしいですか？\nこの操作は取り消せません。')) return;
+        if (!user) return;
+
+        try {
+            const idToken = await user.getIdToken();
+            const result = await deleteUsedInvitationCodes(idToken);
+            if (result.success) {
+                await loadInvitations();
+            } else {
+                alert('一括削除に失敗しました: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Delete used error:', error);
+            alert('削除エラーが発生しました。');
+        }
+    };
+
+    const unusedInvitations = invitations.filter(i => !i.isUsed);
+    const usedInvitations = invitations.filter(i => i.isUsed);
 
     return (
         <motion.div
@@ -187,49 +209,34 @@ export default function InvitePage() {
                                     <p className="text-gray-400">履歴がまだありません。</p>
                                 </motion.div>
                             ) : (
-                                invitations.map((invite) => (
-                                    <motion.div
-                                        key={invite.id}
-                                        layout
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className={`group relative flex items-center justify-between p-5 rounded-3xl transition-all border ${invite.isUsed
-                                            ? 'bg-gray-50/50 border-gray-100 opacity-60'
-                                            : 'bg-white border-gray-100 hover:border-pink-200 hover:shadow-xl hover:shadow-pink-500/5'
-                                            }`}
-                                    >
-                                        <div className="flex items-center gap-5">
-                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all ${invite.isUsed ? 'bg-gray-100 rotate-0' : 'bg-pink-50 text-pink-500 group-hover:rotate-6'
-                                                }`}>
-                                                {invite.isUsed ? '🔒' : '🎟️'}
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`font-mono text-2xl font-black tracking-tight ${invite.isUsed ? 'text-gray-400 line-through' : 'text-gray-800'
-                                                        }`}>
-                                                        {invite.code}
-                                                    </span>
-                                                    {invite.isUsed && (
-                                                        <span className="text-[10px] font-bold bg-gray-200 text-gray-500 px-2 py-0.5 rounded-md uppercase">Used</span>
-                                                    )}
+                                <>
+                                    {/* Unused Invitations */}
+                                    {unusedInvitations.map((invite) => (
+                                        <motion.div
+                                            key={invite.id}
+                                            layout
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="group relative flex items-center justify-between p-5 rounded-3xl transition-all border bg-white border-gray-100 hover:border-pink-200 hover:shadow-xl hover:shadow-pink-500/5"
+                                        >
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all bg-pink-50 text-pink-500 group-hover:rotate-6">
+                                                    🎟️
                                                 </div>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest leading-none">
-                                                        {new Date(invite.createdAt).toLocaleDateString()}
-                                                    </span>
-                                                    {invite.usedBy && (
-                                                        <>
-                                                            <span className="text-gray-200">•</span>
-                                                            <span className="text-[10px] text-blue-500 font-bold uppercase truncate max-w-[100px]">
-                                                                {invite.usedBy.slice(0, 8)}
-                                                            </span>
-                                                        </>
-                                                    )}
+                                                <div>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="font-mono text-2xl font-black tracking-tight text-gray-800">
+                                                            {invite.code}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest leading-none">
+                                                            {new Date(invite.createdAt).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        {!invite.isUsed && (
                                             <div className="flex items-center gap-2">
                                                 <motion.button
                                                     whileHover={{ scale: 1.05 }}
@@ -276,9 +283,87 @@ export default function InvitePage() {
                                                     <Trash2 size={18} />
                                                 </motion.button>
                                             </div>
-                                        )}
-                                    </motion.div>
-                                ))
+                                        </motion.div>
+                                    ))}
+
+                                    {/* Used Invitations Collapsible */}
+                                    {usedInvitations.length > 0 && (
+                                        <div className="mt-8 border border-gray-200 rounded-3xl overflow-hidden bg-white shadow-sm">
+                                            <div
+                                                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                                                onClick={() => setIsUsedExpanded(!isUsedExpanded)}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-lg font-bold text-gray-700">使用済みコード</span>
+                                                    <span className="text-xs font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+                                                        {usedInvitations.length} 件
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    {isUsedExpanded && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleDeleteUsed(); }}
+                                                            className="text-xs font-bold bg-red-50 hover:bg-red-100 text-red-500 px-4 py-2 rounded-xl border border-red-100 transition-colors flex items-center gap-2"
+                                                        >
+                                                            <Trash2 size={14} />一括削除
+                                                        </button>
+                                                    )}
+                                                    <div className="p-2 rounded-full bg-gray-100 text-gray-500">
+                                                        {isUsedExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <AnimatePresence>
+                                                {isUsedExpanded && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: 'auto' }}
+                                                        exit={{ opacity: 0, height: 0 }}
+                                                        className="border-t border-gray-100 bg-gray-50/30"
+                                                    >
+                                                        <div className="p-4 space-y-3">
+                                                            {usedInvitations.map((invite) => (
+                                                                <div
+                                                                    key={invite.id}
+                                                                    className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100 opacity-70"
+                                                                >
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-200 text-xl">
+                                                                            🔒
+                                                                        </div>
+                                                                        <div>
+                                                                            <div className="flex items-center gap-3">
+                                                                                <span className="font-mono text-lg font-bold text-gray-400 line-through">
+                                                                                    {invite.code}
+                                                                                </span>
+                                                                                <span className="text-[10px] font-bold bg-gray-200 text-gray-500 px-2 py-0.5 rounded-md uppercase">Used</span>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2 mt-1">
+                                                                                <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest leading-none">
+                                                                                    {new Date(invite.createdAt).toLocaleDateString()}
+                                                                                </span>
+                                                                                {invite.usedBy && (
+                                                                                    <>
+                                                                                        <span className="text-gray-300">•</span>
+                                                                                        <span className="text-[10px] text-blue-500 font-bold uppercase truncate max-w-[150px]">
+                                                                                            {invite.usedBy}
+                                                                                        </span>
+                                                                                    </>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    {/* Note: Individual delete button is removed since used codes can be deleted via "Delete All" or individually if we wanted but you asked for bundle delete */}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </AnimatePresence>
                     </div>
