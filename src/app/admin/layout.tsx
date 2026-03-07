@@ -58,6 +58,16 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                         </div>
                     )}
 
+                    {/* Mobile Close Button */}
+                    {!isCollapsed && (
+                        <button
+                            onClick={toggleSidebar}
+                            className="md:hidden p-2 text-slate-400 hover:text-white transition-colors"
+                        >
+                            <ChevronLeft size={24} />
+                        </button>
+                    )}
+
                     {/* Desktop Toggle Button */}
                     <button
                         onClick={toggleSidebar}
@@ -188,13 +198,6 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                 </div>
             </div>
 
-            {/* Mobile Toggle Button */}
-            <button
-                onClick={toggleSidebar}
-                className={`md:hidden absolute -right-12 top-4 ${sidebarBg} text-white p-2 rounded-r-lg shadow-lg z-50 flex items-center justify-center`}
-            >
-                {isCollapsed ? <Menu size={24} /> : <ChevronLeft size={24} />}
-            </button>
         </aside>
     );
 }
@@ -228,6 +231,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {!isPublicPage && (
                     <>
                         <AdminSidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+
+                        {/* Mobile Menu Button - Floating when collapsed */}
+                        {isCollapsed && (
+                            <button
+                                onClick={toggleSidebar}
+                                className="md:hidden fixed left-4 top-4 bg-slate-900 text-white p-3 rounded-2xl shadow-2xl z-[60] flex items-center justify-center border border-white/10 active:scale-95 transition-transform"
+                                aria-label="Open Menu"
+                            >
+                                <Menu size={24} />
+                            </button>
+                        )}
+
                         {/* Overlay to close sidebar on Mobile */}
                         {!isCollapsed && (
                             <div
