@@ -240,6 +240,10 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
 
             const photoRef = db.collection('photos').doc();
             photoIds.push(photoRef.id);
+            const shotAtDate = (data.shotAt && !isNaN(new Date(String(data.shotAt).replace(/:/g, '-')).getTime()))
+                ? (String(data.shotAt).includes('T') ? new Date(data.shotAt) : new Date(`${data.shotAt}T12:00:00.000Z`))
+                : null;
+
             batch.set(photoRef, {
                 uploaderId,
                 modelId, // Link photo to Model ID
@@ -252,18 +256,19 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 location: data.location || null,
                 latitude,
                 longitude,
-                shotAt: (data.shotAt && !isNaN(new Date(String(data.shotAt).replace(/:/g, '-')).getTime()))
-                    ? new Date(String(data.shotAt).replace(/:/g, '-'))
-                    : null,
+                shotAt: shotAtDate,
                 snsUrl: data.snsUrl || null,
                 categoryId: data.categoryId || null,
                 displayMode: data.displayMode || 'title',
+                focalPoint: data.focalPoint || null,
                 exif: data.exif || null,
                 tags: data.tags || [],
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
         }
+
+        await batch.commit();
 
         revalidatePath('/');
         revalidatePath('/portfolio');
