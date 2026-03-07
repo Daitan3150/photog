@@ -1,5 +1,6 @@
 import { getUsers } from '@/lib/actions/users';
 import Link from 'next/link';
+import ResetPasswordForm from './ResetPasswordForm';
 
 export default async function UsersPage() {
     const { success, users, error } = await getUsers();
@@ -81,11 +82,12 @@ export default async function UsersPage() {
                                 <td className="px-6 py-4 text-sm text-gray-500">
                                     {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('ja-JP') : '-'}
                                 </td>
-                                <td className="px-6 py-4 text-right">
+                                <td className="px-6 py-4 text-right flex justify-end gap-2 items-center">
                                     <button className="text-gray-400 hover:text-blue-600 transition-colors">
                                         <span className="sr-only">編集</span>
                                         ✏️
                                     </button>
+                                    <ResetPasswordForm userId={user.uid} userEmail={user.email || ''} />
                                 </td>
                             </tr>
                         ))}
