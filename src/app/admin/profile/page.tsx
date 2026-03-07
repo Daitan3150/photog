@@ -338,6 +338,7 @@ export default function AdminProfilePage() {
                             type="button"
                             onClick={async () => {
                                 if (confirm('本当に退会しますか？\nこの操作は取り消せません。投稿した写真はアーカイブに移動されます。')) {
+                                    if (!user) return;
                                     try {
                                         setSaving(true);
                                         const { deleteMyAccount } = await import('@/lib/actions/invitation');
