@@ -4,15 +4,15 @@ import { searchPhotos } from '@/lib/actions/photos';
 import CategoryFilter from "@/components/portfolio/CategoryFilter";
 import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
 import EmptyPortfolio from "@/components/portfolio/EmptyPortfolio";
+import PortraitScrollSection from "@/components/gallery/PortraitScrollSection";
+import { Metadata } from 'next';
 
 // Revalidate every 1 hour (ISR)
 export const revalidate = 3600;
 
 interface PageProps {
-    searchParams: Promise<{ category?: string }>;
+    searchParams: Promise<{ category?: string; img?: string }>;
 }
-
-import { Metadata } from 'next';
 
 export const metadata: Metadata = {
     title: "Portfolio",
@@ -23,7 +23,7 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
     // URLからカテゴリーと写真IDを取得
     const params = await searchParams;
     let currentCategory = params.category || 'cosplay';
-    const imgId = (params as any).img;
+    // const imgId = params.img; // Not used but available
 
     // サーバーサイドでのフィルタリング（Firestoreクエリを使用）
     const allPhotos = await searchPhotos('', {
@@ -31,14 +31,14 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
         limit: 100 // より多くの写真を表示可能に
     });
 
-    const filteredPhotos = allPhotos;
+    const filteredPhotos = allPhotos as any[];
 
     // ポートレートカテゴリーの場合のみ、モデル名（subjectName）ごとにグループ化する
     const isPortrait = currentCategory === 'portrait';
-    const groupedPhotos: Record<string, typeof filteredPhotos> = {};
+    const groupedPhotos: Record<string, any[]> = {};
 
     if (isPortrait) {
-        filteredPhotos.forEach(photo => {
+        filteredPhotos.forEach((photo: any) => {
             const modelName = photo.subjectName || 'Unknown Model';
             if (!groupedPhotos[modelName]) groupedPhotos[modelName] = [];
             groupedPhotos[modelName].push(photo);
@@ -77,10 +77,4 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
         </main>
     );
 }
-
-// 動的インポートを使用してクライアントコンポーネントを読み込む
-import dynamic from 'next/dynamic';
-const PortraitScrollSection = dynamic(() => import('@/components/gallery/PortraitScrollSection'), {
-    ssr: false,
-});
 

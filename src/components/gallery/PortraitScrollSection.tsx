@@ -51,9 +51,6 @@ export default function PortraitScrollSection({ modelName, photos }: PortraitScr
                         <h2 className="text-xl md:text-2xl font-serif tracking-[0.1em] text-neutral-900">
                             {modelName}
                         </h2>
-                        <p className="text-[10px] md:text-xs text-neutral-400 uppercase tracking-[0.2em] font-medium mt-0.5">
-                            Series / {photos.length} Photos
-                        </p>
                     </div>
                 </div>
 
