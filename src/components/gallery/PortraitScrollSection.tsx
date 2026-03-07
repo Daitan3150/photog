@@ -133,15 +133,15 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
                 {/* Soft Overlay for Hover */}
                 <div className="absolute inset-0 bg-neutral-900/10 opacity-0 group-hover/item:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
-                {/* Uploader Mini-icon & Name at Bottom-Right on Hover */}
-                <div className="absolute bottom-0 right-0 left-0 p-6 md:p-8 flex items-end justify-between transition-all duration-500 translate-y-4 opacity-0 group-hover/item:translate-y-0 group-hover/item:opacity-100">
+                {/* Uploader Mini-icon & Name at Bottom-Right on Hover (Desktop) / Constant (Mobile) */}
+                <div className="absolute bottom-0 right-0 left-0 p-6 md:p-8 flex items-end justify-between transition-all duration-500 md:translate-y-4 md:opacity-0 group-hover/item:translate-y-0 group-hover/item:opacity-100">
                     <div className="flex flex-col gap-1">
-                        <p className="text-white text-[10px] md:text-xs font-serif tracking-[0.2em] uppercase">
+                        <p className="text-white text-[10px] md:text-xs font-serif tracking-[0.2em] uppercase drop-shadow-md">
                             {photo.title || "Untitled"}
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-black/20 backdrop-blur-md px-3 py-2 rounded-full border border-white/20">
+                    <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-2 rounded-full border border-white/20 shadow-lg">
                         <span className="text-white text-[9px] md:text-[10px] font-bold tracking-wider leading-none">
                             {photo.uploaderName || "Creator"}
                         </span>
