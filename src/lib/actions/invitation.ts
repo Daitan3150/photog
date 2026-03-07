@@ -130,8 +130,12 @@ export async function removeUser(uid: string, idToken: string) {
         // 1. Delete from Firebase Auth
         await auth.deleteUser(uid);
 
-        // 2. Delete from Firestore 'users'
         const db = getAdminFirestore();
+
+        // Fetch user data before deletion
+        const userDoc = await db.collection('users').doc(uid).get();
+        const deletedUserName = userDoc.exists ? (userDoc.data()?.displayName || 'Unknown User') : 'Unknown User';
+
         await db.collection('users').doc(uid).delete();
 
         // 3. Handle orphaned photos (Move to 'archived' category)
@@ -145,9 +149,11 @@ export async function removeUser(uid: string, idToken: string) {
             for (const doc of userPhotos.docs) {
                 batch.update(doc.ref, {
                     categoryId: 'archived',
-                    uploaderId: '__DELETED_USER__', // Mark as orphaned
+                    uploaderId: `__DELETED_USER_${uid}__`, // Include uid to stay distinct
+                    deletedUserName: deletedUserName,
                     updatedAt: new Date()
                 });
+
                 // Remove from Algolia
                 await syncPhotoToAlgolia({ id: doc.id, categoryId: 'archived' });
             }
@@ -179,6 +185,10 @@ export async function deleteMyAccount(idToken: string) {
 
         const db = getAdminFirestore();
 
+        // Fetch user data before deletion
+        const userDoc = await db.collection('users').doc(uid).get();
+        const deletedUserName = userDoc.exists ? (userDoc.data()?.displayName || 'Unknown User') : 'Unknown User';
+
         // 1. Move photos to 'archived' and sync with Algolia
         const photosRef = db.collection('photos');
         const userPhotos = await photosRef.where('uploaderId', '==', uid).get();
@@ -190,7 +200,8 @@ export async function deleteMyAccount(idToken: string) {
             for (const doc of userPhotos.docs) {
                 batch.update(doc.ref, {
                     categoryId: 'archived',
-                    uploaderId: '__DELETED_USER_SELF__', // Mark as self-deleted
+                    uploaderId: `__DELETED_USER_SELF_${uid}__`,
+                    deletedUserName: deletedUserName,
                     updatedAt: new Date()
                 });
                 // Remove from Algolia

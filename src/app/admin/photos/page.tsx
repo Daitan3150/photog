@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { getPhotos, deletePhoto, bulkDeletePhotos, bulkUpdateCategory, refreshPhotoMetadata } from '@/lib/actions/photos';
 import { getCategories, Category } from '@/lib/actions/categories';
-import { Trash2, ExternalLink, CheckSquare, Square, X, Check, Tag, Edit, Loader2 } from 'lucide-react';
+import { Trash2, ExternalLink, CheckSquare, Square, X, Check, Tag, Edit, Loader2, User } from 'lucide-react';
 import Image from 'next/image';
 import BulkEditModal from '@/components/admin/BulkEditModal';
 import cloudinaryLoader from '@/lib/cloudinary-loader';
@@ -493,18 +493,62 @@ export default function PhotosPage() {
 
                         {/* カテゴリーごとのセクション */}
                         {
-                            categoryNames.map(catName => (
-                                <div key={catName} className="mb-10" id={`section-${catName}`}>
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wider">{catName}</h2>
-                                        <span className="text-sm text-gray-400 font-medium">{groupedByCategory[catName].length}枚</span>
-                                        <div className="h-[1px] flex-1 bg-gray-200" />
+                            categoryNames.map(catName => {
+                                const photosInCategory = groupedByCategory[catName];
+
+                                if (catName === 'ARCHIVED') {
+                                    // Group photos by deletedUserName (or uploaderName as fallback)
+                                    const groupedByUser = photosInCategory.reduce((acc: any, photo: any) => {
+                                        const userName = photo.deletedUserName || photo.uploaderName || 'Unknown User';
+                                        if (!acc[userName]) acc[userName] = [];
+                                        acc[userName].push(photo);
+                                        return acc;
+                                    }, {});
+
+                                    return (
+                                        <div key={catName} className="mb-14" id={`section-${catName}`}>
+                                            <div className="flex items-center gap-3 mb-8">
+                                                <h2 className="text-xl font-bold text-gray-800 tracking-widest flex items-center gap-2">
+                                                    <Trash2 className="w-5 h-5 text-gray-400" />
+                                                    退会ユーザーの投稿 <span className="text-sm font-normal text-gray-400">({photosInCategory.length}枚)</span>
+                                                </h2>
+                                                <div className="h-[1px] flex-1 bg-gray-200" />
+                                            </div>
+
+                                            <div className="space-y-12 pl-2">
+                                                {Object.entries(groupedByUser).map(([userName, userPhotos]: [string, any]) => (
+                                                    <div key={userName} className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 relative shadow-sm">
+                                                        <div className="absolute top-6 left-0 w-1 h-8 bg-gray-300 rounded-r-md" />
+                                                        <h3 className="text-lg font-bold text-gray-700 mb-6 flex items-center gap-2 pl-4">
+                                                            <User className="w-5 h-5 text-gray-400" />
+                                                            {userName}
+                                                            <span className="text-sm font-medium text-gray-400 ml-2 bg-white px-2 py-0.5 rounded-md border border-gray-200">
+                                                                {userPhotos.length} 枚
+                                                            </span>
+                                                        </h3>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                                            {userPhotos.map(renderPhotoCard)}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div key={catName} className="mb-10" id={`section-${catName}`}>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wider">{catName}</h2>
+                                            <span className="text-sm text-gray-400 font-medium">{photosInCategory.length}枚</span>
+                                            <div className="h-[1px] flex-1 bg-gray-200" />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                            {photosInCategory.map(renderPhotoCard)}
+                                        </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                        {groupedByCategory[catName].map(renderPhotoCard)}
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         }
 
                         {
