@@ -15,7 +15,7 @@ export default function AdminLoginPage() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isEmergencyAvailable, setIsEmergencyAvailable] = useState(false);
-    const [mode, setMode] = useState<'login' | 'forgot' | 'force-reset'>('login');
+    const [mode, setMode] = useState<'login' | 'forgot'>('login');
     const [resetEmail, setResetEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -80,32 +80,7 @@ export default function AdminLoginPage() {
         }
     };
 
-    const handleForcePasswordReset = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (newPassword.length < 8) {
-            setError('パスワードは8文字以上で入力してください。');
-            return;
-        }
 
-        setLoading(true);
-        setError(null);
-
-        try {
-            const { emergencySignIn } = await import('@/lib/actions/auth-recovery');
-            const result = await emergencySignIn(resetEmail, 'daiki725412');
-
-            if (result.success && result.token) {
-                setSuccessMessage('パスワードの強制上書きに成功しました（デモ）。このままEmergency Bypassでログインしてください。');
-                setIsEmergencyAvailable(true);
-            } else {
-                setError(result.error || '強制リセットに失敗しました。');
-            }
-        } catch (err: any) {
-            setError('エラーが発生しました。');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleEmergencyLogin = async () => {
         setLoading(true);
@@ -280,73 +255,11 @@ export default function AdminLoginPage() {
                                 >
                                     ← ログインに戻る
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => { setMode('force-reset'); setError(null); setSuccessMessage(null); }}
-                                    className="text-[10px] text-red-400 hover:text-red-600 italic text-left"
-                                >
-                                    ※メールが届かない場合（緊急用パスワード上書き）
-                                </button>
+
                             </div>
                         </form>
                     </>
-                ) : (
-                    <>
-                        <h2 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2">
-                            <ShieldAlert className="w-5 h-5" />
-                            FORCE OVERWRITE
-                        </h2>
-                        <p className="text-xs text-gray-500 mb-4">
-                            サーバー権限を使用してパスワードを上書きします。
-                        </p>
-                        <form onSubmit={handleForcePasswordReset} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">ADMIN EMAIL</label>
-                                <input
-                                    type="email"
-                                    value={resetEmail}
-                                    onChange={(e) => setResetEmail(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-200"
-                                    placeholder="daitan10618@..."
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">NEW PASSWORD</label>
-                                <input
-                                    type="password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-200"
-                                    placeholder="新しいパスワード (8文字以上)"
-                                    required
-                                />
-                            </div>
-
-                            {successMessage && (
-                                <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
-                                    {successMessage}
-                                </div>
-                            )}
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all"
-                            >
-                                {loading ? '処理中...' : 'パスワードを強制上書き'}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => { setMode('login'); setError(null); setSuccessMessage(null); }}
-                                className="w-full text-sm text-gray-500"
-                            >
-                                キャンセル
-                            </button>
-                        </form>
-                    </>
-                )}
+                ) : null}
             </div>
         </div>
     );
