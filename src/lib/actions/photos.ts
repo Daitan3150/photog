@@ -357,9 +357,55 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
             return dateB - dateA;
         });
 
+        // 🔄 Admin Profile fetching for override
+        let adminName = 'Daitan';
+        let adminPhotoURL = '/images/portrait.png';
+        try {
+            const profileDoc = await db.collection('settings').doc('profile').get();
+            if (profileDoc.exists) {
+                const pData = profileDoc.data();
+                adminName = pData?.name || 'Daitan';
+                adminPhotoURL = pData?.imageUrl || '/images/portrait.png';
+            }
+        } catch (ep) {
+            console.error('Error fetching admin profile:', ep);
+        }
+
+        // 🔄 Fetch uploader profiles
+        const uploaderIds = Array.from(new Set(photos.map((p: any) => p.uploaderId).filter(Boolean)));
+        const missingIds = uploaderIds.filter(id => !userProfileCache.has(id));
+
+        if (missingIds.length > 0) {
+            try {
+                for (let i = 0; i < missingIds.length; i += 10) {
+                    const chunk = missingIds.slice(i, i + 10);
+                    const userDocs = await db.collection('users').where('__name__', 'in', chunk).get();
+                    userDocs.forEach((doc: any) => {
+                        const d = doc.data();
+                        const is_admin = SUPER_ADMIN_EMAILS.includes(d.email || d.uploaderEmail || '');
+                        userProfileCache.set(doc.id, {
+                            displayName: is_admin ? adminName : (d.displayName || 'Anonymous'),
+                            photoURL: is_admin ? adminPhotoURL : (d.photoURL || '')
+                        });
+                    });
+                }
+            } catch (e) {
+                console.error('[getPhotos] Error fetching uploader profiles:', e);
+            }
+        }
+
+        let photosWithUploader = photos.map((p: any) => {
+            const uploader = userProfileCache.get(p.uploaderId) || { displayName: '', photoURL: '' };
+            return {
+                ...p,
+                uploaderName: uploader.displayName,
+                uploaderPhotoURL: uploader.photoURL
+            };
+        });
+
         // 本来の Limit 分だけ抽出
-        const finalPhotos = photos.slice(0, options.limit || 50);
-        const nextCursor = photos.length > (options.limit || 50) ? String(photos[(options.limit || 50) - 1].id) : null;
+        const finalPhotos = photosWithUploader.slice(0, options.limit || 50);
+        const nextCursor = photosWithUploader.length > (options.limit || 50) ? String(photosWithUploader[(options.limit || 50) - 1].id) : null;
 
         console.log(`[getPhotos] Returning ${finalPhotos.length} photos.`);
 
