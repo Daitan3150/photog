@@ -357,51 +357,8 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
             return dateB - dateA;
         });
 
-        // 🔄 Admin Profile fetching for override
-        let adminName = 'Daitan';
-        let adminPhotoURL = '/images/portrait.png';
-        try {
-            const profileDoc = await db.collection('settings').doc('profile').get();
-            if (profileDoc.exists) {
-                const pData = profileDoc.data();
-                adminName = pData?.name || 'Daitan';
-                adminPhotoURL = pData?.imageUrl || '/images/portrait.png';
-            }
-        } catch (ep) {
-            console.error('Error fetching admin profile:', ep);
-        }
-
-        // 🔄 Fetch uploader profiles
-        const uploaderIds = Array.from(new Set(photos.map((p: any) => p.uploaderId).filter(Boolean))) as string[];
-        const missingIds = uploaderIds.filter((id: string) => !userProfileCache.has(id));
-
-        if (missingIds.length > 0) {
-            try {
-                for (let i = 0; i < missingIds.length; i += 10) {
-                    const chunk = missingIds.slice(i, i + 10);
-                    const userDocs = await db.collection('users').where('__name__', 'in', chunk).get();
-                    userDocs.forEach((doc: any) => {
-                        const d = doc.data();
-                        const is_admin = SUPER_ADMIN_EMAILS.includes(d.email || d.uploaderEmail || '');
-                        userProfileCache.set(doc.id, {
-                            displayName: is_admin ? adminName : (d.displayName || 'Anonymous'),
-                            photoURL: is_admin ? adminPhotoURL : (d.photoURL || '')
-                        });
-                    });
-                }
-            } catch (e) {
-                console.error('[getPhotos] Error fetching uploader profiles:', e);
-            }
-        }
-
-        let photosWithUploader = photos.map((p: any) => {
-            const uploader = userProfileCache.get(p.uploaderId) || { displayName: '', photoURL: '' };
-            return {
-                ...p,
-                uploaderName: uploader.displayName,
-                uploaderPhotoURL: uploader.photoURL
-            };
-        });
+        // 🔄 Enrich with uploader profiles
+        const photosWithUploader = await enrichPhotosWithUploader(photos, db);
 
         // 本来の Limit 分だけ抽出
         const finalPhotos = photosWithUploader.slice(0, options.limit || 50);
@@ -759,7 +716,7 @@ export async function refreshPhotoMetadata(photoId: string, idToken: string): Pr
     }
 }
 
-// [NEW] Helper to map Category ID (slug) to Display Name
+// 🔄 Helper to map Category ID (slug) to Display Name
 const CATEGORY_MAP: Record<string, string> = {
     'cosplay': 'COSPLAY',
     'portrait': 'PORTRAIT',
@@ -768,11 +725,92 @@ const CATEGORY_MAP: Record<string, string> = {
     'landscape': 'LANDSCAPE',
     'animal': 'ANIMAL',
     'archived': 'ARCHIVED',
+    'works': 'WORKS',
 };
 
 // 🏛️ Cache for user profiles to avoid N+1 queries during photo fetch
 const userProfileCache = new Map<string, { displayName: string, photoURL: string }>();
 
+/**
+ * 🔄 Helper function to enrich photos with uploader profile info and admin overrides.
+ * This ensures consistent branding and uploader icons across the entire app.
+ */
+async function enrichPhotosWithUploader(photos: any[], db: any) {
+    if (!photos || photos.length === 0) return [];
+
+    // 1. Fetch Admin Profile for override (Daitan's custom name and icon)
+    let adminName = 'Daitan';
+    let adminPhotoURL = '/images/portrait.png';
+    try {
+        const profileDoc = await db.collection('settings').doc('profile').get();
+        if (profileDoc.exists) {
+            const pData = profileDoc.data();
+            adminName = pData?.name || 'Daitan';
+            adminPhotoURL = pData?.imageUrl || '/images/portrait.png';
+        }
+    } catch (e) {
+        console.error('[enrichPhotos] Admin profile fetch error:', e);
+    }
+
+    // 2. Fetch missing uploader profiles from 'users' collection
+    const uploaderIds = Array.from(new Set(
+        photos.map(p => p.uploaderId).filter(id => id && typeof id === 'string' && !userProfileCache.has(id))
+    )) as string[];
+
+    if (uploaderIds.length > 0) {
+        try {
+            for (let i = 0; i < uploaderIds.length; i += 10) {
+                const chunk = uploaderIds.slice(i, i + 10);
+                const userDocs = await db.collection('users').where('__name__', 'in', chunk).get();
+                userDocs.forEach((doc: any) => {
+                    const d = doc.data();
+                    const is_admin = SUPER_ADMIN_EMAILS.includes(d.email || d.uploaderEmail || '');
+                    userProfileCache.set(doc.id, {
+                        displayName: is_admin ? adminName : (d.displayName || d.email?.split('@')[0] || 'Anonymous'),
+                        photoURL: is_admin ? adminPhotoURL : (d.photoURL || '')
+                    });
+                });
+            }
+        } catch (e) {
+            console.error('[enrichPhotos] User fetch error:', e);
+        }
+    }
+
+    // 3. Map and Apply Override Logic
+    return photos.map(data => {
+        const uploaderId = data.uploaderId;
+        const uploaderEmail = data.uploaderEmail;
+
+        // Is this an admin photo? Check by Email directly OR by ID already in cache
+        const cachedUploader = uploaderId ? userProfileCache.get(uploaderId) : null;
+        const is_admin = SUPER_ADMIN_EMAILS.includes(uploaderEmail || '') ||
+            (cachedUploader && SUPER_ADMIN_EMAILS.includes(cachedUploader.displayName)); // Catch cases where email was used as name
+
+        // Final attribution
+        let finalName = '';
+        let finalPhotoURL = '';
+
+        if (is_admin) {
+            finalName = adminName;
+            finalPhotoURL = adminPhotoURL;
+        } else if (cachedUploader) {
+            finalName = cachedUploader.displayName;
+            finalPhotoURL = cachedUploader.photoURL;
+        } else {
+            // Fallback: If it's an email, we show the part before @ if admin, but here it's already checked.
+            // For regular users, we show their stored name or split email if allowed.
+            const uName = data.uploaderName || uploaderEmail?.split('@')[0] || 'Anonymous';
+            finalName = uName;
+            finalPhotoURL = '';
+        }
+
+        return {
+            ...data,
+            uploaderName: finalName,
+            uploaderPhotoURL: finalPhotoURL
+        };
+    });
+}
 export async function searchPhotos(query: string, options: { category?: string; limit?: number } = {}) {
     const { category, limit = 50 } = options;
     try {
@@ -799,12 +837,10 @@ export async function searchPhotos(query: string, options: { category?: string; 
                     .get();
                 photos = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
             } else {
-                // 🛠️ 特定カテゴリの取得（インデックスエラーを避けるため orderBy を外す）
-                // Firestore では where と orderBy を組み合わせると複合インデックスが必要になりますが、
-                // ポートフォリオ程度なら全件取得してメモリでソートしても十分高速です。
+                // 🛠️ 特定カテゴリの取得
                 let queryRef = db.collection('photos').where('categoryId', '==', targetCat);
 
-                // 例外の処理 (snap/snapshot 等)
+                // カテゴリ名の揺れを吸収
                 if (targetCat === 'snapshot') {
                     queryRef = db.collection('photos').where('categoryId', 'in', ['snapshot', 'snap', 'SNAPSHOT', 'SNAP']);
                 } else if (targetCat === 'landscape') {
@@ -818,12 +854,9 @@ export async function searchPhotos(query: string, options: { category?: string; 
                 photos.sort((a: any, b: any) => {
                     let dateA = 0;
                     let dateB = 0;
-                    if (a.createdAt) {
-                        dateA = typeof a.createdAt.toDate === 'function' ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime();
-                    }
-                    if (b.createdAt) {
-                        dateB = typeof b.createdAt.toDate === 'function' ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime();
-                    }
+                    const getT = (v: any) => v?.toDate ? v.toDate().getTime() : (v ? new Date(v).getTime() : 0);
+                    dateA = getT(a.createdAt);
+                    dateB = getT(b.createdAt);
                     if (isNaN(dateA)) dateA = 0;
                     if (isNaN(dateB)) dateB = 0;
                     return dateB - dateA;
@@ -832,55 +865,15 @@ export async function searchPhotos(query: string, options: { category?: string; 
                 if (photos.length > limit) photos = photos.slice(0, limit);
             }
 
-            // 🔄 Admin Profile fetching for override
-            let adminName = 'Daitan';
-            let adminPhotoURL = '/images/portrait.png';
-            try {
-                const profileDoc = await db.collection('settings').doc('profile').get();
-                if (profileDoc.exists) {
-                    const pData = profileDoc.data();
-                    adminName = pData?.name || 'Daitan';
-                    adminPhotoURL = pData?.imageUrl || '/images/portrait.png';
-                }
-            } catch (ep) {
-                console.error('Error fetching admin profile:', ep);
-            }
+            // 🔄 Enrich with uploader profiles
+            const results_raw = await enrichPhotosWithUploader(photos, db);
 
-            // 🔄 一人一人の投稿者プロファイルを紐付け（N+1を避けるためキャッシュ活用 & 一括取得）
-            const uploaderIds = Array.from(new Set(photos.map((p: any) => p.uploaderId).filter(Boolean))) as string[];
-            const missingIds = uploaderIds.filter((id: string) => !userProfileCache.has(id));
-
-            if (missingIds.length > 0) {
-                try {
-                    // split missingIds into chunks of 10 for 'in' query
-                    for (let i = 0; i < missingIds.length; i += 10) {
-                        const chunk = missingIds.slice(i, i + 10);
-                        const userDocs = await db.collection('users').where('__name__', 'in', chunk).get();
-                        userDocs.forEach((doc: any) => {
-                            const d = doc.data();
-                            // Check if this user is a super admin
-                            const is_admin = SUPER_ADMIN_EMAILS.includes(d.email || d.uploaderEmail || '');
-
-                            userProfileCache.set(doc.id, {
-                                displayName: is_admin ? adminName : (d.displayName || 'Anonymous'),
-                                photoURL: is_admin ? adminPhotoURL : (d.photoURL || '')
-                            });
-                        });
-                    }
-                } catch (e) {
-                    console.error('[searchPhotos] Error fetching uploader profiles:', e);
-                }
-            }
-
-            const results_data = photos.map((data: any) => {
+            const results_data = results_raw.map((data: any) => {
                 const catId = String(data.categoryId || '');
-                const uploader = userProfileCache.get(data.uploaderId) || { displayName: '', photoURL: '' };
                 return {
                     ...data,
                     categoryId: catId,
                     category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
-                    uploaderName: uploader.displayName,
-                    uploaderPhotoURL: uploader.photoURL
                 };
             }).filter((p: any) =>
                 p.categoryId &&
@@ -926,8 +919,10 @@ export async function searchPhotos(query: string, options: { category?: string; 
             })
         );
 
-        const results_data = photoDocs
-            .filter(Boolean)
+        // 🔄 Enrich with uploader profiles
+        const results_raw = await enrichPhotosWithUploader(photoDocs.filter(Boolean), db);
+
+        const results_data = results_raw
             .map((data: any) => {
                 const catId = String(data.categoryId || '');
                 return {
@@ -1257,53 +1252,15 @@ export async function getRecentPhotos(limit: number = 6) {
             ...doc.data()
         }));
 
-        // 🔄 Admin Profile fetching for override
-        let adminName = 'Daitan';
-        let adminPhotoURL = '/images/portrait.png';
-        try {
-            const profileDoc = await db.collection('settings').doc('profile').get();
-            if (profileDoc.exists) {
-                const pData = profileDoc.data();
-                adminName = pData?.name || 'Daitan';
-                adminPhotoURL = pData?.imageUrl || '/images/portrait.png';
-            }
-        } catch (ep) {
-            console.error('Error fetching admin profile:', ep);
-        }
+        // 🔄 Enrich with uploader profiles
+        const enriched = await enrichPhotosWithUploader(photosRaw, db);
 
-        // 🔄 Fetch uploader profiles
-        const uploaderIds = Array.from(new Set(photosRaw.map((p: any) => (p as any).uploaderId).filter(Boolean))) as string[];
-        const missingIds = uploaderIds.filter((id: string) => !userProfileCache.has(id));
-
-        if (missingIds.length > 0) {
-            try {
-                for (let i = 0; i < missingIds.length; i += 10) {
-                    const chunk = missingIds.slice(i, i + 10);
-                    const userDocs = await db.collection('users').where('__name__', 'in', chunk).get();
-                    userDocs.forEach((doc: any) => {
-                        const d = doc.data();
-                        const is_admin = SUPER_ADMIN_EMAILS.includes(d.email || d.uploaderEmail || '');
-                        userProfileCache.set(doc.id, {
-                            displayName: is_admin ? adminName : (d.displayName || 'Anonymous'),
-                            photoURL: is_admin ? adminPhotoURL : (d.photoURL || '')
-                        });
-                    });
-                }
-            } catch (e) {
-                console.error('[getRecentPhotos] Error fetching uploader profiles:', e);
-            }
-        }
-
-        const photos = photosRaw
-            .map((p: any) => {
-                const data = p;
+        const photos = enriched
+            .map((data: any) => {
                 const catId = data.categoryId || '';
-                const uploader = userProfileCache.get(data.uploaderId) || { displayName: '', photoURL: '' };
                 return {
                     ...data,
                     category: CATEGORY_MAP[String(catId)] || String(catId).toUpperCase() || 'OTHER',
-                    uploaderName: uploader.displayName,
-                    uploaderPhotoURL: uploader.photoURL,
                     shotAt: serializeData(data.shotAt),
                     createdAt: serializeData(data.createdAt),
                     updatedAt: serializeData(data.updatedAt),
