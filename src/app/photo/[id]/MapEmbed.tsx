@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getMapEmbedUrl } from "@/lib/actions/map";
 
 export default function MapEmbed({ lat, lng }: { lat: number; lng: number }) {
     const [mapUrl, setMapUrl] = useState<string | null>(null);
@@ -8,18 +9,10 @@ export default function MapEmbed({ lat, lng }: { lat: number; lng: number }) {
     useEffect(() => {
         async function load() {
             try {
-                const res = await fetch("/api/mapurl", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ address: `${lat},${lng}` }),
-                });
-
-                if (!res.ok) return;
-
-                const data = (await res.json()) as { mapUrl?: string };
-                setMapUrl(data.mapUrl || null);
+                const url = await getMapEmbedUrl(lat, lng);
+                setMapUrl(url);
             } catch (err) {
-                console.error("Failed to load map URL", err);
+                console.error("Failed to load map URL via Server Action", err);
             }
         }
         load();
