@@ -1,9 +1,9 @@
 import Hero from "@/components/ui/Hero";
-import PhotoGrid from "@/components/gallery/PhotoGrid";
+import RecentWorksSlider from "@/components/home/RecentWorksSlider";
 import { getRecentPhotos } from "@/lib/actions/photos";
 import { getSiteSettings } from "@/lib/actions/settings";
 import { Suspense } from "react";
-import HomeFeaturedSection, { HomeRecentWorksHeader, HomeViewAllLink } from "@/components/home/HomeSections";
+import HomeFeaturedSection from "@/components/home/HomeSections";
 
 import { Metadata } from "next";
 
@@ -31,22 +31,16 @@ export default async function Home() {
         snapshotCoverUrl={settings.covers.home_snapshot}
       />
 
-      {/* Recent Works Section */}
-      <section className="py-16 md:py-24 px-4 md:px-12 bg-transparent">
-        <HomeRecentWorksHeader />
-
-        <Suspense fallback={<div className="text-center py-12"><div className="w-8 h-8 border-2 border-gray-200 border-t-black rounded-full animate-spin mx-auto" /></div>}>
-          {displayPhotos.length > 0 ? (
-            <PhotoGrid photos={displayPhotos as any[]} overlayVariant="category" />
-          ) : (
-            <div className="text-center py-12 text-gray-400">
-              <p>No photos found.</p>
-            </div>
-          )}
-        </Suspense>
-
-        <HomeViewAllLink />
-      </section>
+      {/* Recent Works Section (Cinematic Slider) */}
+      <Suspense fallback={<div className="text-center py-20 bg-[#0a0a0a]"><div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto" /></div>}>
+        {displayPhotos.length > 0 ? (
+          <RecentWorksSlider photos={displayPhotos as any[]} />
+        ) : (
+          <div className="text-center py-20 bg-[#0a0a0a] text-white/40 tracking-[0.2em] uppercase text-sm">
+            <p>No recent works found.</p>
+          </div>
+        )}
+      </Suspense>
     </main>
   );
 }
