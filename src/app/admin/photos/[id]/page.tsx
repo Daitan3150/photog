@@ -589,9 +589,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                             width="100%"
                                             height="100%"
                                             frameBorder="0"
-                                            src={process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
-                                                ? `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${formData.latitude},${formData.longitude}&zoom=15`
-                                                : `https://www.openstreetmap.org/export/embed.html?bbox=${formData.longitude - 0.005},${formData.latitude - 0.005},${formData.longitude + 0.005},${formData.latitude + 0.005}&layer=mapnik&marker=${formData.latitude},${formData.longitude}`}
+                                            src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}&q=${formData.latitude},${formData.longitude}&zoom=15`}
                                             className="grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500"
                                         />
                                         <div className="absolute inset-0 pointer-events-none border-2 border-transparent group-hover:border-blue-500/20 transition-all rounded-xl" />

@@ -32,6 +32,9 @@ interface Photo {
     event?: string;
     displayMode?: 'title' | 'character';
     aspectRatio?: "portrait" | "landscape" | "square";
+    latitude?: number;
+    longitude?: number;
+    address?: string;
     href?: string;
     uploaderName?: string;
     uploaderPhotoURL?: string;

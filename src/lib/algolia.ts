@@ -43,6 +43,8 @@ export interface AlgoliaPhoto {
     address: string;
     category: string;
     tags: string[];
+    latitude?: number | null;
+    longitude?: number | null;
     shotAt: number;
     createdAt: number;
 }
@@ -76,6 +78,8 @@ export async function syncPhotoToAlgolia(
             address: photo.address || '',
             category: photo.category || '',
             tags: photo.tags || [],
+            latitude: photo.latitude || null,
+            longitude: photo.longitude || null,
             shotAt:
                 photo.shotAt instanceof Date
                     ? photo.shotAt.getTime()

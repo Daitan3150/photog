@@ -366,6 +366,8 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
                 focalPoint: data.focalPoint || null,
                 aspectRatio: data.aspectRatio || 1.5,
                 tags: data.tags || [],
+                latitude: data.latitude || null,
+                longitude: data.longitude || null,
                 exif: safeExif,
                 shotAt: serializeData(data.shotAt),
                 createdAt: serializeData(data.createdAt) || new Date().toISOString(),
@@ -897,6 +899,8 @@ export async function searchPhotos(query: string, options: { category?: string; 
                     ...data,
                     categoryId: catId,
                     category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
+                    latitude: data.latitude || null,
+                    longitude: data.longitude || null,
                 };
             }).filter((p: any) =>
                 p.categoryId &&
@@ -950,6 +954,8 @@ export async function searchPhotos(query: string, options: { category?: string; 
                 const catId = String(data.categoryId || '');
                 return {
                     ...data,
+                    latitude: data.latitude || null,
+                    longitude: data.longitude || null,
                     category: CATEGORY_MAP[catId] || CATEGORY_MAP[catId.toLowerCase()] || catId.toUpperCase() || 'LANDSCAPE',
                 };
             });
@@ -1210,15 +1216,18 @@ export async function getPhotoById(photoId: string, idToken: string): Promise<an
 
         const safeExif = serializeData(data?.exif);
 
-        return {
+        return serializeData({
             id: photoDoc.id,
             ...data,
+            address: data?.address || '',
+            latitude: data?.latitude || null,
+            longitude: data?.longitude || null,
             exif: safeExif,
             category: CATEGORY_MAP[String(catId)] || String(catId).toUpperCase() || 'OTHER',
-            shotAt: serializeData(data?.shotAt),
-            createdAt: serializeData(data?.createdAt) || new Date().toISOString(),
-            updatedAt: serializeData(data?.updatedAt) || new Date().toISOString(),
-        };
+            shotAt: data?.shotAt,
+            createdAt: data?.createdAt || new Date().toISOString(),
+            updatedAt: data?.updatedAt || new Date().toISOString(),
+        });
     } catch (error) {
         console.error('Error fetching photo by ID:', error);
         return null;
@@ -1240,6 +1249,8 @@ export async function getPublicPhotoById(photoId: string): Promise<any> {
             id: photoId,
             ...data,
             address: data?.address || '',
+            latitude: data?.latitude || null,
+            longitude: data?.longitude || null,
             category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
             shotAt: serializeData(data?.shotAt),
             createdAt: serializeData(data?.createdAt),
@@ -1277,6 +1288,8 @@ export async function getRecentPhotos(limit: number = 6) {
                 return {
                     ...data,
                     address: data.address || '',
+                    latitude: data.latitude || null,
+                    longitude: data.longitude || null,
                     category: CATEGORY_MAP[String(catId)] || String(catId).toUpperCase() || 'OTHER',
                     shotAt: serializeData(data.shotAt),
                     createdAt: serializeData(data.createdAt),
