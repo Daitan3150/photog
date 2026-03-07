@@ -134,9 +134,25 @@ export async function removeUser(uid: string, idToken: string) {
         const db = getAdminFirestore();
         await db.collection('users').doc(uid).delete();
 
-        // For now, we just leave them or you can add logic to delete them if needed.
+        // 3. Handle orphaned photos (Move to 'archived' category)
+        const photosRef = db.collection('photos');
+        const userPhotos = await photosRef.where('uploaderId', '==', uid).get();
+
+        if (!userPhotos.empty) {
+            const batch = db.batch();
+            userPhotos.docs.forEach(doc => {
+                batch.update(doc.ref, {
+                    categoryId: 'archived',
+                    uploaderId: '__DELETED_USER__', // Mark as orphaned
+                    updatedAt: new Date()
+                });
+            });
+            await batch.commit();
+            console.log(`[Admin Action] Moved ${userPhotos.size} photos of deleted user ${uid} to archived.`);
+        }
 
         revalidatePath('/admin/users');
+        revalidatePath('/admin/photos');
         console.log(`[Admin Action] User ${uid} removed by ${decodedToken.email}`);
         return { success: true };
     } catch (error: any) {

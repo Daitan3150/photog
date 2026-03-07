@@ -260,6 +260,7 @@ export default function PhotosPage() {
     // カテゴリー名を ID から取得
     const getCategoryName = (categoryId: string | null) => {
         if (!categoryId) return null;
+        if (categoryId === 'archived') return '🗑️ 削除済みユーザーの投稿';
         return categories.find(c => c.id === categoryId)?.name || categoryId;
     };
 
@@ -335,7 +336,7 @@ export default function PhotosPage() {
                                 }
                             }}
                             className={`bg-white rounded-xl shadow-sm overflow-hidden border transition-all cursor-pointer group relative ${isSelected ? 'ring-2 ring-blue-500 border-transparent' : 'border-gray-100 hover:shadow-md'
-                                }`}
+                                } ${photo.categoryId === 'archived' ? 'opacity-80 grayscale-[0.3]' : ''}`}
                         >
                             {isSelectionMode && (
                                 <div className={`absolute top-3 left-3 z-10 p-1 rounded-md transition-colors ${isSelected ? 'bg-blue-500 text-white' : 'bg-white/80 text-gray-400 border border-gray-200'
@@ -546,6 +547,7 @@ export default function PhotosPage() {
                                     {categories.map(cat => (
                                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                                     ))}
+                                    <option value="archived" className="text-red-400">🗑️ 削除済みユーザーとして保存</option>
                                 </select>
                                 <button
                                     onClick={handleBulkCategoryUpdate}

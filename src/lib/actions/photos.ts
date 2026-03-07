@@ -9,7 +9,7 @@ import { syncPhotoToAlgolia } from '../algolia';
 import { appendToMetadataRegistry } from './metadata';
 import { revalidatePath } from 'next/cache';
 
-const CATEGORIES = ['all', 'portrait', 'snapshot', 'cosplay', 'landscape', 'animal', 'other'];
+const CATEGORIES = ['all', 'portrait', 'snapshot', 'cosplay', 'landscape', 'animal', 'other', 'archived'];
 
 async function purgePublicCache() {
     try {
@@ -721,6 +721,7 @@ const CATEGORY_MAP: Record<string, string> = {
     'snap': 'SNAPSHOT', // Handle legacy
     'landscape': 'LANDSCAPE',
     'animal': 'ANIMAL',
+    'archived': 'ARCHIVED',
 };
 
 export async function searchPhotos(query: string, options: { category?: string; limit?: number } = {}) {
@@ -789,7 +790,13 @@ export async function searchPhotos(query: string, options: { category?: string; 
                     categoryId: catId,
                     category: CATEGORY_MAP[catId] || catId.toUpperCase() || 'OTHER',
                 };
-            }).filter((p: any) => p.categoryId && String(p.categoryId).trim() !== '' && p.url && String(p.url).trim() !== '');
+            }).filter((p: any) =>
+                p.categoryId &&
+                String(p.categoryId).trim() !== '' &&
+                p.categoryId !== 'archived' &&
+                p.url &&
+                String(p.url).trim() !== ''
+            );
 
             const serialized = serializeData(results_data);
             await setCachedData(cacheKey, serialized, 3600);
