@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/admin/AuthProvider';
-import { getPhotoById, updatePhoto, getExifSuggestions, refreshPhotoMetadata } from '@/lib/actions/photos';
+import { getPhotoById, updatePhoto, getExifSuggestions, refreshPhotoMetadata, getCoordinatesAction } from '@/lib/actions/photos';
 import { getCategories, Category } from '@/lib/actions/categories';
 import { getSubjects, Subject } from '@/lib/actions/subjects';
 import Image from 'next/image';
@@ -506,13 +506,22 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                     <button
                                         type="button"
                                         onClick={async () => {
-                                            const { getCoordinates } = await import('@/lib/utils/location');
-                                            const coords = await getCoordinates(formData.location);
-                                            if (coords) {
-                                                setFormData(prev => ({ ...prev, latitude: coords.lat, longitude: coords.lng }));
-                                                alert(`位置情報を取得しました: ${coords.lat}, ${coords.lng}`);
-                                            } else {
-                                                alert('位置情報の取得に失敗しました。');
+                                            if (!formData.location) return;
+                                            try {
+                                                const coords = await getCoordinatesAction(formData.location);
+                                                if (coords) {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        latitude: coords.lat,
+                                                        longitude: coords.lng
+                                                    }));
+                                                    alert(`位置情報を取得しました: ${coords.lat}, ${coords.lng}`);
+                                                } else {
+                                                    alert('位置情報が見つかりませんでした。別の言葉で試してみてください。');
+                                                }
+                                            } catch (err) {
+                                                console.error('Search error:', err);
+                                                alert('検索中にエラーが発生しました。');
                                             }
                                         }}
                                         className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold transition-all"
