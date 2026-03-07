@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { checkInvitationCode } from '@/lib/actions/invitation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,7 +8,7 @@ import { Sparkles, ArrowRight, Camera, Info, Ticket, Check } from 'lucide-react'
 import IssuanceMascot from '@/components/admin/IssuanceMascot';
 import Link from 'next/link';
 
-export default function ClaimInvitePage() {
+function ClaimInviteContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const codeFromUrl = searchParams.get('code');
@@ -184,5 +184,21 @@ export default function ClaimInvitePage() {
                 </motion.div>
             </div>
         </main>
+    );
+}
+
+export default function ClaimInvitePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-white flex items-center justify-center">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-8 h-8 border-2 border-pink-200 border-t-pink-500 rounded-full"
+                />
+            </div>
+        }>
+            <ClaimInviteContent />
+        </Suspense>
     );
 }
