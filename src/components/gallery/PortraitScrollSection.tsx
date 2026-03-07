@@ -63,6 +63,7 @@ export default function PortraitScrollSection({ modelName, photos }: PortraitScr
                             index={index}
                             searchParams={searchParams}
                             modelName={modelName}
+                            containerRef={containerRef}
                         />
                     ))}
 
@@ -94,21 +95,25 @@ export default function PortraitScrollSection({ modelName, photos }: PortraitScr
     );
 }
 
-function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
+function PortraitPhotoItem({ photo, index, searchParams, modelName, containerRef }: {
     photo: Photo,
     index: number,
     searchParams: any,
-    modelName: string
+    modelName: string,
+    containerRef: React.RefObject<HTMLDivElement | null>
 }) {
     const itemRef = useRef<HTMLDivElement>(null);
     const { scrollXProgress } = useScroll({
         target: itemRef,
+        container: containerRef,
+        axis: "x",
         offset: ["start end", "end start"]
     });
 
     // 儚く消えるアニメーション: スクロール位置に応じて透明度とスケールを変化
-    const opacity = useTransform(scrollXProgress, [0, 0.4, 0.6, 1], [0, 1, 1, 0]);
-    const scale = useTransform(scrollXProgress, [0, 0.4, 0.6, 1], [0.95, 1, 1, 0.95]);
+    // [0, 0.4, 0.6, 1] -> 入ってきて、中央付近で1になり、出ていくときに0になる
+    const opacity = useTransform(scrollXProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0]);
+    const scale = useTransform(scrollXProgress, [0, 0.3, 0.7, 1], [0.95, 1, 1, 0.95]);
 
     return (
         <motion.div
