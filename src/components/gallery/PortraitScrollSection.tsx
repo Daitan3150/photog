@@ -19,6 +19,20 @@ interface Photo {
     uploaderPhotoURL?: string;
     nextPhotoUrl?: string | null;
     prevPhotoUrl?: string | null;
+    location?: string;
+    snsUrl?: string;
+    characterName?: string;
+    event?: string;
+    displayMode?: 'title' | 'character';
+    aspectRatio?: number;
+    exif?: {
+        Model?: string;
+        LensModel?: string;
+        FNumber?: number;
+        ExposureTime?: number;
+        ISO?: number;
+        FocalLength?: number;
+    };
 }
 
 interface PortraitScrollSectionProps {
