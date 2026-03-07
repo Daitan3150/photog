@@ -60,7 +60,7 @@ export default withSentryConfig(nextConfig, {
   silent: !process.env.CI,
 
   // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
+  // disableLogger is deprecated, use webpack instead
 
   // Ensure sourcemaps are uploaded correctly
   widenClientFileUpload: true,
