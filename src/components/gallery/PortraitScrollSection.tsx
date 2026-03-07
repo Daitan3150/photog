@@ -1,12 +1,13 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import cloudinaryLoader from "@/lib/cloudinary-loader";
 import { User, ChevronRight } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useRef } from "react";
+import Lightbox from "./Lightbox";
 
 interface Photo {
     id: string;
@@ -16,6 +17,8 @@ interface Photo {
     subjectName?: string;
     uploaderName?: string;
     uploaderPhotoURL?: string;
+    nextPhotoUrl?: string | null;
+    prevPhotoUrl?: string | null;
 }
 
 interface PortraitScrollSectionProps {
@@ -25,7 +28,46 @@ interface PortraitScrollSectionProps {
 
 export default function PortraitScrollSection({ modelName, photos }: PortraitScrollSectionProps) {
     const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
     const containerRef = useRef<HTMLDivElement>(null);
+
+    const selectedId = searchParams.get('img');
+    const selectedPhotoIndex = photos.findIndex(p => p.id === selectedId);
+    let selectedPhoto = selectedPhotoIndex !== -1 ? photos[selectedPhotoIndex] : null;
+
+    // Next/Prev logic for Lightbox
+    if (selectedPhoto) {
+        selectedPhoto = {
+            ...selectedPhoto,
+            nextPhotoUrl: selectedPhotoIndex < photos.length - 1 ? photos[selectedPhotoIndex + 1]?.url || null : null,
+            prevPhotoUrl: selectedPhotoIndex > 0 ? photos[selectedPhotoIndex - 1]?.url || null : null
+        };
+    }
+
+    const closeLightbox = () => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete('img');
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    };
+
+    const nextPhoto = () => {
+        if (selectedPhotoIndex < photos.length - 1) {
+            const nextId = photos[selectedPhotoIndex + 1].id;
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('img', nextId);
+            router.push(`${pathname}?${params.toString()}`, { scroll: false });
+        }
+    };
+
+    const prevPhoto = () => {
+        if (selectedPhotoIndex > 0) {
+            const prevId = photos[selectedPhotoIndex - 1].id;
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('img', prevId);
+            router.push(`${pathname}?${params.toString()}`, { scroll: false });
+        }
+    };
 
     return (
         <section className="mb-32 last:mb-0 overflow-hidden">
@@ -86,6 +128,17 @@ export default function PortraitScrollSection({ modelName, photos }: PortraitScr
                     />
                 </div>
             </div>
+
+            <AnimatePresence>
+                {selectedPhoto && (
+                    <Lightbox
+                        photo={selectedPhoto as any}
+                        onClose={closeLightbox}
+                        onNext={selectedPhotoIndex < photos.length - 1 ? nextPhoto : undefined}
+                        onPrev={selectedPhotoIndex > 0 ? prevPhoto : undefined}
+                    />
+                )}
+            </AnimatePresence>
 
             <style jsx global>{`
                 .no-scrollbar::-webkit-scrollbar {
