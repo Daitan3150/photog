@@ -19,7 +19,6 @@ export default async function Home() {
   const displayPhotos = photos.map((p: any) => ({
     ...p,
     category: p.categoryId,
-    aspectRatio: "portrait" as const,
   }));
 
   return (

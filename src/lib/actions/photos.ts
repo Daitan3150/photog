@@ -786,6 +786,20 @@ export async function searchPhotos(query: string, options: { category?: string; 
                 if (photos.length > limit) photos = photos.slice(0, limit);
             }
 
+            // 🔄 Admin Profile fetching for override
+            let adminName = 'Daitan';
+            let adminPhotoURL = '/images/portrait.png';
+            try {
+                const profileDoc = await db.collection('settings').doc('profile').get();
+                if (profileDoc.exists) {
+                    const pData = profileDoc.data();
+                    adminName = pData?.name || 'Daitan';
+                    adminPhotoURL = pData?.imageUrl || '/images/portrait.png';
+                }
+            } catch (ep) {
+                console.error('Error fetching admin profile:', ep);
+            }
+
             // 🔄 一人一人の投稿者プロファイルを紐付け（N+1を避けるためキャッシュ活用 & 一括取得）
             const uploaderIds = Array.from(new Set(photos.map(p => p.uploaderId).filter(Boolean)));
             const missingIds = uploaderIds.filter(id => !userProfileCache.has(id));
@@ -798,9 +812,12 @@ export async function searchPhotos(query: string, options: { category?: string; 
                         const userDocs = await db.collection('users').where('__name__', 'in', chunk).get();
                         userDocs.forEach((doc: any) => {
                             const d = doc.data();
+                            // Check if this user is a super admin
+                            const is_admin = SUPER_ADMIN_EMAILS.includes(d.email || d.uploaderEmail || '');
+
                             userProfileCache.set(doc.id, {
-                                displayName: d.displayName || 'Anonymous',
-                                photoURL: d.photoURL || ''
+                                displayName: is_admin ? adminName : (d.displayName || 'Anonymous'),
+                                photoURL: is_admin ? adminPhotoURL : (d.photoURL || '')
                             });
                         });
                     }
@@ -1189,14 +1206,58 @@ export async function getRecentPhotos(limit: number = 6) {
             .limit(limit + 10)
             .get();
 
-        const photos = snapshot.docs
-            .map((doc: any) => {
-                const data = doc.data();
+        const photosRaw = snapshot.docs.map((doc: any) => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // 🔄 Admin Profile fetching for override
+        let adminName = 'Daitan';
+        let adminPhotoURL = '/images/portrait.png';
+        try {
+            const profileDoc = await db.collection('settings').doc('profile').get();
+            if (profileDoc.exists) {
+                const pData = profileDoc.data();
+                adminName = pData?.name || 'Daitan';
+                adminPhotoURL = pData?.imageUrl || '/images/portrait.png';
+            }
+        } catch (ep) {
+            console.error('Error fetching admin profile:', ep);
+        }
+
+        // 🔄 Fetch uploader profiles
+        const uploaderIds = Array.from(new Set(photosRaw.map(p => p.uploaderId).filter(Boolean)));
+        const missingIds = uploaderIds.filter(id => !userProfileCache.has(id));
+
+        if (missingIds.length > 0) {
+            try {
+                for (let i = 0; i < missingIds.length; i += 10) {
+                    const chunk = missingIds.slice(i, i + 10);
+                    const userDocs = await db.collection('users').where('__name__', 'in', chunk).get();
+                    userDocs.forEach((doc: any) => {
+                        const d = doc.data();
+                        const is_admin = SUPER_ADMIN_EMAILS.includes(d.email || d.uploaderEmail || '');
+                        userProfileCache.set(doc.id, {
+                            displayName: is_admin ? adminName : (d.displayName || 'Anonymous'),
+                            photoURL: is_admin ? adminPhotoURL : (d.photoURL || '')
+                        });
+                    });
+                }
+            } catch (e) {
+                console.error('[getRecentPhotos] Error fetching uploader profiles:', e);
+            }
+        }
+
+        const photos = photosRaw
+            .map((p: any) => {
+                const data = p;
                 const catId = data.categoryId || '';
+                const uploader = userProfileCache.get(data.uploaderId) || { displayName: '', photoURL: '' };
                 return {
-                    id: doc.id,
                     ...data,
                     category: CATEGORY_MAP[String(catId)] || String(catId).toUpperCase() || 'OTHER',
+                    uploaderName: uploader.displayName,
+                    uploaderPhotoURL: uploader.photoURL,
                     shotAt: serializeData(data.shotAt),
                     createdAt: serializeData(data.createdAt),
                     updatedAt: serializeData(data.updatedAt),

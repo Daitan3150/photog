@@ -108,8 +108,12 @@ export default function RecentWorksSlider({ photos }: { photos: any[] }) {
                                 alt={currentPhoto.title || 'Featured Work'}
                                 fill
                                 className={clsx(
-                                    "object-contain md:object-cover transition-transform duration-[20s] ease-linear",
-                                    currentPhoto.aspectRatio === 'portrait' ? "md:object-contain bg-[#0a0a0a]" : "md:object-cover"
+                                    "transition-all duration-[20s] ease-linear",
+                                    // 全ての写真において、まず見切れないようにobject-containを基本とする
+                                    // 背景にぼかし画像があるので、余白が出ても美しさを維持できる
+                                    "object-contain bg-black/40",
+                                    // モバイルでは画面いっぱいに表示したい場合があるため、状況に応じて調整
+                                    "md:object-contain"
                                 )}
                                 sizes="(max-width: 768px) 100vw, 1400px"
                                 priority
@@ -138,21 +142,20 @@ export default function RecentWorksSlider({ photos }: { photos: any[] }) {
                                     {currentPhoto.event && <span className="bg-black/50 px-3 py-1.5 rounded backdrop-blur-sm border border-white/5">{currentPhoto.event}</span>}
                                 </div>
 
-                                {/* Uploader / Model Attribution */}
-                                {(currentPhoto.subjectName || currentPhoto.uploaderName) && (() => {
-                                    const uploaderLabel = currentPhoto.uploaderName?.includes('@')
+                                {/* Uploader / Creator Attribution */}
+                                {currentPhoto.uploaderName && (() => {
+                                    const displayAttributionName = currentPhoto.uploaderName?.includes('@')
                                         ? currentPhoto.uploaderName.split('@')[0]
                                         : currentPhoto.uploaderName;
-                                    const displayAttributionName = currentPhoto.subjectName || uploaderLabel || 'Member';
                                     const initial = displayAttributionName.charAt(0).toUpperCase();
 
                                     return (
                                         <div className="mt-6 flex items-center gap-3 bg-black/40 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md pointer-events-auto">
                                             <div className="relative w-6 h-6 md:w-8 md:h-8 rounded-full overflow-hidden border border-white/40 bg-white/20">
-                                                {currentPhoto.uploaderPhotoURL && !currentPhoto.subjectName ? (
+                                                {currentPhoto.uploaderPhotoURL ? (
                                                     <img
                                                         src={currentPhoto.uploaderPhotoURL}
-                                                        alt={displayAttributionName}
+                                                        alt={currentPhoto.uploaderName}
                                                         className="w-full h-auto object-cover"
                                                     />
                                                 ) : (
@@ -162,8 +165,8 @@ export default function RecentWorksSlider({ photos }: { photos: any[] }) {
                                                 )}
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-[8px] md:text-[10px] text-white/40 tracking-[0.3em] uppercase">{currentPhoto.subjectName ? 'Model' : 'Photographer'}</span>
-                                                <span className="text-xs md:text-sm font-bold text-white/90 tracking-widest">{displayAttributionName}</span>
+                                                <span className="text-[8px] md:text-[10px] text-white/40 tracking-[0.3em] uppercase">Creator</span>
+                                                <span className="text-xs md:text-sm font-bold text-white/90 tracking-widest">{currentPhoto.uploaderName || displayAttributionName}</span>
                                             </div>
                                         </div>
                                     );

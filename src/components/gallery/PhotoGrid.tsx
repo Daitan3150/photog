@@ -197,13 +197,13 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                                     const initial = displayAttributionName.charAt(0).toUpperCase();
 
                                                     return (
-                                                        <div className="flex items-center gap-1.5 ml-2 shrink-0 group/uploader" title={`Creator: ${displayAttributionName}`}>
+                                                        <div className="flex items-center gap-1.5 ml-2 shrink-0 group/uploader" title={`Creator: ${photo.uploaderName || displayAttributionName}`}>
                                                             <div className="relative w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border border-white/40 bg-white/20">
-                                                                {/* Only use uploaderPhotoURL if the uploader is being displayed, or if we fallback to it for aesthetics */}
-                                                                {photo.uploaderPhotoURL && !photo.subjectName ? (
+                                                                {/* Use uploaderPhotoURL (now correctly set to admin profile if admin) */}
+                                                                {photo.uploaderPhotoURL ? (
                                                                     <img
                                                                         src={photo.uploaderPhotoURL}
-                                                                        alt={displayAttributionName}
+                                                                        alt={photo.uploaderName || displayAttributionName}
                                                                         className="w-full h-auto object-cover"
                                                                     />
                                                                 ) : (

@@ -95,10 +95,27 @@ export default async function PhotoPage({ params }: Props) {
 
     // URL optimization is handled by cloudinaryLoader
 
-    const formatShutterSpeed = (exposureTime: number) => {
-        if (!exposureTime) return null;
-        if (exposureTime >= 1) return `${Math.round(exposureTime)}s`;
-        return `1/${Math.round(1 / exposureTime)}`;
+    const formatShutterSpeed = (exposureTime: any) => {
+        if (exposureTime === undefined || exposureTime === null || exposureTime === '') return null;
+
+        let numericValue: number;
+
+        if (typeof exposureTime === 'string') {
+            if (exposureTime.includes('/')) {
+                const [num, den] = exposureTime.split('/').map(Number);
+                numericValue = num / den;
+            } else {
+                numericValue = parseFloat(exposureTime);
+            }
+        } else {
+            numericValue = exposureTime;
+        }
+
+        if (isNaN(numericValue) || numericValue <= 0) return exposureTime; // Return raw if invalid
+
+        if (numericValue >= 1) return `${Math.round(numericValue)}s`;
+        const denominator = Math.round(1 / numericValue);
+        return isNaN(denominator) ? exposureTime : `1/${denominator}`;
     };
 
     return (
