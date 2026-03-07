@@ -1,5 +1,8 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
+
+
 // Removed top-level imports to prevent client-side leak
 // Removed top-level admin import to prevent client-side leak
 
@@ -72,6 +75,7 @@ export async function registerWithInvitation(formData: FormData): Promise<Regist
             });
         });
 
+        revalidatePath('/admin/users');
         return { success: true };
 
     } catch (error: any) {

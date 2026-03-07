@@ -3,6 +3,9 @@ import Link from 'next/link';
 import ResetPasswordForm from './ResetPasswordForm';
 import DeleteUserButton from './DeleteUserButton';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function UsersPage() {
     const { success, users, error } = await getUsers();
 

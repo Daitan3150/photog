@@ -1,5 +1,8 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
+
+
 // Removed top-level import to prevent client-side leak
 import * as crypto from 'crypto';
 
@@ -131,9 +134,9 @@ export async function removeUser(uid: string, idToken: string) {
         const db = getAdminFirestore();
         await db.collection('users').doc(uid).delete();
 
-        // 3. Mark photos as anonymous or delete? (Usually safer to anonymize or keep for history)
         // For now, we just leave them or you can add logic to delete them if needed.
 
+        revalidatePath('/admin/users');
         console.log(`[Admin Action] User ${uid} removed by ${decodedToken.email}`);
         return { success: true };
     } catch (error: any) {
