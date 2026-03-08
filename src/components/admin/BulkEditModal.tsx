@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from 'react';
-import { X, Check, Tag, MapPin, User, Calendar, Type } from 'lucide-react';
+import { X, Check, Tag, MapPin, User, Calendar, Type, Sparkles } from 'lucide-react';
 import { useAuth } from '@/components/admin/AuthProvider';
-import { bulkUpdatePhotos } from '@/lib/actions/photos';
+import { bulkUpdatePhotos, searchCoordinatesAction } from '@/lib/actions/photos';
 
 interface BulkEditModalProps {
     isOpen: boolean;
@@ -25,6 +25,15 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
     const [event, setEvent] = useState('');
     const [characterName, setCharacterName] = useState('');
     const [displayMode, setDisplayMode] = useState<'title' | 'character' | ''>('');
+    const [address, setAddress] = useState('');
+    const [latitude, setLatitude] = useState('');
+    const [longitude, setLongitude] = useState('');
+    const [zipCode, setZipCode] = useState('');
+    const [prefecture, setPrefecture] = useState('');
+    const [generalAddressInput, setGeneralAddressInput] = useState('');
+    const [locationCandidates, setLocationCandidates] = useState<any[]>([]);
+    const [searchError, setSearchError] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
 
     if (!isOpen) return null;
 
@@ -53,6 +62,11 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
             if (event.trim()) data.event = event.trim();
             if (characterName.trim()) data.characterName = characterName.trim();
             if (displayMode) data.displayMode = displayMode;
+            if (address.trim()) data.address = address.trim();
+            if (latitude.trim()) data.latitude = parseFloat(latitude);
+            if (longitude.trim()) data.longitude = parseFloat(longitude);
+            if (zipCode.trim()) data.zipCode = zipCode.trim();
+            if (prefecture.trim()) data.prefecture = prefecture.trim();
 
             if (Object.keys(data).length === 0) {
                 alert('変更する項目を入力してください。');
@@ -74,6 +88,64 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
             alert(`エラーが発生しました: ${error.message}`);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleAddressParse = (input: string) => {
+        setGeneralAddressInput(input);
+        if (!input.trim()) return;
+
+        // 郵便番号: 〒060-0063 or 060-0063 or 0600063
+        const zipMatch = input.match(/(?:〒?\s?)(\d{3}-\d{4}|\d{7})/);
+        const zip = zipMatch ? (zipMatch[1].includes('-') ? zipMatch[1] : `${zipMatch[1].slice(0, 3)}-${zipMatch[1].slice(3)}`) : '';
+        if (zip) setZipCode(zip);
+
+        // 都道府県
+        const prefMatch = input.match(/(北海道|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|東京都|神奈川県|新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|京都府|大阪府|兵庫県|奈良県|和歌山県|鳥取県|島根県|岡山県|広島県|山口県|徳島県|香川県|愛媛県|高知県|福岡県|佐賀県|長崎県|熊本県|大分県|宮崎県|鹿児島県|沖縄県)/);
+        const pref = prefMatch ? prefMatch[1] : '';
+        if (pref) setPrefecture(pref);
+
+        // 住所 (都道府県の後の部分、または郵便番号や特定のキーワードを除去した残り)
+        let addr = input;
+        if (zipMatch) addr = addr.replace(zipMatch[0], '');
+        if (prefMatch) addr = addr.replace(prefMatch[0], '');
+
+        // 残った文字列から施設名らしきもの(最初の空白より前など)を調整しても良いが、
+        // ユーザーの例「北海道札幌市中央区 南3条西1丁目15」では「札幌市中央区 南3条西1丁目15」が残る
+        addr = addr.replace(/^[\s　,]+|[\s　,]+$/g, ''); // 前後の空白削除
+        if (addr) setAddress(addr);
+    };
+
+    const handleLocationSearch = async () => {
+        const query = [zipCode, prefecture, address, location].filter(Boolean).join(' ');
+        if (!query.trim()) {
+            setSearchError('検索キーワードを入力してください。');
+            return;
+        }
+
+        setIsSearching(true);
+        setSearchError('');
+        setLocationCandidates([]);
+
+        try {
+            const results = await searchCoordinatesAction(query);
+            if (results && results.length > 0) {
+                if (results.length === 1) {
+                    const res = results[0];
+                    setLatitude(res.lat.toString());
+                    setLongitude(res.lng.toString());
+                    if (res.displayName) setAddress(res.displayName);
+                } else {
+                    setLocationCandidates(results);
+                }
+            } else {
+                setSearchError('候補が見つかりませんでした。別の言葉（住所、施設名、郵便番号など）を試してください。');
+            }
+        } catch (err) {
+            console.error('Search error:', err);
+            setSearchError('位置情報の取得中にエラーが発生しました。');
+        } finally {
+            setIsSearching(false);
         }
     };
 
@@ -130,18 +202,146 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                         />
                     </div>
 
-                    {/* Location */}
+                    {/* General Address Input (Smart Parsing) */}
+                    <div className="p-4 bg-amber-900/10 border border-amber-800/30 rounded-xl space-y-2">
+                        <label className="text-[10px] font-bold text-amber-500 uppercase flex items-center gap-2">
+                            <Sparkles className="w-3 h-3" /> 規定住所一括入力 (Smart Parse)
+                        </label>
+                        <textarea
+                            value={generalAddressInput}
+                            onChange={(e) => handleAddressParse(e.target.value)}
+                            className="w-full bg-neutral-900/50 border border-neutral-700 rounded-lg px-3 py-2 text-xs text-white focus:ring-1 focus:ring-amber-500 outline-none transition-all placeholder:text-neutral-700"
+                            placeholder="例: 吉田学園 〒060-0063 北海道札幌市中央区 南3条西1丁目15"
+                            rows={2}
+                        />
+                        <p className="text-[9px] text-amber-600/70">※ 貼り付けると郵便番号、都道府県、住所が自動抽出されます。</p>
+                    </div>
+
+                    {/* Location & Address Group */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                                <MapPin className="w-4 h-4" /> 郵便番号 (Zip)
+                            </label>
+                            <input
+                                type="text"
+                                value={zipCode}
+                                onChange={(e) => setZipCode(e.target.value)}
+                                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                                placeholder="── 変更しない ──"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                                <MapPin className="w-4 h-4" /> 都道府県 (Pref)
+                            </label>
+                            <input
+                                type="text"
+                                value={prefecture}
+                                onChange={(e) => setPrefecture(e.target.value)}
+                                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                                placeholder="── 変更しない ──"
+                            />
+                        </div>
+                    </div>
+
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
-                            <MapPin className="w-4 h-4" /> 撮影場所 (Location)
+                            <MapPin className="w-4 h-4" /> 住所 (Address)
                         </label>
                         <input
                             type="text"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
                             className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
                             placeholder="── 変更しない ──"
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                            <MapPin className="w-4 h-4" /> 撮影場所名 (Location)
+                        </label>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                className="flex-1 bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                                placeholder="── 変更しない ──"
+                            />
+                            <button
+                                type="button"
+                                onClick={handleLocationSearch}
+                                disabled={isSearching}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-500 disabled:opacity-50 transition-colors"
+                            >
+                                {isSearching ? '検索中' : '検索'}
+                            </button>
+                        </div>
+                        {searchError && (
+                            <p className="text-[10px] text-red-400 font-bold mt-1">⚠️ {searchError}</p>
+                        )}
+                    </div>
+
+                    {/* ✅ ロケーション候補選択 */}
+                    {locationCandidates.length > 0 && (
+                        <div className="p-3 bg-blue-900/30 border border-blue-800 rounded-xl space-y-2">
+                            <p className="text-[10px] font-bold text-blue-400 flex items-center gap-1.5 mb-1">
+                                <MapPin className="w-3 h-3" />
+                                該当する撮影場所を選んでください
+                            </p>
+                            <div className="max-h-40 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                                {locationCandidates.map((cand, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => {
+                                            setLatitude(cand.lat.toString());
+                                            setLongitude(cand.lng.toString());
+                                            setAddress(cand.displayName);
+                                            setLocationCandidates([]);
+                                        }}
+                                        className="w-full text-left p-2 rounded-lg bg-neutral-800 border border-neutral-700 hover:border-blue-500 transition-all group"
+                                    >
+                                        <div className="text-[10px] font-bold text-white group-hover:text-blue-400 truncate">
+                                            {cand.displayName}
+                                        </div>
+                                        <div className="text-[8px] text-neutral-500 mt-0.5">
+                                            {cand.lat.toFixed(5)}, {cand.lng.toFixed(5)} ({cand.type || 'unknown'})
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Coordinates Group */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-blue-400" /> 緯度 (Lat)
+                            </label>
+                            <input
+                                type="text"
+                                value={latitude}
+                                onChange={(e) => setLatitude(e.target.value)}
+                                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-[10px] text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic font-mono"
+                                placeholder="── 変更しない ──"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-emerald-400" /> 経度 (Lng)
+                            </label>
+                            <input
+                                type="text"
+                                value={longitude}
+                                onChange={(e) => setLongitude(e.target.value)}
+                                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-[10px] text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic font-mono"
+                                placeholder="── 変更しない ──"
+                            />
+                        </div>
                     </div>
 
                     {/* Tags */}

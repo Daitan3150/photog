@@ -548,6 +548,11 @@ export async function bulkUpdatePhotos(
         event?: string;
         characterName?: string;
         displayMode?: 'title' | 'character';
+        address?: string;
+        latitude?: number | null;
+        longitude?: number | null;
+        zipCode?: string;
+        prefecture?: string;
     },
     idToken: string
 ): Promise<{ success: boolean; count?: number; error?: string }> {
@@ -596,6 +601,11 @@ export async function bulkUpdatePhotos(
         if (data.event !== undefined) updateData.event = data.event;
         if (data.characterName !== undefined) updateData.characterName = data.characterName;
         if (data.displayMode !== undefined) updateData.displayMode = data.displayMode;
+        if (data.address !== undefined) updateData.address = data.address;
+        if (data.latitude !== undefined) updateData.latitude = data.latitude;
+        if (data.longitude !== undefined) updateData.longitude = data.longitude;
+        if (data.zipCode !== undefined) updateData.zipCode = data.zipCode;
+        if (data.prefecture !== undefined) updateData.prefecture = data.prefecture;
 
         for (const photoId of photoIds) {
             const ref = db.collection('photos').doc(photoId);

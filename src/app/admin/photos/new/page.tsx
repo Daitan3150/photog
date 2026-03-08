@@ -1203,6 +1203,33 @@ export default function NewPhotoPage() {
                             </div>
 
                             <div className="space-y-1">
+                                <p className="text-[10px] text-gray-400 font-bold tracking-wider uppercase">規定住所一括入力 (Smart Parse)</p>
+                                <textarea
+                                    value={address}
+                                    onChange={(e) => {
+                                        const input = e.target.value;
+                                        setAddress(input);
+                                        const zipMatch = input.match(/(?:〒?\s?)(\d{3}-\d{4}|\d{7})/);
+                                        const zip = zipMatch ? (zipMatch[1].includes('-') ? zipMatch[1] : `${zipMatch[1].slice(0, 3)}-${zipMatch[1].slice(3)}`) : '';
+                                        if (zip) setAddressZip(zip);
+
+                                        const prefMatch = input.match(/(北海道|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|東京都|神奈川県|新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|京都府|大阪府|兵庫県|奈良県|和歌山県|鳥取県|島根県|岡山県|広島県|山口県|徳島県|香川県|愛媛県|高知県|福岡県|佐賀県|長崎県|熊本県|大分県|宮崎県|鹿児島県|沖縄県)/);
+                                        const pref = prefMatch ? prefMatch[1] : '';
+                                        if (pref) setAddressPref(pref);
+
+                                        let addr = input;
+                                        if (zipMatch) addr = addr.replace(zipMatch[0], '');
+                                        if (prefMatch) addr = addr.replace(prefMatch[0], '');
+                                        addr = addr.replace(/^[\s　,]+|[\s　,]+$/g, '');
+                                        if (addr) setAddressCity(addr);
+                                    }}
+                                    className="w-full border border-gray-200 bg-white rounded p-2 text-xs h-16 resize-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder="例: 吉田学園 〒060-0063 北海道札幌市中央区 南3条西1丁目15"
+                                />
+                                <p className="text-[9px] text-amber-600 font-medium">※ 住所を貼り付けると郵便番号・都道府県・市区町村を自動抽出します。</p>
+                            </div>
+
+                            <div className="space-y-1">
                                 <p className="text-[10px] text-gray-400 font-bold">市区町村・番地・建物名</p>
                                 <input type="text" value={addressCity} onChange={e => setAddressCity(e.target.value)} className="w-full border p-2 rounded text-sm" placeholder="千代田区千代田1-1" />
                             </div>
