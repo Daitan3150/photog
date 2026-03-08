@@ -93,9 +93,14 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
 
                 {/* Body */}
                 <div className="p-6 overflow-y-auto space-y-5">
-                    <p className="text-sm text-neutral-400 mb-4">
-                        入力した項目のみ更新されます。空欄の項目は変更されません。
-                    </p>
+                    <div className="bg-blue-900/20 border border-blue-800/50 p-3 rounded-xl mb-4 text-center">
+                        <p className="text-xs font-bold text-blue-400">
+                            ✨ 入力した項目のみ一括更新されます。
+                        </p>
+                        <p className="text-[10px] text-blue-500/70 mt-1">
+                            空欄のままの項目は、写真の元の情報が維持されます。
+                        </p>
+                    </div>
 
                     {/* Title */}
                     <div className="space-y-2">
@@ -106,8 +111,8 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600"
-                            placeholder="一括設定するタイトル..."
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                            placeholder="── 変更しない ──"
                         />
                     </div>
 
@@ -120,8 +125,8 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                             type="text"
                             value={subjectName}
                             onChange={(e) => setSubjectName(e.target.value)}
-                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600"
-                            placeholder="例: Model Name"
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                            placeholder="── 変更しない ──"
                         />
                     </div>
 
@@ -134,8 +139,8 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                             type="text"
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
-                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600"
-                            placeholder="例: Tokyo, Shibuya"
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                            placeholder="── 変更しない ──"
                         />
                     </div>
 
@@ -148,8 +153,8 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                             type="text"
                             value={tagsInput}
                             onChange={(e) => setTagsInput(e.target.value)}
-                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600"
-                            placeholder="カンマ区切り (例: portrait, night, street)"
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                            placeholder="── 変更しない ──"
                         />
                     </div>
 
@@ -158,12 +163,24 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                         <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
                             <Calendar className="w-4 h-4" /> 撮影日 (Shot At)
                         </label>
-                        <input
-                            type="date"
-                            value={shotAt}
-                            onChange={(e) => setShotAt(e.target.value)}
-                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all [color-scheme:dark]"
-                        />
+                        <div className="relative group">
+                            <input
+                                type="text"
+                                value={shotAt}
+                                onChange={(e) => setShotAt(e.target.value)}
+                                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                                placeholder="── 変更しない ── (例: 2024-01-01)"
+                            />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                <input
+                                    type="date"
+                                    onChange={(e) => setShotAt(e.target.value)}
+                                    className="opacity-0 absolute inset-0 cursor-pointer pointer-events-auto w-full"
+                                    title="カレンダーから選択"
+                                />
+                                <Calendar className="w-4 h-4 text-neutral-500 group-hover:text-blue-400 pointer-events-none" />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Event Name */}
@@ -175,8 +192,8 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                             type="text"
                             value={event}
                             onChange={(e) => setEvent(e.target.value)}
-                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600"
-                            placeholder="例: コミケ105"
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                            placeholder="── 変更しない ──"
                         />
                     </div>
 
@@ -189,8 +206,8 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                             type="text"
                             value={characterName}
                             onChange={(e) => setCharacterName(e.target.value)}
-                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600"
-                            placeholder="例: 博麗霊夢"
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                            placeholder="── 変更しない ──"
                         />
                     </div>
 
@@ -202,9 +219,10 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                         <select
                             value={displayMode}
                             onChange={(e) => setDisplayMode(e.target.value as any)}
-                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'white\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}
                         >
-                            <option value="">変更しない</option>
+                            <option value="">── 変更しない ──</option>
                             <option value="title">タイトル表示 (A)</option>
                             <option value="character">キャラクター名表示 (B)</option>
                         </select>
