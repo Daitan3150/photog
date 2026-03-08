@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self' https://*.sentry.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://*.sentry.io https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://res.cloudinary.com blob: https://*.sentry.io https://*.googleusercontent.com https://*.google.com https://*.openstreetmap.org; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.cloudinary.com https://*.algolia.net https://*.algolianet.com https://*.firebaseio.com https://*.googleapis.com https://*.firebase.com https://*.sentry.io; frame-src 'self' https://www.google.com https://www.openstreetmap.org; frame-ancestors 'none';",
+            value: "default-src 'self' https://*.sentry.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://*.sentry.io https://apis.google.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https://res.cloudinary.com blob: https://*.sentry.io https://*.googleusercontent.com https://*.google.com https://*.openstreetmap.org https://unpkg.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.cloudinary.com https://*.algolia.net https://*.algolianet.com https://*.firebaseio.com https://*.googleapis.com https://*.firebase.com https://*.sentry.io; frame-src 'self' https://www.google.com https://www.openstreetmap.org; frame-ancestors 'none';",
           },
           {
             key: 'X-Content-Type-Options',

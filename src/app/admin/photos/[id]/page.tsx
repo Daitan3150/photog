@@ -14,6 +14,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import exifr from 'exifr';
 import { formatShutterSpeed, validateShutterSpeed, STANDARD_APERTURES, getMinApertureFromLens } from '@/lib/utils/exif';
 import SmartDatePicker from '@/components/admin/SmartDatePicker';
+import LeafletMap from '@/components/common/LeafletMap';
 
 // ✅ 署名取得
 const fetchSignature = async (paramsToSign: Record<string, any>, token: string) => {
@@ -764,24 +765,22 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
 
                                     if (isValid && lat !== null && lng !== null) {
                                         return (
-                                            <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-white h-52 relative group shadow-sm text-balance">
-                                                <iframe
-                                                    width="100%"
-                                                    height="100%"
-                                                    frameBorder="0"
-                                                    style={{ border: 0 }}
-                                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.005},${lat - 0.005},${lng + 0.005},${lat + 0.005}&layer=mapnik&marker=${lat},${lng}`}
-                                                    allowFullScreen
-                                                    className="bg-gray-50"
+                                            <div className="mt-4 group/map relative">
+                                                <LeafletMap
+                                                    lat={lat}
+                                                    lng={lng}
+                                                    height="320px"
+                                                    className="rounded-2xl overflow-hidden shadow-lg border border-gray-100"
                                                 />
-                                                <div className="absolute top-2 left-2 px-2 py-1 bg-white/80 backdrop-blur-sm rounded text-[9px] font-bold text-gray-500 border border-gray-200 shadow-sm pointer-events-none">
-                                                    Simple Map (OSM)
+                                                <div className="absolute top-3 left-3 z-[1000] px-3 py-1.5 bg-white/95 backdrop-blur-md rounded-xl text-[10px] font-bold text-gray-700 border border-gray-100 shadow-sm pointer-events-none flex items-center gap-1.5">
+                                                    <MapPin className="w-3 h-3 text-blue-500" />
+                                                    Preview
                                                 </div>
                                                 <a
                                                     href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold text-blue-600 shadow-lg border border-blue-100 hover:bg-blue-50 transition-all transform hover:scale-105"
+                                                    className="absolute bottom-3 right-3 z-[1000] bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold text-blue-600 shadow-lg border border-blue-100 hover:bg-blue-50 transition-all transform hover:scale-105"
                                                 >
                                                     Google Maps で詳細を確認 ↗
                                                 </a>

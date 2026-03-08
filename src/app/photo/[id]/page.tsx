@@ -8,6 +8,7 @@ import { clsx } from 'clsx';
 import { getRelatedPhotos } from '@/lib/algolia';
 import LikeButton from '@/components/gallery/LikeButton';
 import cloudinaryLoader from '@/lib/cloudinary-loader';
+import LeafletMap from '@/components/common/LeafletMap';
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -278,21 +279,27 @@ export default async function PhotoPage({ params }: Props) {
                                     </div>
                                 </div>
 
-                                {/* ✅ 公開用マッププレビュー (OSM) */}
+                                {/* ✅ 公開用マッププレビュー (Leaflet) */}
                                 {photo.latitude !== null && photo.longitude !== null && (
-                                    <div className="w-full h-40 mt-2 rounded-2xl overflow-hidden border border-black/5 shadow-sm group/map relative">
-                                        <iframe
-                                            width="100%"
-                                            height="100%"
-                                            frameBorder="0"
-                                            style={{ border: 0 }}
-                                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${photo.longitude - 0.005},${photo.latitude - 0.005},${photo.longitude + 0.005},${photo.latitude + 0.005}&layer=mapnik&marker=${photo.latitude},${photo.longitude}`}
-                                            allowFullScreen
-                                            className="grayscale-[0.2] hover:grayscale-0 transition-all"
+                                    <div className="w-full h-[300px] mt-2 group/map relative">
+                                        <LeafletMap
+                                            lat={photo.latitude}
+                                            lng={photo.longitude}
+                                            height="300px"
+                                            className="rounded-2xl overflow-hidden shadow-lg border border-black/5"
                                         />
-                                        <div className="absolute top-2 right-2 px-2 py-1 bg-white/80 backdrop-blur-sm rounded-full text-[8px] font-bold text-black/40 border border-black/5 pointer-events-none opacity-0 group-hover/map:opacity-100 transition-opacity">
-                                            OpenStreetMap
+                                        <div className="absolute top-4 left-4 z-[1000] px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-xl text-[10px] font-bold text-white border border-white/10 shadow-2xl pointer-events-none flex items-center gap-1.5 group-hover/map:bg-amber-600/90 transition-colors">
+                                            <MapPin className="w-3 h-3" />
+                                            Map Preview
                                         </div>
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="absolute bottom-4 right-4 z-[1000] bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold text-blue-600 shadow-xl border border-blue-100 hover:bg-blue-50 transition-all transform lg:translate-y-2 lg:opacity-0 group-hover/map:translate-y-0 group-hover/map:opacity-100"
+                                        >
+                                            Google Maps で詳細を確認 ↗
+                                        </a>
                                     </div>
                                 )}
                             </div>

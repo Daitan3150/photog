@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { getPhotoStats, incrementPhotoStats, PhotoStats } from "@/lib/worker-stats";
 import { Heart, Sparkles, Calendar } from "lucide-react";
 import { clsx } from "clsx";
+import LeafletMap from "@/components/common/LeafletMap";
 
 interface LightboxProps {
     photo: any;
@@ -277,18 +278,24 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                             </>
                                         )}
 
-                                        {/* ✅ ライトボックス内マッププレビュー (OSM) */}
+                                        {/* ✅ ライトボックス内マッププレビュー (Leaflet) */}
                                         {photo.latitude !== null && photo.longitude !== null && (
-                                            <div className="w-full h-24 mt-2 rounded-xl overflow-hidden border border-gray-100 shadow-sm relative group/map">
-                                                <iframe
-                                                    width="100%"
-                                                    height="100%"
-                                                    frameBorder="0"
-                                                    style={{ border: 0 }}
-                                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${photo.longitude - 0.003},${photo.latitude - 0.003},${photo.longitude + 0.003},${photo.latitude + 0.003}&layer=mapnik&marker=${photo.latitude},${photo.longitude}`}
-                                                    allowFullScreen
-                                                    className="bg-gray-50"
+                                            <div className="w-full h-32 mt-2 group/map relative">
+                                                <LeafletMap
+                                                    lat={photo.latitude}
+                                                    lng={photo.longitude}
+                                                    height="128px"
+                                                    className="rounded-xl overflow-hidden shadow-sm border border-gray-100"
                                                 />
+                                                <a
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="absolute top-2 right-2 z-[1000] bg-white/95 backdrop-blur-md p-1.5 rounded-lg text-blue-600 shadow-sm border border-blue-100 hover:bg-blue-50 transition-all transform scale-75 lg:scale-90"
+                                                    title="Google Maps"
+                                                >
+                                                    <ExternalLink size={14} />
+                                                </a>
                                             </div>
                                         )}
                                     </div>
