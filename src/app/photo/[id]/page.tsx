@@ -85,6 +85,14 @@ export default async function PhotoPage({ params }: Props) {
         notFound();
     }
 
+    // ✅ Debug: Check coordinates on server
+    console.log(`[PhotoPage] Debugging photo coordinates for ID ${id}:`, {
+        latitude: photo.latitude,
+        longitude: photo.longitude,
+        location: photo.location,
+        address: (photo as any).address
+    });
+
     const relatedPhotos = await getRelatedPhotos({
         photoId: id,
         category: photo.categoryId,

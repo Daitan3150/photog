@@ -153,6 +153,14 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
             });
         }
         setLoading(false);
+
+        // ✅ Debug: Check coordinates in admin client
+        console.log(`[Admin EditPage] Debugging coordinates for ID ${photoId}:`, {
+            latitude: data.latitude,
+            longitude: data.longitude,
+            formDataLat: data.latitude, // Same as data at this point
+            formDataLng: data.longitude
+        });
     };
 
 
@@ -659,30 +667,36 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                 </div>
 
                                 {/* ✅ マッププレビュー (OpenStreetMap Fallback) */}
-                                {formData.latitude !== null && formData.longitude !== null && (
-                                    <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-white h-52 relative group shadow-sm text-balance">
-                                        <iframe
-                                            width="100%"
-                                            height="100%"
-                                            frameBorder="0"
-                                            style={{ border: 0 }}
-                                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${formData.longitude - 0.005},${formData.latitude - 0.005},${formData.longitude + 0.005},${formData.latitude + 0.005}&layer=mapnik&marker=${formData.latitude},${formData.longitude}`}
-                                            allowFullScreen
-                                            className="bg-gray-50"
-                                        />
-                                        <div className="absolute top-2 left-2 px-2 py-1 bg-white/80 backdrop-blur-sm rounded text-[9px] font-bold text-gray-500 border border-gray-200 shadow-sm pointer-events-none">
-                                            Simple Map (OSM)
-                                        </div>
-                                        <a
-                                            href={`https://www.google.com/maps/search/?api=1&query=${formData.latitude},${formData.longitude}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold text-blue-600 shadow-lg border border-blue-100 hover:bg-blue-50 transition-all transform hover:scale-105"
-                                        >
-                                            Google Maps で詳細を確認 ↗
-                                        </a>
-                                    </div>
-                                )}
+                                {(() => {
+                                    if (formData.latitude !== null && formData.longitude !== null) {
+                                        console.log(`[Admin Render] Rendering map with:`, { lat: formData.latitude, lng: formData.longitude });
+                                        return (
+                                            <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-white h-52 relative group shadow-sm text-balance">
+                                                <iframe
+                                                    width="100%"
+                                                    height="100%"
+                                                    frameBorder="0"
+                                                    style={{ border: 0 }}
+                                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${formData.longitude - 0.005},${formData.latitude - 0.005},${formData.longitude + 0.005},${formData.latitude + 0.005}&layer=mapnik&marker=${formData.latitude},${formData.longitude}`}
+                                                    allowFullScreen
+                                                    className="bg-gray-50"
+                                                />
+                                                <div className="absolute top-2 left-2 px-2 py-1 bg-white/80 backdrop-blur-sm rounded text-[9px] font-bold text-gray-500 border border-gray-200 shadow-sm pointer-events-none">
+                                                    Simple Map (OSM)
+                                                </div>
+                                                <a
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${formData.latitude},${formData.longitude}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold text-blue-600 shadow-lg border border-blue-100 hover:bg-blue-50 transition-all transform hover:scale-105"
+                                                >
+                                                    Google Maps で詳細を確認 ↗
+                                                </a>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
                                 <p className="text-[10px] text-gray-400 mt-2 italic">※ 「検索」ボタンで住所からGPS座標を取得できます。座標は手動入力も可能です。</p>
                             </div>
 
@@ -943,7 +957,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                         </form>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

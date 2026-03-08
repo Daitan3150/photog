@@ -1264,30 +1264,35 @@ export default function NewPhotoPage() {
                             </div>
 
                             {/* ✅ マッププレビュー (OpenStreetMap Fallback) */}
-                            {latitude !== null && longitude !== null && (
-                                <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-white h-52 relative group shadow-sm">
-                                    <iframe
-                                        width="100%"
-                                        height="100%"
-                                        frameBorder="0"
-                                        style={{ border: 0 }}
-                                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.005},${latitude - 0.005},${longitude + 0.005},${latitude + 0.005}&layer=mapnik&marker=${latitude},${longitude}`}
-                                        allowFullScreen
-                                        className="bg-gray-50"
-                                    />
-                                    <div className="absolute top-2 left-2 px-2 py-1 bg-white/80 backdrop-blur-sm rounded text-[9px] font-bold text-gray-500 border border-gray-200 shadow-sm pointer-events-none">
-                                        Simple Map (OSM)
+                            {(() => {
+                                if (latitude !== null && longitude !== null) {
+                                    console.log(`[Batch Upload] Rendering map with:`, { lat: latitude, lng: longitude });
+                                }
+                                return latitude !== null && longitude !== null && (
+                                    <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-white h-52 relative group shadow-sm">
+                                        <iframe
+                                            width="100%"
+                                            height="100%"
+                                            frameBorder="0"
+                                            style={{ border: 0 }}
+                                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.005},${latitude - 0.005},${longitude + 0.005},${latitude + 0.005}&layer=mapnik&marker=${latitude},${longitude}`}
+                                            allowFullScreen
+                                            className="bg-gray-50"
+                                        />
+                                        <div className="absolute top-2 left-2 px-2 py-1 bg-white/80 backdrop-blur-sm rounded text-[9px] font-bold text-gray-500 border border-gray-200 shadow-sm pointer-events-none">
+                                            Simple Map (OSM)
+                                        </div>
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold text-blue-600 shadow-lg border border-blue-100 hover:bg-blue-50 transition-all transform hover:scale-105"
+                                        >
+                                            Google Maps で詳細を確認 ↗
+                                        </a>
                                     </div>
-                                    <a
-                                        href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold text-blue-600 shadow-lg border border-blue-100 hover:bg-blue-50 transition-all transform hover:scale-105"
-                                    >
-                                        Google Maps で詳細を確認 ↗
-                                    </a>
-                                </div>
-                            )}
+                                );
+                            })()}
                         </div>
 
                         {/* ✅ 一括タグ付け */}
