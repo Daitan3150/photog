@@ -1263,43 +1263,28 @@ export default function NewPhotoPage() {
                                 <p className="text-[9px] text-gray-400">※ Googleマップ等の座標をそのまま貼り付け可能です。</p>
                             </div>
 
-                            {/* ✅ マッププレビュー */}
+                            {/* ✅ マッププレビュー (OpenStreetMap Fallback) */}
                             {latitude !== null && longitude !== null && (
-                                <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-white h-48 relative group shadow-inner">
-                                    {process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ? (
-                                        <iframe
-                                            width="100%"
-                                            height="100%"
-                                            frameBorder="0"
-                                            style={{ border: 0 }}
-                                            src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${latitude},${longitude}&zoom=15`}
-                                            allowFullScreen
-                                            className="bg-gray-50"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-slate-400 p-6 text-center">
-                                            <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mb-3 animate-pulse">
-                                                <MapPin className="w-6 h-6 text-slate-400" />
-                                            </div>
-                                            <p className="text-[11px] font-bold text-slate-500 mb-1">プレビューマップを準備中</p>
-                                            <p className="text-[10px] leading-relaxed opacity-70">
-                                                Google Maps APIキーが未設定です。<br />
-                                                設定するとここに地図が表示されます。
-                                            </p>
-                                            <div className="mt-3 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm">
-                                                <p className="text-[10px] font-mono text-slate-600">
-                                                    緯度: {latitude.toFixed(5)} / 経度: {longitude.toFixed(5)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
+                                <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-white h-52 relative group shadow-sm">
+                                    <iframe
+                                        width="100%"
+                                        height="100%"
+                                        frameBorder="0"
+                                        style={{ border: 0 }}
+                                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.005},${latitude - 0.005},${longitude + 0.005},${latitude + 0.005}&layer=mapnik&marker=${latitude},${longitude}`}
+                                        allowFullScreen
+                                        className="bg-gray-50"
+                                    />
+                                    <div className="absolute top-2 left-2 px-2 py-1 bg-white/80 backdrop-blur-sm rounded text-[9px] font-bold text-gray-500 border border-gray-200 shadow-sm pointer-events-none">
+                                        Simple Map (OSM)
+                                    </div>
                                     <a
                                         href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold text-blue-600 shadow-lg border border-blue-100 hover:bg-blue-50 transition-all transform hover:scale-105"
                                     >
-                                        Google Maps アプリで開く ↗
+                                        Google Maps で詳細を確認 ↗
                                     </a>
                                 </div>
                             )}

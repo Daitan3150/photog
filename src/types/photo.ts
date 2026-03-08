@@ -7,6 +7,9 @@ export interface Photo {
     subjectName: string; // Model or Layer name
     location: string;
     address?: string; // [NEW] Formal address from geocoding
+    addressZip?: string; // [NEW] Zip code
+    addressPref?: string; // [NEW] Prefecture
+    addressCity?: string; // [NEW] City/Street/Building
     characterName?: string; // [NEW] For cosplayers
     event?: string; // [NEW] Event name (especially for cosplay)
     shotAt: Date; // Will be stored as Timestamp in Firestore
@@ -23,8 +26,11 @@ export interface Photo {
     updatedAt: Date;
 }
 
-export type PhotoFormData = Omit<Photo, 'id' | 'uploaderId' | 'createdAt' | 'updatedAt' | 'shotAt'> & {
+export type PhotoFormData = Omit<Photo, 'id' | 'uploaderId' | 'createdAt' | 'updatedAt' | 'shotAt' | 'addressZip' | 'addressPref' | 'addressCity'> & {
     shotAt: string; // From date input
+    addressZip?: string;
+    addressPref?: string;
+    addressCity?: string;
     characterName?: string;
     event?: string;
     categoryId?: string;
