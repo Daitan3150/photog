@@ -658,23 +658,31 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                     </div>
                                 </div>
 
-                                {(formData.latitude !== null && formData.longitude !== null) && (
-                                    <div className="mt-4 rounded-xl overflow-hidden border border-gray-100 bg-gray-50 h-48 relative group">
-                                        <iframe
-                                            width="100%"
-                                            height="100%"
-                                            frameBorder="0"
-                                            src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}&q=${formData.latitude},${formData.longitude}&zoom=15`}
-                                            className="grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500"
-                                        />
-                                        <div className="absolute inset-0 pointer-events-none border-2 border-transparent group-hover:border-blue-500/20 transition-all rounded-xl" />
+                                {formData.latitude !== null && formData.longitude !== null && (
+                                    <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-white h-48 relative group shadow-inner">
+                                        {process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ? (
+                                            <iframe
+                                                width="100%"
+                                                height="100%"
+                                                frameBorder="0"
+                                                style={{ border: 0 }}
+                                                src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${formData.latitude},${formData.longitude}&zoom=15`}
+                                                allowFullScreen
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-400 p-4 text-center">
+                                                <MapPin className="w-8 h-8 mb-2 opacity-20" />
+                                                <p className="text-[10px]">Google Maps APIキーが設定されていないため<br />マッププレビューを表示できません。</p>
+                                                <p className="text-[9px] mt-1 opacity-60">※座標データは正しく保持されています</p>
+                                            </div>
+                                        )}
                                         <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${formData.latitude},${formData.longitude}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-gray-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-gray-600 shadow-sm border border-gray-200 hover:bg-white transition-colors"
                                         >
-                                            Google Mapsで開く
+                                            Google Mapsで確認 ↗
                                         </a>
                                     </div>
                                 )}

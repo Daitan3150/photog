@@ -189,6 +189,8 @@ export default function NewPhotoPage() {
     const [addressCity, setAddressCity] = useState('');
     const [addressDetail, setAddressDetail] = useState('');
     const [coordsInput, setCoordsInput] = useState('');
+    const [latitude, setLatitude] = useState<number | null>(null);
+    const [longitude, setLongitude] = useState<number | null>(null);
     const [shotAt, setShotAt] = useState('');
     const [shotAtEnabled, setShotAtEnabled] = useState(true);
     const [snsUrl, setSnsUrl] = useState('');
@@ -666,22 +668,9 @@ export default function NewPhotoPage() {
                 const clientExif = fileExifMap.get(file.fileHash || '') || {};
                 const mergedExif = { ...clientExif, ...(file.exif || {}) };
 
-                // ✅ 座標の解析 (北43.25°, 東141.35° or 43.25, 141.35 形式)
-                let finalLat: number | null = null;
-                let finalLng: number | null = null;
-                if (coordsInput.includes(',') || coordsInput.includes('，')) {
-                    const parts = coordsInput.split(/[,，]/);
-                    const parseCoord = (s: string, negChar: string) => {
-                        const num = parseFloat(s.replace(/[^\d.-]/g, ''));
-                        return s.includes(negChar) ? -Math.abs(num) : num;
-                    };
-                    const la = parseCoord(parts[0], '南');
-                    const ln = parseCoord(parts[1], '西');
-                    if (!isNaN(la) && !isNaN(ln)) {
-                        finalLat = la;
-                        finalLng = ln;
-                    }
-                }
+                // ✅ 座標の決定 (個別ファイルごとではなく共通設定を使用)
+                const finalLat = latitude;
+                const finalLng = longitude;
 
                 // ✅ 住所の結合
                 const fullAddress = address || [addressZip, addressPref, addressCity, addressDetail].filter(Boolean).join(' ');
@@ -1239,7 +1228,11 @@ export default function NewPhotoPage() {
                                                     const la = parseCoord(parts[0], '南');
                                                     const ln = parseCoord(parts[1], '西');
                                                     if (!isNaN(la) && !isNaN(ln)) {
-                                                        setCoordsInput(`${la}, ${ln}`); // 正規化
+                                                        const lat = la;
+                                                        const lng = ln;
+                                                        setLatitude(lat);
+                                                        setLongitude(lng);
+                                                        setCoordsInput(`${lat}, ${lng}`); // 正規化
                                                         return; // 解析できたら終了
                                                     }
                                                 }
@@ -1252,6 +1245,8 @@ export default function NewPhotoPage() {
                                                 const { getCoordinatesAction } = await import('@/lib/actions/photos');
                                                 const res = await getCoordinatesAction(query);
                                                 if (res) {
+                                                    setLatitude(res.lat);
+                                                    setLongitude(res.lng);
                                                     setCoordsInput(`${res.lat}, ${res.lng}`);
                                                     if (res.displayName) {
                                                         // 住所が空、かつ自動取得されたものがあれば補完
@@ -1267,6 +1262,36 @@ export default function NewPhotoPage() {
                                 </div>
                                 <p className="text-[9px] text-gray-400">※ Googleマップ等の座標をそのまま貼り付け可能です。</p>
                             </div>
+
+                            {/* ✅ マッププレビュー */}
+                            {latitude !== null && longitude !== null && (
+                                <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-white h-48 relative group shadow-inner">
+                                    {process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ? (
+                                        <iframe
+                                            width="100%"
+                                            height="100%"
+                                            frameBorder="0"
+                                            style={{ border: 0 }}
+                                            src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${latitude},${longitude}&zoom=15`}
+                                            allowFullScreen
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-400 p-4 text-center">
+                                            <MapPin className="w-8 h-8 mb-2 opacity-20" />
+                                            <p className="text-[10px]">Google Maps APIキーが設定されていないため<br />マッププレビューを表示できません。</p>
+                                            <p className="text-[9px] mt-1 opacity-60">※座標データは正しく保持されています</p>
+                                        </div>
+                                    )}
+                                    <a
+                                        href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-gray-600 shadow-sm border border-gray-200 hover:bg-white transition-colors"
+                                    >
+                                        Google Mapsで確認 ↗
+                                    </a>
+                                </div>
+                            )}
                         </div>
 
                         {/* ✅ 一括タグ付け */}
