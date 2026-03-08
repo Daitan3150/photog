@@ -112,11 +112,11 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                             photo.category?.toLowerCase() === 'cosplay' && "p-[2px] rounded-lg bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 shadow-lg shadow-purple-200/50"
                         )}
                     >
-                        <div className="flex flex-col">
+                        <div className="flex flex-col mb-4">
                             <div className="relative overflow-hidden rounded-sm shadow-sm group">
                                 <Link
                                     href={photo.href || `/portfolio?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), img: photo.id }).toString()}`}
-                                    className="block"
+                                    className="block relative aspect-auto"
                                 >
                                     <Image
                                         loader={cloudinaryLoader}
@@ -131,7 +131,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                 </Link>
 
                                 {photo.category?.toLowerCase() === 'cosplay' && (
-                                    <div className="absolute top-3 right-3 z-10 pointer-events-none">
+                                    <div className="absolute top-3 right-3 z-20 pointer-events-none">
                                         <motion.div
                                             animate={{ rotate: 360 }}
                                             transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
@@ -143,11 +143,8 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                 )}
 
                                 {/* Metadata Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 pointer-events-none flex flex-col justify-end p-5 text-left">
+                                <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex flex-col justify-end p-5 text-left">
                                     <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        whileInView={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.5 }}
                                         className="pointer-events-auto"
                                     >
                                         <div className="flex flex-col gap-1 text-white/90">
@@ -195,20 +192,16 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
 
                                                 {/* Uploader / Model Attribution */}
                                                 {(photo.uploaderName || photo.subjectName) && (() => {
-                                                    const uploaderLabel = photo.uploaderName?.includes('@')
-                                                        ? photo.uploaderName.split('@')[0]
-                                                        : photo.uploaderName;
-
-                                                    const displayAttributionName = uploaderLabel || photo.subjectName || 'Member';
+                                                    const displayAttributionName = (photo.uploaderName?.includes('@') ? photo.uploaderName.split('@')[0] : photo.uploaderName) || photo.subjectName || 'Member';
                                                     const initial = displayAttributionName.charAt(0).toUpperCase();
 
                                                     return (
-                                                        <div className="flex items-center gap-1.5 ml-2 shrink-0 group/uploader" title={`Creator: ${photo.uploaderName || displayAttributionName}`}>
+                                                        <div className="flex items-center gap-1.5 ml-2 shrink-0" title={`Creator: ${photo.uploaderName || displayAttributionName}`}>
                                                             <div className="relative w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border border-white/40 bg-white/20">
                                                                 {photo.uploaderPhotoURL ? (
                                                                     <img
                                                                         src={photo.uploaderPhotoURL}
-                                                                        alt={photo.uploaderName || displayAttributionName}
+                                                                        alt={displayAttributionName}
                                                                         className="w-full h-auto object-cover"
                                                                     />
                                                                 ) : (
@@ -217,9 +210,6 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                            <span className="text-[8px] md:text-[9px] font-bold opacity-0 group-hover/uploader:opacity-100 transition-opacity whitespace-nowrap hidden md:inline">
-                                                                {displayAttributionName}
-                                                            </span>
                                                         </div>
                                                     );
                                                 })()}
@@ -231,44 +221,38 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                 {/* Category Overlay */}
                                 <AnimatePresence>
                                     {overlayVariant === "category" && (
-                                        <div className="absolute inset-0 bg-black/30 md:bg-black/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-700 flex items-center justify-center overflow-hidden pointer-events-none">
+                                        <div className="absolute inset-0 z-10 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-700 flex items-center justify-center overflow-hidden pointer-events-none">
                                             <motion.div
                                                 initial={{ y: 20, opacity: 0 }}
-                                                whileInView={{ opacity: 1, y: 0 }}
-                                                viewport={{ once: true }}
-                                                transition={{ duration: 0.8 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: 20 }}
                                                 className="text-center px-4"
                                             >
-                                                <motion.div
-                                                    animate={{ y: [0, -8, 0] }}
-                                                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                                >
-                                                    <p className="text-white font-serif tracking-[0.6em] text-lg md:text-2xl uppercase border-y border-white/20 py-5 px-6 md:px-12 backdrop-blur-[2px]">
-                                                        {photo.category}
-                                                    </p>
-                                                </motion.div>
+                                                <p className="text-white font-serif tracking-[0.6em] text-lg md:text-2xl uppercase border-y border-white/20 py-5 px-6 md:px-12 backdrop-blur-[2px]">
+                                                    {photo.category}
+                                                </p>
                                             </motion.div>
                                         </div>
                                     )}
                                 </AnimatePresence>
                             </div>
 
-                            {/* SNS Icon Below Photo - Refined Margin & Style */}
-                            <div className="pt-6 pb-20 flex justify-center">
-                                {photo.snsUrl && (
+                            {/* SNS Icon (Positioned properly below or floating) */}
+                            {photo.snsUrl && (
+                                <div className="mt-4 flex justify-center h-14">
                                     <motion.a
                                         href={getSnsUrl(photo.snsUrl)}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        whileHover={{ scale: 1.1, borderColor: "#000", color: "#000", backgroundColor: "#f9fafb" }}
+                                        whileHover={{ scale: 1.1, backgroundColor: "#f3f4f6" }}
                                         whileTap={{ scale: 0.95 }}
-                                        className="w-14 h-14 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 transition-all duration-300 hover:shadow-md"
+                                        className="w-12 h-12 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all duration-300"
                                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                     >
                                         {getSnsIcon(photo.snsUrl)}
                                     </motion.a>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 ))}
