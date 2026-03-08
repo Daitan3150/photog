@@ -624,7 +624,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
 
                                     <div className="space-y-1">
                                         <p className="text-[9px] text-gray-400 font-bold">市区町村・番地・建物名</p>
-                                        <input type="text" value={formData.addressCity} onChange={e => setFormData({ ...formData, addressCity: e.target.value })} className="w-full border-gray-200 border bg-white rounded p-2 text-xs" placeholder="千代田区千代田1-1" />
+                                        <input type="text" value={formData.addressCity} onChange={e => setFormData({ ...formData, addressCity: e.target.value })} className="w-full border-gray-200 border bg-white rounded p-2 text-xs" placeholder="ノトカリ市 モシリ野 7-4" />
                                     </div>
 
                                     <div className="space-y-1">
@@ -653,7 +653,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                 }));
                                             }}
                                             className="w-full border-gray-200 border bg-white rounded p-2 text-xs h-16 resize-none"
-                                            placeholder="例: 吉田学園 〒060-0063 北海道札幌市中央区 南3条西1丁目15"
+                                            placeholder="例: 〒 XXX-XXXX 蝦夷地 ノトカリ市 モシリ野 7-4"
                                         />
                                         <p className="text-[9px] text-amber-600 font-medium">※ 住所を貼り付けると郵便番号・都道府県・市区町村を自動抽出します。</p>
                                     </div>

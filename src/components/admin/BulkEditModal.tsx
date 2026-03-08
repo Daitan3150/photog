@@ -30,6 +30,7 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
     const [address, setAddress] = useState('');
     const [latitude, setLatitude] = useState('');
     const [longitude, setLongitude] = useState('');
+    const [coordsInput, setCoordsInput] = useState('');
     const [zipCode, setZipCode] = useState('');
     const [prefecture, setPrefecture] = useState('');
     const [generalAddressInput, setGeneralAddressInput] = useState('');
@@ -145,6 +146,7 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                     const res = results[0];
                     setLatitude(res.lat.toString());
                     setLongitude(res.lng.toString());
+                    setCoordsInput(`${res.lat}, ${res.lng}`);
                     if (res.displayName) setAddress(res.displayName);
                 } else {
                     setLocationCandidates(results);
@@ -222,7 +224,7 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                             value={generalAddressInput}
                             onChange={(e) => handleAddressParse(e.target.value)}
                             className="w-full bg-neutral-900/50 border border-neutral-700 rounded-lg px-3 py-2 text-xs text-white focus:ring-1 focus:ring-amber-500 outline-none transition-all placeholder:text-neutral-700"
-                            placeholder="例: 吉田学園 〒060-0063 北海道札幌市中央区 南3条西1丁目15"
+                            placeholder="例: 〒 XXX-XXXX 蝦夷地 ノトカリ市 モシリ野 7-4"
                             rows={2}
                         />
                         <p className="text-[9px] text-amber-600/70">※ 貼り付けると郵便番号、都道府県、住所が自動抽出されます。</p>
@@ -310,6 +312,7 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                                         onClick={() => {
                                             setLatitude(cand.lat.toString());
                                             setLongitude(cand.lng.toString());
+                                            setCoordsInput(`${cand.lat}, ${cand.lng}`);
                                             setAddress(cand.displayName);
                                             setLocationCandidates([]);
                                         }}
@@ -328,32 +331,80 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                     )}
 
                     {/* Coordinates Group */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
-                                <MapPin className="w-4 h-4 text-blue-400" /> 緯度 (Lat)
-                            </label>
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-blue-400" /> 座標 (緯度, 経度)
+                        </label>
+                        <div className="flex gap-2">
                             <input
                                 type="text"
-                                value={latitude}
-                                onChange={(e) => setLatitude(e.target.value)}
-                                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-[10px] text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic font-mono"
+                                value={coordsInput}
+                                onChange={(e) => setCoordsInput(e.target.value)}
+                                className="flex-1 bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-[10px] text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic font-mono"
                                 placeholder="── 変更しない ──"
                             />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
-                                <MapPin className="w-4 h-4 text-emerald-400" /> 経度 (Lng)
-                            </label>
-                            <input
-                                type="text"
-                                value={longitude}
-                                onChange={(e) => setLongitude(e.target.value)}
-                                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-[10px] text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic font-mono"
-                                placeholder="── 変更しない ──"
-                            />
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    // 1. まず座標入力欄（北... 東... など）の解析を試みる
+                                    if (coordsInput.trim()) {
+                                        const parts = coordsInput.split(/[,，]/);
+                                        if (parts.length >= 2) {
+                                            const parseCoord = (s: string, negChar: string) => {
+                                                const num = parseFloat(s.replace(/[^\d.-]/g, ''));
+                                                return s.includes(negChar) ? -Math.abs(num) : num;
+                                            };
+                                            const la = parseCoord(parts[0], '南');
+                                            const ln = parseCoord(parts[1], '西');
+                                            if (!isNaN(la) && !isNaN(ln)) {
+                                                setLatitude(la.toString());
+                                                setLongitude(ln.toString());
+                                                setCoordsInput(`${la}, ${ln}`); // 正規化して表示
+                                                return; // 解析できたら終了
+                                            }
+                                        }
+                                    }
+
+                                    // 2. 座標欄が空、または解析不能な場合は住所から検索
+                                    handleLocationSearch();
+                                }}
+                                disabled={isSearching}
+                                className={`px-4 py-3 bg-blue-900/30 text-blue-400 border border-blue-800 rounded-lg text-[10px] font-bold hover:bg-blue-900/50 transition-all ${isSearching ? 'opacity-50' : ''}`}
+                            >
+                                {isSearching ? '反映中...' : '反映 & 座標取得'}
+                            </button>
                         </div>
                     </div>
+
+                    {/* ✅ マッププレビュー */}
+                    {(() => {
+                        const latNum = parseFloat(latitude);
+                        const lngNum = parseFloat(longitude);
+                        const isValid = !isNaN(latNum) && !isNaN(lngNum) && latitude !== '' && longitude !== '';
+
+                        if (isValid) {
+                            return (
+                                <div className="mt-4 group/map relative">
+                                    <LeafletMap
+                                        lat={latNum}
+                                        lng={lngNum}
+                                        height="200px"
+                                        className="rounded-2xl overflow-hidden shadow-lg border border-neutral-800"
+                                    />
+                                    <div className="absolute top-3 left-3 z-[1000] px-3 py-1.5 bg-neutral-900/90 backdrop-blur-md rounded-xl text-[10px] font-bold text-neutral-300 border border-neutral-800 shadow-sm pointer-events-none flex items-center gap-1.5">
+                                        <MapPin className="w-3 h-3 text-blue-500" />
+                                        Batch Preview
+                                    </div>
+                                </div>
+                            );
+                        }
+                        return (
+                            <div className="mt-4 p-4 border border-dashed border-neutral-800 rounded-xl bg-neutral-800/20 text-center">
+                                <p className="text-[10px] text-neutral-500 italic">有効な座標が反映されるとここに地図が表示されます</p>
+                            </div>
+                        );
+                    })()}
+                    <p className="text-[9px] text-neutral-500 italic mt-2">※ 「座標取得」ボタンで住所・場所名からGPS座標を反映できます。座標の直接入力も可能です。</p>
 
                     {/* Tags */}
                     <div className="space-y-2">
