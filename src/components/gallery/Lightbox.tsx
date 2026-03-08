@@ -250,7 +250,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                     <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
                                         <MapPin size={14} className="opacity-50" />
                                     </div>
-                                    <div className="flex flex-col items-start gap-1">
+                                    <div className="flex flex-col items-start gap-1 flex-1">
                                         <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Location</p>
                                         {(photo.latitude && photo.longitude) || (photo.location || photo.address) ? (
                                             <a
@@ -275,6 +275,21 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                                     <p className="text-[10px] text-gray-400 mt-0.5 leading-snug">{photo.address}</p>
                                                 )}
                                             </>
+                                        )}
+
+                                        {/* ✅ ライトボックス内マッププレビュー (OSM) */}
+                                        {photo.latitude !== null && photo.longitude !== null && (
+                                            <div className="w-full h-24 mt-2 rounded-xl overflow-hidden border border-gray-100 shadow-sm relative group/map">
+                                                <iframe
+                                                    width="100%"
+                                                    height="100%"
+                                                    frameBorder="0"
+                                                    style={{ border: 0 }}
+                                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${photo.longitude - 0.003},${photo.latitude - 0.003},${photo.longitude + 0.003},${photo.latitude + 0.003}&layer=mapnik&marker=${photo.latitude},${photo.longitude}`}
+                                                    allowFullScreen
+                                                    className="bg-gray-50"
+                                                />
+                                            </div>
                                         )}
                                     </div>
                                 </div>

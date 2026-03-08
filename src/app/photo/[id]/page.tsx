@@ -277,6 +277,24 @@ export default async function PhotoPage({ params }: Props) {
                                         )}
                                     </div>
                                 </div>
+
+                                {/* ✅ 公開用マッププレビュー (OSM) */}
+                                {photo.latitude !== null && photo.longitude !== null && (
+                                    <div className="w-full h-40 mt-2 rounded-2xl overflow-hidden border border-black/5 shadow-sm group/map relative">
+                                        <iframe
+                                            width="100%"
+                                            height="100%"
+                                            frameBorder="0"
+                                            style={{ border: 0 }}
+                                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${photo.longitude - 0.005},${photo.latitude - 0.005},${photo.longitude + 0.005},${photo.latitude + 0.005}&layer=mapnik&marker=${photo.latitude},${photo.longitude}`}
+                                            allowFullScreen
+                                            className="grayscale-[0.2] hover:grayscale-0 transition-all"
+                                        />
+                                        <div className="absolute top-2 right-2 px-2 py-1 bg-white/80 backdrop-blur-sm rounded-full text-[8px] font-bold text-black/40 border border-black/5 pointer-events-none opacity-0 group-hover/map:opacity-100 transition-opacity">
+                                            OpenStreetMap
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex items-center gap-4 text-black/60 group">

@@ -99,6 +99,8 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const [shotAtEnabled, setShotAtEnabled] = useState(true); // false = 撮影日なし
     const [exifSuggestions, setExifSuggestions] = useState<{ models: string[], lensModels: string[] }>({ models: [], lensModels: [] });
     const [refreshingExif, setRefreshingExif] = useState(false);
+    const [searchingLocation, setSearchingLocation] = useState(false);
+    const [locationCandidates, setLocationCandidates] = useState<any[]>([]);
 
     // ✅ Coords Auto-parsing from input string
     useEffect(() => {
@@ -662,24 +664,85 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                     // 2. 座標欄が空、または解析不能な場合は住所から検索
                                                     const query = formData.address || [formData.addressZip, formData.addressPref, formData.addressCity].filter(Boolean).join(' ');
                                                     if (!query) return;
+                                                    setSearchingLocation(true);
+                                                    setLocationCandidates([]);
                                                     try {
-                                                        const res = await getCoordinatesAction(query);
-                                                        if (res) {
-                                                            setFormData(prev => ({
-                                                                ...prev,
-                                                                coordsInput: `${res.lat}, ${res.lng}`,
-                                                                latitude: res.lat,
-                                                                longitude: res.lng,
-                                                                address: prev.address || res.displayName || ''
-                                                            }));
+                                                        const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+                                                        const results = await searchCoordinatesAction(query);
+
+                                                        if (results && results.length > 0) {
+                                                            if (results.length === 1) {
+                                                                const res = results[0];
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    coordsInput: `${res.lat}, ${res.lng}`,
+                                                                    latitude: res.lat,
+                                                                    longitude: res.lng,
+                                                                    address: prev.address || res.displayName || ''
+                                                                }));
+                                                            } else {
+                                                                // 複数候補がある場合
+                                                                setLocationCandidates(results);
+                                                            }
+                                                        } else {
+                                                            alert('候補が見つかりませんでした。より詳細な住所を入力してください。');
                                                         }
-                                                    } catch (e) { console.error(e); }
+                                                    } catch (e) {
+                                                        console.error(e);
+                                                        alert('検索中にエラーが発生しました。');
+                                                    } finally {
+                                                        setSearchingLocation(false);
+                                                    }
                                                 }}
-                                                className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded text-[10px] font-bold hover:bg-blue-100 transition-colors"
+                                                disabled={searchingLocation}
+                                                className={`px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded text-[10px] font-bold hover:bg-blue-100 transition-colors ${searchingLocation ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
-                                                反映 & 座標取得
+                                                {searchingLocation ? '検索中...' : '反映 & 座標取得'}
                                             </button>
                                         </div>
+
+                                        {/* ✅ 候補リストの表示 */}
+                                        {locationCandidates.length > 0 && (
+                                            <div className="mt-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                <p className="text-[10px] font-bold text-blue-600 flex items-center gap-1.5 mb-2">
+                                                    <MapPin className="w-3 h-3" />
+                                                    該当する場所を選択してください ({locationCandidates.length}件見つかりました)
+                                                </p>
+                                                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                                                    {locationCandidates.map((cand, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    coordsInput: `${cand.lat}, ${cand.lng}`,
+                                                                    latitude: cand.lat,
+                                                                    longitude: cand.lng,
+                                                                    address: cand.displayName || prev.address
+                                                                }));
+                                                                setLocationCandidates([]);
+                                                            }}
+                                                            className="w-full text-left p-2 rounded-lg bg-white border border-blue-50 hover:border-blue-300 hover:shadow-sm transition-all group"
+                                                        >
+                                                            <div className="text-[10px] font-bold text-gray-700 group-hover:text-blue-600 truncate">
+                                                                {cand.displayName}
+                                                            </div>
+                                                            <div className="text-[8px] text-gray-400 mt-0.5">
+                                                                {cand.lat.toFixed(5)}, {cand.lng.toFixed(5)} ({cand.type || 'unknown'})
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setLocationCandidates([])}
+                                                    className="w-full text-[9px] text-gray-400 hover:text-gray-600 py-1"
+                                                >
+                                                    キャンセル
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

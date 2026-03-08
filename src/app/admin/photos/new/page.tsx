@@ -229,6 +229,8 @@ export default function NewPhotoPage() {
 
     // ✅ 新機能: AI自動タグ
     const [useAiTags, setUseAiTags] = useState(true);
+    const [searchingLocation, setSearchingLocation] = useState(false);
+    const [locationCandidates, setLocationCandidates] = useState<any[]>([]);
 
     // ✅ 署名取得
     const fetchSignature = async (paramsToSign: Record<string, any>) => {
@@ -1241,25 +1243,80 @@ export default function NewPhotoPage() {
                                             // 2. 検索実行
                                             const query = [addressZip, addressPref, addressCity].filter(Boolean).join(' ');
                                             if (!query) return;
+                                            setSearchingLocation(true);
+                                            setLocationCandidates([]);
                                             try {
-                                                const { getCoordinatesAction } = await import('@/lib/actions/photos');
-                                                const res = await getCoordinatesAction(query);
-                                                if (res) {
-                                                    setLatitude(res.lat);
-                                                    setLongitude(res.lng);
-                                                    setCoordsInput(`${res.lat}, ${res.lng}`);
-                                                    if (res.displayName) {
-                                                        // 住所が空、かつ自動取得されたものがあれば補完
-                                                        setAddressDetail(prev => prev || res.displayName || '');
+                                                const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+                                                const results = await searchCoordinatesAction(query);
+
+                                                if (results && results.length > 0) {
+                                                    if (results.length === 1) {
+                                                        const res = results[0];
+                                                        setLatitude(res.lat);
+                                                        setLongitude(res.lng);
+                                                        setCoordsInput(`${res.lat}, ${res.lng}`);
+                                                        if (res.displayName) {
+                                                            setAddressDetail(prev => prev || res.displayName || '');
+                                                        }
+                                                    } else {
+                                                        setLocationCandidates(results);
                                                     }
+                                                } else {
+                                                    alert('候補が見つかりませんでした。');
                                                 }
-                                            } catch (e) { console.error(e); }
+                                            } catch (e) {
+                                                console.error(e);
+                                                alert('検索中にエラーが発生しました。');
+                                            } finally {
+                                                setSearchingLocation(false);
+                                            }
                                         }}
-                                        className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded text-xs font-bold hover:bg-blue-100 transition-colors"
+                                        disabled={searchingLocation}
+                                        className={`px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded text-xs font-bold hover:bg-blue-100 transition-colors ${searchingLocation ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
-                                        反映 & 座標取得
+                                        {searchingLocation ? '検索中...' : '反映 & 座標取得'}
                                     </button>
                                 </div>
+
+                                {/* ✅ 候補リストの表示 */}
+                                {locationCandidates.length > 0 && (
+                                    <div className="mt-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl space-y-2 animate-in fade-in slide-in-from-top-2 duration-300 text-balance">
+                                        <p className="text-[10px] font-bold text-blue-600 flex items-center gap-1.5 mb-2">
+                                            <MapPin className="w-3 h-3" />
+                                            該当する場所を選択してください ({locationCandidates.length}件見つかりました)
+                                        </p>
+                                        <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                                            {locationCandidates.map((cand, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setLatitude(cand.lat);
+                                                        setLongitude(cand.lng);
+                                                        setCoordsInput(`${cand.lat}, ${cand.lng}`);
+                                                        setAddressDetail(cand.displayName);
+                                                        setLocationCandidates([]);
+                                                    }}
+                                                    className="w-full text-left p-2 rounded-lg bg-white border border-blue-50 hover:border-blue-300 hover:shadow-sm transition-all group"
+                                                >
+                                                    <div className="text-[10px] font-bold text-gray-700 group-hover:text-blue-600 truncate">
+                                                        {cand.displayName}
+                                                    </div>
+                                                    <div className="text-[8px] text-gray-400 mt-0.5">
+                                                        {cand.lat.toFixed(5)}, {cand.lng.toFixed(5)} ({cand.type || 'unknown'})
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setLocationCandidates([])}
+                                            className="w-full text-[10px] text-gray-400 hover:text-gray-600 py-1"
+                                        >
+                                            キャンセル
+                                        </button>
+                                    </div>
+                                )}
                                 <p className="text-[9px] text-gray-400">※ Googleマップ等の座標をそのまま貼り付け可能です。</p>
                             </div>
 

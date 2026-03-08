@@ -33,106 +33,67 @@ function zenkakuToHankaku(str: string): string {
         .replace(/[－ー]/g, '-');  // Zenkaku hyphens
 }
 
-export async function getCoordinates(locationName: string): Promise<{ lat: number; lng: number; displayName?: string } | null> {
-    if (!locationName || locationName.trim() === '') return null;
-
-    // Check if it's already a manual GPS coordinate
-    const manual = parseManualGPS(locationName);
-    if (manual) {
-        try {
-            // Reverse geocode to get a clean address from coordinates
-            const url = `https://nominatim.openstreetmap.org/reverse?lat=${manual.lat}&lon=${manual.lng}&format=json&addressdetails=1`;
-            const res = await fetch(url, { headers: { 'User-Agent': 'NextPortfolio/1.0' } });
-            if (res.ok) {
-                const data = await res.json() as any;
-                if (data && data.address) {
-                    const addr = data.address;
-                    let jpnAddr = '';
-                    if (addr.postcode) jpnAddr += `〒${addr.postcode} `;
-                    if (addr.province || addr.state) jpnAddr += (addr.province || addr.state);
-                    if (addr.city || addr.town || addr.village) jpnAddr += (addr.city || addr.town || addr.village);
-                    if (addr.suburb || addr.city_district) jpnAddr += (addr.suburb || addr.city_district);
-                    if (addr.neighbourhood) jpnAddr += addr.neighbourhood;
-                    if (addr.road) jpnAddr += addr.road;
-                    if (addr.house_number) jpnAddr += addr.house_number;
-                    return { ...manual, displayName: jpnAddr.trim() || data.display_name };
-                }
-            }
-        } catch (e) { console.error(e); }
-        return manual;
-    }
-
-    // Prepare search variations
-    const normalized = zenkakuToHankaku(locationName.trim());
-
-    // Create a list of potential search terms
-    const searchQueries: string[] = [];
-    searchQueries.push(normalized); // 1. Original (half-width)
-
-    // 2. If it contains slashes or special separators, try parts
-    if (normalized.includes('/') || normalized.includes('／') || normalized.includes('・')) {
-        const parts = normalized.split(/[/／・]/).map(p => p.trim()).filter(Boolean);
-        searchQueries.push(...parts);
-    }
-
-    // 3. Strip trailing house numbers or floor info
-    searchQueries.push(normalized.replace(/(\d+[-－]\d+.*$)|(\d+丁目\d+.*$)/, '').trim());
-
-    // 4. Split by spaces/commas and take the first few parts (most significant)
-    const blocks = normalized.split(/[\s,、　]/).filter(Boolean);
-    if (blocks.length > 1) {
-        searchQueries.push(blocks[0]); // First block only
-        searchQueries.push(blocks.slice(0, 2).join(' ')); // First two blocks
-    }
-
-    for (const query of [...new Set(searchQueries)]) {
-        if (!query || query.length < 2) continue;
-        try {
-            // nominatim works best with structured queries. 
-            // We append 'Japan' to narrow it down.
-            const searchUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=jp&addressdetails=1`;
-
-            const response = await fetch(searchUrl, {
-                headers: {
-                    'User-Agent': 'NextPortfolio/1.0 (daitan3150-portfolio-contact)'
-                }
-            });
-
-            if (!response.ok) {
-                console.error('Nominatim API error:', response.statusText);
-                continue; // Try next query
-            }
-
-            const data = await response.json() as any;
-
-            if (data && data.length > 0) {
-                const addr = data[0].address;
-                // Build a clean Japanese address format: 〒123-4567 〇〇県〇〇市...
-                let jpnAddress = '';
-                if (addr.postcode) jpnAddress += `〒${addr.postcode} `;
-                if (addr.province || addr.state) jpnAddress += (addr.province || addr.state);
-                if (addr.city || addr.town || addr.village) jpnAddress += (addr.city || addr.town || addr.village);
-                if (addr.suburb || addr.city_district) jpnAddress += (addr.suburb || addr.city_district);
-                if (addr.neighbourhood) jpnAddress += addr.neighbourhood;
-                if (addr.road) jpnAddress += addr.road;
-                if (addr.house_number) jpnAddress += addr.house_number;
-
-                // If the building name isn't already in the string, prepend it
-                const building = addr.building || addr.amenity || addr.tourism || addr.historic;
-                if (building && !jpnAddress.includes(building)) {
-                    jpnAddress = `${building} (${jpnAddress.trim()})`;
-                }
-
-                return {
-                    lat: parseFloat(data[0].lat),
-                    lng: parseFloat(data[0].lon),
-                    displayName: jpnAddress.trim() || data[0].display_name
-                };
-            }
-        } catch (error) {
-            console.error('Error fetching coordinates:', error);
-        }
-    }
-
-    return null;
+export interface LocationSearchResult {
+    lat: number;
+    lng: number;
+    displayName: string;
+    type?: string;
 }
+
+/**
+ * Searches for multiple location candidates.
+ * Returns up to 10 results for the user to pick from.
+ */
+export async function searchCoordinates(locationName: string): Promise<LocationSearchResult[]> {
+    if (!locationName || locationName.trim() === '') return [];
+
+    const normalized = zenkakuToHankaku(locationName.trim());
+    try {
+        // Nominatim search with higher limit
+        const searchUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(normalized)}&format=json&limit=10&countrycodes=jp&addressdetails=1`;
+
+        const response = await fetch(searchUrl, {
+            headers: { 'User-Agent': 'NextPortfolio/1.0 (daitan3150-portfolio-contact)' }
+        });
+
+        if (!response.ok) return [];
+
+        const data = await response.json() as any[];
+        if (!data || data.length === 0) return [];
+
+        return data.map(item => {
+            const addr = item.address;
+            let jpnAddress = '';
+            // 〒123-4567 〇〇県〇〇市... の形式を構築
+            if (addr.postcode) jpnAddress += `〒${addr.postcode} `;
+            if (addr.province || addr.state) jpnAddress += (addr.province || addr.state);
+            if (addr.city || addr.town || addr.village) jpnAddress += (addr.city || addr.town || addr.village);
+            if (addr.suburb || addr.city_district) jpnAddress += (addr.suburb || addr.city_district);
+            if (addr.neighbourhood) jpnAddress += addr.neighbourhood;
+            if (addr.road) jpnAddress += addr.road;
+            if (addr.house_number) jpnAddress += addr.house_number;
+
+            // 建物名や施設名があれば強調
+            const building = addr.building || addr.amenity || addr.tourism || addr.historic || addr.shop || addr.office;
+            if (building && !jpnAddress.includes(building)) {
+                jpnAddress = `${building} (${jpnAddress.trim()})`;
+            }
+
+            return {
+                lat: parseFloat(item.lat),
+                lng: parseFloat(item.lon),
+                displayName: jpnAddress.trim() || item.display_name,
+                type: item.type
+            };
+        });
+    } catch (error) {
+        console.error('Error searching coordinates:', error);
+        return [];
+    }
+}
+
+export async function getCoordinates(locationName: string): Promise<{ lat: number; lng: number; displayName?: string } | null> {
+    const results = await searchCoordinates(locationName);
+    return results.length > 0 ? results[0] : null;
+}
+

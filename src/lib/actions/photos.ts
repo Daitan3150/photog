@@ -5,6 +5,11 @@ export async function getCoordinatesAction(locationName: string) {
     return await getCoordinates(locationName);
 }
 
+export async function searchCoordinatesAction(locationName: string) {
+    const { searchCoordinates } = await import('../utils/location');
+    return await searchCoordinates(locationName);
+}
+
 // Removed top-level admin/firebaseAdmin imports to prevent client-side leak
 import { PhotoFormData, Photo as PhotoType } from '@/types/photo';
 import { serializeData } from '../utils/serialization';
