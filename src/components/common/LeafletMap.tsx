@@ -8,9 +8,10 @@ interface LeafletMapProps {
     lng: number;
     height?: string;
     className?: string;
+    zoom?: number;
 }
 
-export default function LeafletMap({ lat, lng, height = '300px', className = '' }: LeafletMapProps) {
+export default function LeafletMap({ lat, lng, height = '300px', className = '', zoom = 18 }: LeafletMapProps) {
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const markerInstance = useRef<any>(null);
@@ -24,7 +25,7 @@ export default function LeafletMap({ lat, lng, height = '300px', className = '' 
 
         if (!mapInstance.current) {
             // 初回初期化
-            mapInstance.current = L.map(mapRef.current).setView([lat, lng], 15);
+            mapInstance.current = L.map(mapRef.current).setView([lat, lng], zoom);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(mapInstance.current);
@@ -41,7 +42,7 @@ export default function LeafletMap({ lat, lng, height = '300px', className = '' 
             markerInstance.current = L.marker([lat, lng], { icon: DefaultIcon }).addTo(mapInstance.current);
         } else {
             // 既存の地図を移動
-            mapInstance.current.setView([lat, lng], 15);
+            mapInstance.current.setView([lat, lng], zoom);
             if (markerInstance.current) {
                 markerInstance.current.setLatLng([lat, lng]);
             }
