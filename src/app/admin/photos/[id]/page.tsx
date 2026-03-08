@@ -100,6 +100,23 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const [exifSuggestions, setExifSuggestions] = useState<{ models: string[], lensModels: string[] }>({ models: [], lensModels: [] });
     const [refreshingExif, setRefreshingExif] = useState(false);
 
+    // ✅ Coords Auto-parsing from input string
+    useEffect(() => {
+        if (!formData.coordsInput) return;
+        const parts = formData.coordsInput.split(/[,，]/);
+        if (parts.length >= 2) {
+            const parseCoord = (s: string, negChar: string) => {
+                const num = parseFloat(s.replace(/[^\d.-]/g, ''));
+                return s.includes(negChar) ? -Math.abs(num) : num;
+            };
+            const la = parseCoord(parts[0], '南');
+            const ln = parseCoord(parts[1], '西');
+            if (!isNaN(la) && !isNaN(ln) && (la !== formData.latitude || ln !== formData.longitude)) {
+                setFormData(prev => ({ ...prev, latitude: la, longitude: ln }));
+            }
+        }
+    }, [formData.coordsInput, formData.latitude, formData.longitude]);
+
     useEffect(() => {
         if (user) {
             fetchPhoto();
@@ -154,12 +171,12 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         }
         setLoading(false);
 
-        // ✅ Debug: Check coordinates in admin client
-        console.log(`[Admin EditPage] Debugging coordinates for ID ${photoId}:`, {
-            latitude: data.latitude,
-            longitude: data.longitude,
-            formDataLat: data.latitude, // Same as data at this point
-            formDataLng: data.longitude
+        // ✅ Debug: Check raw data from server
+        console.log(`[Admin EditPage] Fetched Data for ID ${photoId}:`, {
+            rawLat: data.latitude,
+            rawLng: data.longitude,
+            typeLat: typeof data.latitude,
+            typeLng: typeof data.longitude
         });
     };
 
@@ -667,9 +684,22 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                 </div>
 
                                 {/* ✅ マッププレビュー (OpenStreetMap Fallback) */}
+                                {/* ✅ マッププレビュー (OpenStreetMap Fallback) */}
                                 {(() => {
-                                    if (formData.latitude !== null && formData.longitude !== null) {
-                                        console.log(`[Admin Render] Rendering map with:`, { lat: formData.latitude, lng: formData.longitude });
+                                    const lat = typeof formData.latitude === 'string' ? parseFloat(formData.latitude) : formData.latitude;
+                                    const lng = typeof formData.longitude === 'string' ? parseFloat(formData.longitude) : formData.longitude;
+                                    const isValid = (lat !== null && !isNaN(lat)) && (lng !== null && !isNaN(lng));
+
+                                    console.log(`[Map Preview Debug]`, {
+                                        latitude: formData.latitude,
+                                        longitude: formData.longitude,
+                                        parsedLat: lat,
+                                        parsedLng: lng,
+                                        isValid,
+                                        coordsInput: formData.coordsInput
+                                    });
+
+                                    if (isValid && lat !== null && lng !== null) {
                                         return (
                                             <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 bg-white h-52 relative group shadow-sm text-balance">
                                                 <iframe
@@ -677,7 +707,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                     height="100%"
                                                     frameBorder="0"
                                                     style={{ border: 0 }}
-                                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${formData.longitude - 0.005},${formData.latitude - 0.005},${formData.longitude + 0.005},${formData.latitude + 0.005}&layer=mapnik&marker=${formData.latitude},${formData.longitude}`}
+                                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.005},${lat - 0.005},${lng + 0.005},${lat + 0.005}&layer=mapnik&marker=${lat},${lng}`}
                                                     allowFullScreen
                                                     className="bg-gray-50"
                                                 />
@@ -685,7 +715,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                     Simple Map (OSM)
                                                 </div>
                                                 <a
-                                                    href={`https://www.google.com/maps/search/?api=1&query=${formData.latitude},${formData.longitude}`}
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold text-blue-600 shadow-lg border border-blue-100 hover:bg-blue-50 transition-all transform hover:scale-105"
@@ -695,7 +725,11 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                             </div>
                                         );
                                     }
-                                    return null;
+                                    return (
+                                        <div className="mt-4 p-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50 text-center">
+                                            <p className="text-[10px] text-gray-400">有効な座標が入力されるとここに地図が表示されます</p>
+                                        </div>
+                                    );
                                 })()}
                                 <p className="text-[10px] text-gray-400 mt-2 italic">※ 「検索」ボタンで住所からGPS座標を取得できます。座標は手動入力も可能です。</p>
                             </div>
