@@ -245,9 +245,10 @@ export default async function PhotoPage({ params }: Props) {
                                         <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold">Location</span>
                                         {(photo.latitude && photo.longitude) || (photo.location || photo.address) ? (
                                             <a
-                                                href={photo.latitude && photo.longitude
-                                                    ? `https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`
-                                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(photo.address || photo.location)}`}
+                                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                                                    [photo.location, photo.address].filter(Boolean).join(' ') ||
+                                                    (photo.latitude && photo.longitude ? `${photo.latitude},${photo.longitude}` : '')
+                                                )}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="hover:text-amber-600 transition-colors flex flex-col items-start group/loc"

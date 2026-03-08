@@ -254,9 +254,10 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                         <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Location</p>
                                         {(photo.latitude && photo.longitude) || (photo.location || photo.address) ? (
                                             <a
-                                                href={photo.latitude && photo.longitude
-                                                    ? `https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`
-                                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(photo.address || photo.location)}`}
+                                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                                                    [photo.location, photo.address].filter(Boolean).join(' ') ||
+                                                    (photo.latitude && photo.longitude ? `${photo.latitude},${photo.longitude}` : '')
+                                                )}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="hover:text-blue-600 transition-colors flex flex-col items-start group/loc"
