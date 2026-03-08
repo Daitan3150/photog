@@ -532,12 +532,22 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                     </button>
                                 </div>
 
-                                {formData.address && (
-                                    <div className="mt-2 p-2.5 bg-gray-50 rounded-lg border border-gray-100">
-                                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">取得された正式な住所</p>
-                                        <p className="text-xs text-gray-600 leading-relaxed">{formData.address}</p>
-                                    </div>
-                                )}
+                                <div className="mt-3 space-y-2">
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                        住所・正確な撮影地
+                                        <span className="ml-2 text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">最優先</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.address}
+                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                        className="w-full border-gray-100 border bg-gray-50/50 rounded-lg p-2.5 text-xs outline-none focus:ring-1 focus:ring-blue-300"
+                                        placeholder="例: 東京都千代田区1-1-1"
+                                    />
+                                    <p className="text-[9px] text-gray-400 italic leading-tight">
+                                        ※ この住所は、地図へのリンク等で「撮影場所」よりも優先して使用されます。
+                                    </p>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4 mt-3 relative">
                                     <div>
                                         <p className="text-[10px] text-gray-400 mb-1 font-bold">緯度 (Latitude)</p>

@@ -183,6 +183,7 @@ export default function NewPhotoPage() {
     const [subjectName, setSubjectName] = useState('');
     const [characterName, setCharacterName] = useState('');
     const [location, setLocation] = useState('');
+    const [address, setAddress] = useState('');
     const [shotAt, setShotAt] = useState('');
     const [shotAtEnabled, setShotAtEnabled] = useState(true);
     const [snsUrl, setSnsUrl] = useState('');
@@ -662,6 +663,7 @@ export default function NewPhotoPage() {
                     subjectName,
                     characterName,
                     location,
+                    address,
                     shotAt: finalShotAt,
                     snsUrl,
                     categoryId,
@@ -1160,8 +1162,23 @@ export default function NewPhotoPage() {
                         )}
 
                         <div className="space-y-2">
-                            <label className="block text-sm font-bold text-gray-700">共通撮影場所</label>
+                            <label className="block text-sm font-bold text-gray-700">共通撮影場所 (検索用)</label>
                             <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" placeholder="例: 北海道 美瑛町" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-bold text-gray-700 flex items-center gap-2">
+                                住所・正確な撮影地
+                                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">最優先</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
+                                className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="例: 東京都千代田区1-1-1 (座標取得に使用)"
+                            />
+                            <p className="text-[10px] text-gray-400">※ 住所を直接入力した場合は、上記「撮影場所」よりもこちらが優先的に地図情報として使用されます。</p>
                         </div>
 
                         {/* ✅ 一括タグ付け */}

@@ -125,17 +125,19 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
         const modelId = userData?.modelId || null;
         const role = userData?.role || (isSuperAdminByEmail ? 'admin' : null);
 
-        // [GEOCODING] Fetch coordinates from location string
+        // [GEOCODING] Fetch coordinates
         let latitude = data.latitude ?? null;
         let longitude = data.longitude ?? null;
 
-        if (data.location && latitude === null && longitude === null) {
-            const coords = await getCoordinates(data.location);
+        const geocodeQuery = data.address || data.location;
+
+        if (geocodeQuery && latitude === null && longitude === null) {
+            const coords = await getCoordinates(geocodeQuery);
             if (coords) {
                 latitude = coords.lat;
                 longitude = coords.lng;
-                // [NEW] Store the formal address in a separate field instead of overwriting location
-                if (coords.displayName) {
+                // Store formal address only if no manual address was provided
+                if (!data.address && coords.displayName) {
                     (data as any).address = coords.displayName;
                 }
             }
@@ -240,17 +242,19 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
 
         const photoIds: string[] = [];
         for (const data of dataList) {
-            // [GEOCODING] Fetch coordinates from location string
+            // [GEOCODING] Fetch coordinates
             let latitude = data.latitude ?? null;
             let longitude = data.longitude ?? null;
 
-            if (data.location && latitude === null && longitude === null) {
-                const coords = await getCoordinates(data.location);
+            const geocodeQuery = data.address || data.location;
+
+            if (geocodeQuery && latitude === null && longitude === null) {
+                const coords = await getCoordinates(geocodeQuery);
                 if (coords) {
                     latitude = coords.lat;
                     longitude = coords.lng;
-                    // [NEW] Store formal address separately
-                    if (coords.displayName) {
+                    // Store formal address only if no manual address was provided
+                    if (!data.address && coords.displayName) {
                         (data as any).address = coords.displayName;
                     }
                 }
