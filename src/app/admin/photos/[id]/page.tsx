@@ -87,7 +87,11 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         tags: [] as string[],
         focalPoint: undefined as { x: number, y: number } | undefined,
         latitude: null as number | null,
-        longitude: null as number | null
+        longitude: null as number | null,
+        addressZip: '',
+        addressPref: '',
+        addressCity: '',
+        coordsInput: ''
     });
     const [categories, setCategories] = useState<Category[]>([]);
     const [originalPhoto, setOriginalPhoto] = useState<any>(null);
@@ -141,7 +145,11 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 focalPoint: data.focalPoint || undefined,
                 latitude: data.latitude || null,
                 longitude: data.longitude || null,
-                address: data.address || ''
+                address: data.address || '',
+                coordsInput: (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : '',
+                addressZip: '', // Initial fetch doesn't have split parts
+                addressPref: '',
+                addressCity: ''
             });
         }
         setLoading(false);
@@ -267,10 +275,33 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
             return;
         }
 
+        // ✅ 座標の解析 (北43.25°, 東141.35° or 43.25, 141.35 形式)
+        let finalLat = formData.latitude;
+        let finalLng = formData.longitude;
+        if (formData.coordsInput.includes(',') || formData.coordsInput.includes('，')) {
+            const parts = formData.coordsInput.split(/[,，]/);
+            const parseCoord = (s: string, negChar: string) => {
+                const num = parseFloat(s.replace(/[^\d.-]/g, ''));
+                return s.includes(negChar) ? -Math.abs(num) : num;
+            };
+            const la = parseCoord(parts[0], '南');
+            const ln = parseCoord(parts[1], '西');
+            if (!isNaN(la) && !isNaN(ln)) {
+                finalLat = la;
+                finalLng = ln;
+            }
+        }
+
+        // ✅ 住所の結合
+        const fullAddress = formData.address || [formData.addressZip, formData.addressPref, formData.addressCity].filter(Boolean).join(' ');
+
         setSaving(true);
         const token = await user.getIdToken();
         const result = await updatePhoto(photoId, {
             ...formData,
+            latitude: finalLat,
+            longitude: finalLng,
+            address: fullAddress,
             shotAt: shotAtEnabled ? formData.shotAt : '', // 撮影日なしの場合は空文字列
             event: formData.event || '', // すべてのカテゴリーでイベント名を保存
         }, token);
@@ -532,65 +563,76 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                     </button>
                                 </div>
 
-                                <div className="mt-3 space-y-2">
-                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                        住所・正確な撮影地
-                                        <span className="ml-2 text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">最優先</span>
+                                <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <MapPin className="w-3 h-3 text-green-500" />
+                                        詳細な撮影地・住所入力
+                                        <span className="ml-auto text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">最優先</span>
                                     </label>
-                                    <input
-                                        type="text"
-                                        value={formData.address}
-                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                        className="w-full border-gray-100 border bg-gray-50/50 rounded-lg p-2.5 text-xs outline-none focus:ring-1 focus:ring-blue-300"
-                                        placeholder="例: 東京都千代田区1-1-1"
-                                    />
-                                    <p className="text-[9px] text-gray-400 italic leading-tight">
-                                        ※ この住所は、地図へのリンク等で「撮影場所」よりも優先して使用されます。
-                                    </p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 mt-3 relative">
-                                    <div>
-                                        <p className="text-[10px] text-gray-400 mb-1 font-bold">緯度 (Latitude)</p>
-                                        <input
-                                            type="number"
-                                            step="any"
-                                            value={formData.latitude ?? ''}
-                                            onChange={(e) => setFormData({ ...formData, latitude: e.target.value ? parseFloat(e.target.value) : null })}
-                                            className="w-full border-gray-200 border bg-white rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="35.6895"
-                                        />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] text-gray-400 mb-1 font-bold">経度 (Longitude)</p>
-                                        <input
-                                            type="number"
-                                            step="any"
-                                            value={formData.longitude ?? ''}
-                                            onChange={(e) => setFormData({ ...formData, longitude: e.target.value ? parseFloat(e.target.value) : null })}
-                                            className="w-full border-gray-200 border bg-white rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="139.6917"
-                                        />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, latitude: null, longitude: null })}
-                                        className="absolute -right-2 top-0 bg-white border border-gray-200 rounded-full p-1 text-gray-400 hover:text-red-500 hover:border-red-200 shadow-sm transition-all"
-                                        title="座標をクリア"
-                                    >
-                                        <Tag size={12} className="rotate-45" />
-                                    </button>
-                                </div>
 
-                                <div className="mt-2 flex justify-between items-center px-1">
-                                    <p className="text-[10px] text-gray-400 italic">※ 直接入力も可能です</p>
-                                    <a
-                                        href="https://www.google.com/maps"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[10px] text-blue-500 hover:underline font-bold"
-                                    >
-                                        Google Mapで座標を探す ↗
-                                    </a>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] text-gray-400 font-bold">郵便番号</p>
+                                            <input type="text" value={formData.addressZip} onChange={e => setFormData({ ...formData, addressZip: e.target.value })} className="w-full border-gray-200 border bg-white rounded p-2 text-xs" placeholder="100-0001" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] text-gray-400 font-bold">都道府県</p>
+                                            <input type="text" value={formData.addressPref} onChange={e => setFormData({ ...formData, addressPref: e.target.value })} className="w-full border-gray-200 border bg-white rounded p-2 text-xs" placeholder="東京都" />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] text-gray-400 font-bold">市区町村・番地・建物名</p>
+                                        <input type="text" value={formData.addressCity} onChange={e => setFormData({ ...formData, addressCity: e.target.value })} className="w-full border-gray-200 border bg-white rounded p-2 text-xs" placeholder="千代田区千代田1-1" />
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] text-gray-400 font-bold">既定の住所 (一括入力用)</p>
+                                        <input
+                                            type="text"
+                                            value={formData.address}
+                                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                            className="w-full border-gray-200 border bg-white rounded p-2 text-xs"
+                                            placeholder="手動で住所を打ち込む場合はこちら"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2 pt-2 border-t border-gray-200">
+                                        <label className="block text-[10px] font-bold text-gray-400 uppercase">
+                                            座標 (緯度, 経度)
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={formData.coordsInput}
+                                                onChange={e => setFormData({ ...formData, coordsInput: e.target.value })}
+                                                className="flex-1 border-gray-200 border bg-white rounded p-2 text-xs font-mono"
+                                                placeholder="35.6895, 139.6917"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    const query = formData.address || [formData.addressZip, formData.addressPref, formData.addressCity].filter(Boolean).join(' ');
+                                                    if (!query) return;
+                                                    try {
+                                                        const res = await getCoordinatesAction(query);
+                                                        if (res) {
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                coordsInput: `${res.lat}, ${res.lng}`,
+                                                                latitude: res.lat,
+                                                                longitude: res.lng,
+                                                                address: prev.address || res.displayName || ''
+                                                            }));
+                                                        }
+                                                    } catch (e) { console.error(e); }
+                                                }}
+                                                className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded text-[10px] font-bold"
+                                            >
+                                                座標取得
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {(formData.latitude !== null && formData.longitude !== null) && (

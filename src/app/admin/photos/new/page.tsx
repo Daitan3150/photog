@@ -184,6 +184,11 @@ export default function NewPhotoPage() {
     const [characterName, setCharacterName] = useState('');
     const [location, setLocation] = useState('');
     const [address, setAddress] = useState('');
+    const [addressZip, setAddressZip] = useState('');
+    const [addressPref, setAddressPref] = useState('');
+    const [addressCity, setAddressCity] = useState('');
+    const [addressDetail, setAddressDetail] = useState('');
+    const [coordsInput, setCoordsInput] = useState('');
     const [shotAt, setShotAt] = useState('');
     const [shotAtEnabled, setShotAtEnabled] = useState(true);
     const [snsUrl, setSnsUrl] = useState('');
@@ -282,6 +287,11 @@ export default function NewPhotoPage() {
         }
         if (mergedExif.ISOSpeedRatings || mergedExif.ISO) {
             setIso(String(mergedExif.ISOSpeedRatings || mergedExif.ISO));
+        }
+
+        // ✅ GPS情報の反映 (coordsInput)
+        if (mergedExif.latitude && mergedExif.longitude) {
+            setCoordsInput(`${mergedExif.latitude}, ${mergedExif.longitude}`);
         }
     };
 
@@ -656,6 +666,26 @@ export default function NewPhotoPage() {
                 const clientExif = fileExifMap.get(file.fileHash || '') || {};
                 const mergedExif = { ...clientExif, ...(file.exif || {}) };
 
+                // ✅ 座標の解析 (北43.25°, 東141.35° or 43.25, 141.35 形式)
+                let finalLat: number | null = null;
+                let finalLng: number | null = null;
+                if (coordsInput.includes(',') || coordsInput.includes('，')) {
+                    const parts = coordsInput.split(/[,，]/);
+                    const parseCoord = (s: string, negChar: string) => {
+                        const num = parseFloat(s.replace(/[^\d.-]/g, ''));
+                        return s.includes(negChar) ? -Math.abs(num) : num;
+                    };
+                    const la = parseCoord(parts[0], '南');
+                    const ln = parseCoord(parts[1], '西');
+                    if (!isNaN(la) && !isNaN(ln)) {
+                        finalLat = la;
+                        finalLng = ln;
+                    }
+                }
+
+                // ✅ 住所の結合
+                const fullAddress = address || [addressZip, addressPref, addressCity, addressDetail].filter(Boolean).join(' ');
+
                 return {
                     url: file.url,
                     publicId: file.publicId,
@@ -663,7 +693,9 @@ export default function NewPhotoPage() {
                     subjectName,
                     characterName,
                     location,
-                    address,
+                    address: fullAddress,
+                    latitude: finalLat,
+                    longitude: finalLng,
                     shotAt: finalShotAt,
                     snsUrl,
                     categoryId,
@@ -1161,24 +1193,62 @@ export default function NewPhotoPage() {
                             <p className="text-[10px] text-blue-500 -mt-2">📷 EXIFから自動取得済（手動変更可）</p>
                         )}
 
-                        <div className="space-y-2">
-                            <label className="block text-sm font-bold text-gray-700">共通撮影場所 (検索用)</label>
-                            <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" placeholder="例: 北海道 美瑛町" />
-                        </div>
-
-                        <div className="space-y-2">
+                        <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                             <label className="block text-sm font-bold text-gray-700 flex items-center gap-2">
-                                住所・正確な撮影地
-                                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">最優先</span>
+                                <MapPin className="w-4 h-4 text-green-500" />
+                                詳細な撮影地・住所入力
                             </label>
-                            <input
-                                type="text"
-                                value={address}
-                                onChange={(e) => setAddress(e.target.value)}
-                                className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="例: 東京都千代田区1-1-1 (座標取得に使用)"
-                            />
-                            <p className="text-[10px] text-gray-400">※ 住所を直接入力した場合は、上記「撮影場所」よりもこちらが優先的に地図情報として使用されます。</p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-gray-400 font-bold">郵便番号</p>
+                                    <input type="text" value={addressZip} onChange={e => setAddressZip(e.target.value)} className="w-full border p-2 rounded text-sm" placeholder="100-0001" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-gray-400 font-bold">都道府県</p>
+                                    <input type="text" value={addressPref} onChange={e => setAddressPref(e.target.value)} className="w-full border p-2 rounded text-sm" placeholder="東京都" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <p className="text-[10px] text-gray-400 font-bold">市区町村・番地・建物名</p>
+                                <input type="text" value={addressCity} onChange={e => setAddressCity(e.target.value)} className="w-full border p-2 rounded text-sm" placeholder="千代田区千代田1-1" />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold text-gray-600">座標 (緯度, 経度)</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={coordsInput}
+                                        onChange={e => setCoordsInput(e.target.value)}
+                                        className="flex-1 border p-2 rounded text-sm font-mono"
+                                        placeholder="35.6895, 139.6917"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            const query = [addressZip, addressPref, addressCity].filter(Boolean).join(' ');
+                                            if (!query) return;
+                                            try {
+                                                const { getCoordinatesAction } = await import('@/lib/actions/photos');
+                                                const res = await getCoordinatesAction(query);
+                                                if (res) {
+                                                    setCoordsInput(`${res.lat}, ${res.lng}`);
+                                                    if (res.displayName) {
+                                                        // 住所が空、かつ自動取得されたものがあれば補完
+                                                        setAddressDetail(prev => prev || res.displayName || '');
+                                                    }
+                                                }
+                                            } catch (e) { console.error(e); }
+                                        }}
+                                        className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded text-xs font-bold hover:bg-blue-100 transition-colors"
+                                    >
+                                        住所から座標取得
+                                    </button>
+                                </div>
+                                <p className="text-[9px] text-gray-400">※ Googleマップ等の座標をそのまま貼り付け可能です。</p>
+                            </div>
                         </div>
 
                         {/* ✅ 一括タグ付け */}
