@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { X, Check, Tag, MapPin, User, Calendar, Type, Sparkles } from 'lucide-react';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { bulkUpdatePhotos, searchCoordinatesAction } from '@/lib/actions/photos';
+import { motion, AnimatePresence } from 'framer-motion';
+import LeafletMap from '@/components/common/LeafletMap';
 
 interface BulkEditModalProps {
     isOpen: boolean;
@@ -34,15 +36,24 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
     const [locationCandidates, setLocationCandidates] = useState<any[]>([]);
     const [searchError, setSearchError] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [showLocationConfirm, setShowLocationConfirm] = useState(false);
+    const [isLocationConfirmed, setIsLocationConfirmed] = useState(false);
 
     if (!isOpen) return null;
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!user) return;
 
         if (selectedIds.size === 0) {
             onClose();
+            return;
+        }
+
+        // ロケーション変更がある場合、確認を求める
+        const hasLocationChange = location.trim() || address.trim() || latitude.trim() || longitude.trim() || zipCode.trim() || prefecture.trim();
+        if (hasLocationChange && !isLocationConfirmed) {
+            setShowLocationConfirm(true);
             return;
         }
 
@@ -447,6 +458,89 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                     </button>
                 </div>
             </div>
+
+            {/* ✅ ロケーション確認用オーバーレイ */}
+            <AnimatePresence>
+                {showLocationConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="bg-neutral-900 border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl"
+                        >
+                            <div className="p-8 text-center space-y-6">
+                                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto ring-8 ring-blue-500/5">
+                                    <MapPin className="w-8 h-8 text-blue-400" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h4 className="text-xl font-black text-white italic tracking-tight">Location Verification</h4>
+                                    <p className="text-sm text-neutral-400 font-medium">この住所・位置情報で間違いありませんか？</p>
+                                </div>
+
+                                <div className="bg-neutral-800/50 rounded-2xl p-5 border border-white/5 space-y-4">
+                                    <div className="text-left space-y-3">
+                                        <div className="space-y-1">
+                                            <span className="text-[10px] font-bold text-neutral-500 uppercase">Address / Info</span>
+                                            <p className="text-xs text-white leading-relaxed font-bold">
+                                                {address || location || '住所が入力されていません'}
+                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-bold text-neutral-500 uppercase">Zip Code</span>
+                                                <p className="text-xs text-white font-mono">{zipCode || '-'}</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-bold text-neutral-500 uppercase">Prefecture</span>
+                                                <p className="text-xs text-white font-bold">{prefecture || '-'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {latitude && longitude && (
+                                        <div className="w-full h-32 rounded-xl overflow-hidden border border-white/10 ring-1 ring-white/5 shadow-inner">
+                                            <LeafletMap
+                                                lat={parseFloat(latitude)}
+                                                lng={parseFloat(longitude)}
+                                                height="128px"
+                                                className="w-full h-full"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 pt-2">
+                                    <button
+                                        onClick={() => setShowLocationConfirm(false)}
+                                        className="py-4 rounded-2xl font-bold text-neutral-500 hover:text-white hover:bg-white/5 transition-all text-sm active:scale-95"
+                                    >
+                                        いいえ、修正
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setIsLocationConfirmed(true);
+                                            setShowLocationConfirm(false);
+                                            // 少し待ってから再送信（ステート反映のため）
+                                            setTimeout(() => {
+                                                handleSubmit();
+                                            }, 50);
+                                        }}
+                                        className="py-4 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+                                    >
+                                        はい、正しい
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

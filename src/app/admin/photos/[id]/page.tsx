@@ -15,6 +15,7 @@ import exifr from 'exifr';
 import { formatShutterSpeed, validateShutterSpeed, STANDARD_APERTURES, getMinApertureFromLens } from '@/lib/utils/exif';
 import SmartDatePicker from '@/components/admin/SmartDatePicker';
 import LeafletMap from '@/components/common/LeafletMap';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // ✅ 署名取得
 const fetchSignature = async (paramsToSign: Record<string, any>, token: string) => {
@@ -102,6 +103,8 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const [refreshingExif, setRefreshingExif] = useState(false);
     const [searchingLocation, setSearchingLocation] = useState(false);
     const [locationCandidates, setLocationCandidates] = useState<any[]>([]);
+    const [showLocationConfirm, setShowLocationConfirm] = useState(false);
+    const [isLocationConfirmed, setIsLocationConfirmed] = useState(false);
 
     // ✅ Coords Auto-parsing from input string
     useEffect(() => {
@@ -295,6 +298,16 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
+
+        // ✅ ロケーションの変更をチェック
+        const isCoordChanged = (formData.latitude !== originalPhoto?.latitude || formData.longitude !== originalPhoto?.longitude);
+        const isAddrChanged = (formData.address !== (originalPhoto as any)?.address || formData.addressZip !== (originalPhoto as any)?.addressZip);
+        const hasLocationInfo = formData.latitude && formData.longitude;
+
+        if ((isCoordChanged || isAddrChanged) && hasLocationInfo && !isLocationConfirmed) {
+            setShowLocationConfirm(true);
+            return;
+        }
 
         // ✅ バリデーション
         const shutter = formData.exif?.ExposureTime;
@@ -1072,8 +1085,96 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                             </div>
                         </form>
                     </div>
-                </div>
+                </div >
             </div >
-        </div >
+
+            {/* ✅ ロケーション確認用オーバーレイ */}
+            <AnimatePresence>
+                {showLocationConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl"
+                        >
+                            <div className="p-8 text-center space-y-6">
+                                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto ring-8 ring-blue-50">
+                                    <MapPin className="w-8 h-8 text-blue-600" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h4 className="text-xl font-bold text-gray-900 tracking-tight">撮影地の確認</h4>
+                                    <p className="text-sm text-gray-500">この内容で撮影地を設定してよろしいですか？</p>
+                                </div>
+
+                                <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-4">
+                                    <div className="text-left space-y-3">
+                                        <div className="space-y-1">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Address / Info</span>
+                                            <p className="text-xs text-gray-800 leading-relaxed font-bold">
+                                                {formData.address || formData.location || '住所情報なし'}
+                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Zip Code</span>
+                                                <p className="text-xs text-gray-800 font-mono font-bold">{formData.addressZip || '-'}</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Prefecture</span>
+                                                <p className="text-xs text-gray-800 font-bold">{formData.addressPref || '-'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {formData.latitude !== null && formData.longitude !== null && (
+                                        <div className="w-full h-32 rounded-xl overflow-hidden border border-gray-100 shadow-inner">
+                                            <LeafletMap
+                                                lat={formData.latitude}
+                                                lng={formData.longitude}
+                                                height="128px"
+                                                className="w-full h-full"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowLocationConfirm(false)}
+                                        className="py-4 rounded-2xl font-bold text-gray-400 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm active:scale-95"
+                                    >
+                                        いいえ、修正
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsLocationConfirmed(true);
+                                            setShowLocationConfirm(false);
+                                            // dispatch submit
+                                            setTimeout(() => {
+                                                const form = document.querySelector('form');
+                                                if (form) {
+                                                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                                                }
+                                            }, 100);
+                                        }}
+                                        className="py-4 bg-gradient-to-br from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+                                    >
+                                        はい、正しい
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 }
