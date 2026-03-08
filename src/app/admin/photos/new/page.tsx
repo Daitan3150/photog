@@ -1228,6 +1228,24 @@ export default function NewPhotoPage() {
                                     <button
                                         type="button"
                                         onClick={async () => {
+                                            // 1. まず座標入力欄（北... 東... など）の解析を試みる
+                                            if (coordsInput) {
+                                                const parts = coordsInput.split(/[,，]/);
+                                                if (parts.length >= 2) {
+                                                    const parseCoord = (s: string, negChar: string) => {
+                                                        const num = parseFloat(s.replace(/[^\d.-]/g, ''));
+                                                        return s.includes(negChar) ? -Math.abs(num) : num;
+                                                    };
+                                                    const la = parseCoord(parts[0], '南');
+                                                    const ln = parseCoord(parts[1], '西');
+                                                    if (!isNaN(la) && !isNaN(ln)) {
+                                                        setCoordsInput(`${la}, ${ln}`); // 正規化
+                                                        return; // 解析できたら終了
+                                                    }
+                                                }
+                                            }
+
+                                            // 2. 検索実行
                                             const query = [addressZip, addressPref, addressCity].filter(Boolean).join(' ');
                                             if (!query) return;
                                             try {
@@ -1244,7 +1262,7 @@ export default function NewPhotoPage() {
                                         }}
                                         className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded text-xs font-bold hover:bg-blue-100 transition-colors"
                                     >
-                                        住所から座標取得
+                                        反映 & 座標取得
                                     </button>
                                 </div>
                                 <p className="text-[9px] text-gray-400">※ Googleマップ等の座標をそのまま貼り付け可能です。</p>

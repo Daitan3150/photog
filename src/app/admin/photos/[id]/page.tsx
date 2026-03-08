@@ -612,6 +612,29 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                             <button
                                                 type="button"
                                                 onClick={async () => {
+                                                    // 1. まず座標入力欄（北... 東... など）の解析を試みる
+                                                    if (formData.coordsInput) {
+                                                        const parts = formData.coordsInput.split(/[,，]/);
+                                                        if (parts.length >= 2) {
+                                                            const parseCoord = (s: string, negChar: string) => {
+                                                                const num = parseFloat(s.replace(/[^\d.-]/g, ''));
+                                                                return s.includes(negChar) ? -Math.abs(num) : num;
+                                                            };
+                                                            const la = parseCoord(parts[0], '南');
+                                                            const ln = parseCoord(parts[1], '西');
+                                                            if (!isNaN(la) && !isNaN(ln)) {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    latitude: la,
+                                                                    longitude: ln,
+                                                                    coordsInput: `${la}, ${ln}` // 正規化して表示
+                                                                }));
+                                                                return; // 解析できたら終了
+                                                            }
+                                                        }
+                                                    }
+
+                                                    // 2. 座標欄が空、または解析不能な場合は住所から検索
                                                     const query = formData.address || [formData.addressZip, formData.addressPref, formData.addressCity].filter(Boolean).join(' ');
                                                     if (!query) return;
                                                     try {
@@ -627,9 +650,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                         }
                                                     } catch (e) { console.error(e); }
                                                 }}
-                                                className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded text-[10px] font-bold"
+                                                className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded text-[10px] font-bold hover:bg-blue-100 transition-colors"
                                             >
-                                                座標取得
+                                                反映 & 座標取得
                                             </button>
                                         </div>
                                     </div>
