@@ -668,21 +668,32 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                 style={{ border: 0 }}
                                                 src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${formData.latitude},${formData.longitude}&zoom=15`}
                                                 allowFullScreen
+                                                className="bg-gray-50"
                                             />
                                         ) : (
-                                            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-400 p-4 text-center">
-                                                <MapPin className="w-8 h-8 mb-2 opacity-20" />
-                                                <p className="text-[10px]">Google Maps APIキーが設定されていないため<br />マッププレビューを表示できません。</p>
-                                                <p className="text-[9px] mt-1 opacity-60">※座標データは正しく保持されています</p>
+                                            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-slate-400 p-6 text-center">
+                                                <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mb-3 animate-pulse">
+                                                    <MapPin className="w-6 h-6 text-slate-400" />
+                                                </div>
+                                                <p className="text-[11px] font-bold text-slate-500 mb-1">プレビューマップを準備中</p>
+                                                <p className="text-[10px] leading-relaxed opacity-70">
+                                                    Google Maps APIキーが未設定です。<br />
+                                                    設定するとここに地図が表示されます。
+                                                </p>
+                                                <div className="mt-3 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                                    <p className="text-[10px] font-mono text-slate-600">
+                                                        緯度: {formData.latitude.toFixed(5)} / 経度: {formData.longitude.toFixed(5)}
+                                                    </p>
+                                                </div>
                                             </div>
                                         )}
                                         <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${formData.latitude},${formData.longitude}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-gray-600 shadow-sm border border-gray-200 hover:bg-white transition-colors"
+                                            className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold text-blue-600 shadow-lg border border-blue-100 hover:bg-blue-50 transition-all transform hover:scale-105"
                                         >
-                                            Google Mapsで確認 ↗
+                                            Google Maps アプリで開く ↗
                                         </a>
                                     </div>
                                 )}
