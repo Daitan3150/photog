@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { getPhotoStats, incrementPhotoStats, PhotoStats } from "@/lib/worker-stats";
 import { Heart, Sparkles, Calendar } from "lucide-react";
 import { clsx } from "clsx";
-import MapEmbed from "@/app/photo/[id]/MapEmbed";
 
 interface LightboxProps {
     photo: any;
@@ -251,11 +250,30 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                     <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
                                         <MapPin size={14} className="opacity-50" />
                                     </div>
-                                    <div>
+                                    <div className="flex flex-col items-start gap-1">
                                         <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Location</p>
-                                        <p className="text-sm font-medium leading-tight">{photo.location}</p>
-                                        {photo.address && (
-                                            <p className="text-[10px] text-gray-400 mt-0.5 leading-snug">{photo.address}</p>
+                                        {(photo.latitude && photo.longitude) || (photo.location || photo.address) ? (
+                                            <a
+                                                href={photo.latitude && photo.longitude
+                                                    ? `https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`
+                                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(photo.address || photo.location)}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="hover:text-blue-600 transition-colors flex flex-col items-start group/loc"
+                                                title="Google Mapsで開く"
+                                            >
+                                                <span className="text-sm font-medium leading-tight underline decoration-gray-300 underline-offset-4 group-hover/loc:decoration-blue-400">{photo.location}</span>
+                                                {photo.address && (
+                                                    <span className="text-[10px] text-gray-400 mt-1 leading-snug">{photo.address}</span>
+                                                )}
+                                            </a>
+                                        ) : (
+                                            <>
+                                                <p className="text-sm font-medium leading-tight">{photo.location || 'Unknown Location'}</p>
+                                                {photo.address && (
+                                                    <p className="text-[10px] text-gray-400 mt-0.5 leading-snug">{photo.address}</p>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>
@@ -319,19 +337,6 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                 </div>
                             )}
 
-                            {/* Map Display (for photos with location or coordinate data) */}
-                            {(photo.location || (photo.latitude && photo.longitude)) && (
-                                <div className="pt-2">
-                                    <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-2">Location Map</p>
-                                    {(photo.latitude && photo.longitude) ? (
-                                        <MapEmbed lat={photo.latitude} lng={photo.longitude} />
-                                    ) : (
-                                        <div className="w-full h-40 rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
-                                            <p className="text-xs text-gray-400 font-bold">地図情報を使用できません</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
 
                             {photo.snsUrl && (
                                 <div className="flex items-center gap-3 text-gray-600 pt-4 border-t border-gray-100">

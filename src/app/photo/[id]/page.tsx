@@ -8,8 +8,6 @@ import { clsx } from 'clsx';
 import { getRelatedPhotos } from '@/lib/algolia';
 import LikeButton from '@/components/gallery/LikeButton';
 import cloudinaryLoader from '@/lib/cloudinary-loader';
-import MapEmbed from './MapEmbed';
-
 
 interface Props {
     params: Promise<{ id: string }>;
@@ -245,15 +243,31 @@ export default async function PhotoPage({ params }: Props) {
                                     </div>
                                     <div className="flex flex-col items-start">
                                         <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold">Location</span>
-                                        <span className="text-base tracking-wide font-bold">{photo.location}</span>
-                                        {photo.address && (
-                                            <span className="text-[10px] opacity-60 leading-tight mt-0.5">{photo.address}</span>
+                                        {(photo.latitude && photo.longitude) || (photo.location || photo.address) ? (
+                                            <a
+                                                href={photo.latitude && photo.longitude
+                                                    ? `https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`
+                                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(photo.address || photo.location)}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="hover:text-amber-600 transition-colors flex flex-col items-start group/loc"
+                                                title="Google Mapsで開く"
+                                            >
+                                                <span className="text-base tracking-wide font-bold underline decoration-black/20 underline-offset-4 group-hover/loc:decoration-amber-500/40">{photo.location}</span>
+                                                {photo.address && (
+                                                    <span className="text-[10px] opacity-60 leading-tight mt-1">{photo.address}</span>
+                                                )}
+                                            </a>
+                                        ) : (
+                                            <>
+                                                <span className="text-base tracking-wide font-bold">{photo.location || 'Unknown Location'}</span>
+                                                {photo.address && (
+                                                    <span className="text-[10px] opacity-60 leading-tight mt-0.5">{photo.address}</span>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>
-                                {photo.latitude && photo.longitude && (
-                                    <MapEmbed lat={photo.latitude} lng={photo.longitude} />
-                                )}
                             </div>
 
                             <div className="flex items-center gap-4 text-black/60 group">
