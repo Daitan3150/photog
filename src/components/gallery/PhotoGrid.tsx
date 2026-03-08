@@ -113,23 +113,25 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                         )}
                     >
                         <div className="flex flex-col">
-                            <Link
-                                href={photo.href || `/portfolio?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), img: photo.id }).toString()}`}
-                                className="block overflow-hidden relative rounded-sm shadow-sm"
-                            >
-                                <Image
-                                    loader={cloudinaryLoader}
-                                    src={photo.url}
-                                    alt={photo.title}
-                                    width={800}
-                                    height={photo.aspectRatio === "portrait" ? 1200 : 600}
-                                    className="w-full h-auto object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110"
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                    priority={index < 4}
-                                />
+                            <div className="relative overflow-hidden rounded-sm shadow-sm group">
+                                <Link
+                                    href={photo.href || `/portfolio?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), img: photo.id }).toString()}`}
+                                    className="block"
+                                >
+                                    <Image
+                                        loader={cloudinaryLoader}
+                                        src={photo.url}
+                                        alt={photo.title || (photo.characterName ? `${photo.characterName} - Photo` : "Photo")}
+                                        width={800}
+                                        height={photo.aspectRatio === "portrait" ? 1200 : 600}
+                                        className="w-full h-auto object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110"
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                        priority={index < 4}
+                                    />
+                                </Link>
 
                                 {photo.category?.toLowerCase() === 'cosplay' && (
-                                    <div className="absolute top-3 right-3 z-10">
+                                    <div className="absolute top-3 right-3 z-10 pointer-events-none">
                                         <motion.div
                                             animate={{ rotate: 360 }}
                                             transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
@@ -140,12 +142,13 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                     </div>
                                 )}
 
-                                {/* Metadata Overlay (Inside Image) */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-5 text-left">
+                                {/* Metadata Overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 pointer-events-none flex flex-col justify-end p-5 text-left">
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         whileInView={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.5 }}
+                                        className="pointer-events-auto"
                                     >
                                         <div className="flex flex-col gap-1 text-white/90">
                                             <div className="flex justify-between items-start">
@@ -183,7 +186,6 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                                 </div>
                                             )}
 
-
                                             <div className="flex justify-between items-center mt-2 border-t border-white/10 pt-2 pb-1">
                                                 <h3 className="text-[11px] md:text-sm font-serif tracking-[0.1em] line-clamp-1">
                                                     {photo.displayMode === 'character' && photo.characterName
@@ -197,14 +199,12 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                                         ? photo.uploaderName.split('@')[0]
                                                         : photo.uploaderName;
 
-                                                    // 【修正】投稿者名を最優先にする
                                                     const displayAttributionName = uploaderLabel || photo.subjectName || 'Member';
                                                     const initial = displayAttributionName.charAt(0).toUpperCase();
 
                                                     return (
                                                         <div className="flex items-center gap-1.5 ml-2 shrink-0 group/uploader" title={`Creator: ${photo.uploaderName || displayAttributionName}`}>
                                                             <div className="relative w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border border-white/40 bg-white/20">
-                                                                {/* Use uploaderPhotoURL (now correctly set to admin profile if admin) */}
                                                                 {photo.uploaderPhotoURL ? (
                                                                     <img
                                                                         src={photo.uploaderPhotoURL}
@@ -228,10 +228,10 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                     </motion.div>
                                 </div>
 
-                                {/* Category Overlay (Only for Category variant) */}
+                                {/* Category Overlay */}
                                 <AnimatePresence>
                                     {overlayVariant === "category" && (
-                                        <div className="absolute inset-0 bg-black/30 md:bg-black/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-700 flex items-center justify-center overflow-hidden">
+                                        <div className="absolute inset-0 bg-black/30 md:bg-black/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-700 flex items-center justify-center overflow-hidden pointer-events-none">
                                             <motion.div
                                                 initial={{ y: 20, opacity: 0 }}
                                                 whileInView={{ opacity: 1, y: 0 }}
@@ -251,7 +251,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                         </div>
                                     )}
                                 </AnimatePresence>
-                            </Link>
+                            </div>
 
                             {/* SNS Icon Below Photo - Refined Margin & Style */}
                             <div className="pt-6 pb-20 flex justify-center">
