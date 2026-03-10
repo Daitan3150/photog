@@ -4,8 +4,8 @@ import AboutContent from "@/components/about/AboutContent"; // Refactored client
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: "About",
-    description: "Profile, biography, and gear information of Photographer Daitan.",
+    title: "About | DAITAN プロフィール",
+    description: "北海道小樽ベースのフォトグラファー DAITAN（ダイタン）の経歴、撮影に対するビジョン、使用機材などのプロフィール情報を紹介します。",
 };
 
 export default async function AboutPage() {

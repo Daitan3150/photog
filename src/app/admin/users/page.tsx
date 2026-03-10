@@ -2,6 +2,7 @@ import { getUsers } from '@/lib/actions/users';
 import Link from 'next/link';
 import ResetPasswordForm from './ResetPasswordForm';
 import DeleteUserButton from './DeleteUserButton';
+import { UserPlus } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -30,7 +31,7 @@ export default async function UsersPage() {
                     href="/admin/invite"
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                 >
-                    <span>💌</span>
+                    <UserPlus size={18} />
                     <span>招待コード発行</span>
                 </Link>
             </div>

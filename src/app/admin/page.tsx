@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/components/admin/AuthProvider';
 import BackupEmailButton from '@/components/admin/BackupEmailButton';
-import { Camera, Mail, Plus, User, ArrowRight, Sparkles } from 'lucide-react';
+import { Images, UserPlus, Users, UserCircle, ArrowRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSiteSettings, SiteSettings } from '@/lib/actions/settings';
@@ -61,7 +61,7 @@ export default function AdminDashboard() {
                         >
                             <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-6 transition-transform group-hover:scale-110
                                 ${isAdmin ? 'bg-blue-100 text-blue-600' : 'bg-fuchsia-600/20 text-fuchsia-400'}`}>
-                                <Camera size={24} />
+                                <Images size={24} />
                             </div>
                             <h3 className={`text-xl font-black mb-2 ${!isAdmin ? 'text-white' : 'text-gray-900'}`}>
                                 {isAdmin ? '写真全管理' : 'MY GALLERY'}
@@ -86,7 +86,7 @@ export default function AdminDashboard() {
                             <>
                                 <div className="p-6 rounded-xl bg-white border border-gray-100 hover:border-pink-400 hover:shadow-lg shadow-gray-200 transition-all group">
                                     <div className="w-12 h-12 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-                                        <Mail size={24} />
+                                        <UserPlus size={24} />
                                     </div>
                                     <h3 className="text-xl font-bold mb-2">招待管理</h3>
                                     <p className="text-gray-500 mb-6 text-sm">モデル用招待コードの発行と管理。</p>
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="p-6 rounded-xl bg-white border border-gray-100 hover:border-indigo-400 hover:shadow-lg shadow-gray-200 transition-all group">
                                     <div className="w-12 h-12 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-                                        <User size={24} />
+                                        <Users size={24} />
                                     </div>
                                     <h3 className="text-xl font-bold mb-2">ユーザー管理</h3>
                                     <p className="text-gray-500 mb-6 text-sm">登録ユーザーのリストと統計。</p>
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
                         ) : (
                             <div className="p-6 rounded-xl bg-white/5 border border-fuchsia-500/20 hover:border-fuchsia-500/60 hover:bg-white/10 transition-all group">
                                 <div className="w-12 h-12 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-                                    <User size={24} />
+                                    <UserCircle size={24} />
                                 </div>
                                 <h3 className="text-xl font-black mb-2 text-white">MY PROFILE</h3>
                                 <p className="text-fuchsia-100/60 mb-6 text-sm">プロフィール情報の更新とSNS設定。</p>

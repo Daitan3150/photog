@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Menu, Camera, Home, User, Mail, AlertTriangle, Globe, LogOut, FileText, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Camera, Home, User, Mail, AlertTriangle, Globe, LogOut, FileText, Settings, Users, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/components/admin/AuthProvider';
 
 
@@ -88,7 +88,7 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                             : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                             } ${isCollapsed ? 'justify-center' : ''}`}
                     >
-                        <Home size={20} className={pathname === '/admin' ? '' : 'text-slate-400 group-hover:text-white'} />
+                        <LayoutDashboard size={20} className={pathname === '/admin' ? '' : 'text-slate-400 group-hover:text-white'} />
                         {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">スタジオ</span>}
                     </Link>
 
@@ -99,7 +99,7 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                             : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                             } ${isCollapsed ? 'justify-center' : ''}`}
                     >
-                        <Camera size={20} className={pathname.startsWith('/admin/photos') ? '' : 'text-slate-400 group-hover:text-white'} />
+                        <Images size={20} className={pathname.startsWith('/admin/photos') ? '' : 'text-slate-400 group-hover:text-white'} />
                         {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">写真管理</span>}
                     </Link>
 
@@ -126,7 +126,7 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                                     : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                                     } ${isCollapsed ? 'justify-center' : ''}`}
                             >
-                                <Mail size={20} className={pathname.startsWith('/admin/invite') ? '' : 'text-slate-400 group-hover:text-white'} />
+                                <UserPlus size={20} className={pathname.startsWith('/admin/invite') ? '' : 'text-slate-400 group-hover:text-white'} />
                                 {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">招待管理</span>}
                             </Link>
 
@@ -137,7 +137,7 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                                     : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                                     } ${isCollapsed ? 'justify-center' : ''}`}
                             >
-                                <User size={20} className={pathname.startsWith('/admin/users') ? '' : 'text-slate-400 group-hover:text-white'} />
+                                <Users size={20} className={pathname.startsWith('/admin/users') ? '' : 'text-slate-400 group-hover:text-white'} />
                                 {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">ユーザー管理</span>}
                             </Link>
 
@@ -148,7 +148,7 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                                     : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                                     } ${isCollapsed ? 'justify-center' : ''}`}
                             >
-                                <AlertTriangle size={20} className={pathname.startsWith('/admin/requests') ? '' : 'text-slate-400 group-hover:text-white'} />
+                                <ShieldAlert size={20} className={pathname.startsWith('/admin/requests') ? '' : 'text-slate-400 group-hover:text-white'} />
                                 {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">削除依頼</span>}
                             </Link>
 
@@ -173,7 +173,7 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                             : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                             } ${isCollapsed ? 'justify-center' : ''}`}
                     >
-                        <User size={20} className={pathname.startsWith('/admin/profile') ? '' : 'text-slate-400 group-hover:text-white'} />
+                        <UserCircle size={20} className={pathname.startsWith('/admin/profile') ? '' : 'text-slate-400 group-hover:text-white'} />
                         {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">プロフィール</span>}
                     </Link>
 

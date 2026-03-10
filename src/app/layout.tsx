@@ -16,10 +16,10 @@ const notoSerifJP = Noto_Serif_JP({
 export const metadata: Metadata = {
   metadataBase: new URL("https://next-portfolio-lime-one.vercel.app"),
   title: {
-    template: "%s | DAITAN",
-    default: "DAITAN | Portrait & Snapshot Photographer",
+    template: "%s | DAITAN フォトグラファー | 北海道・小樽",
+    default: "DAITAN | 北海道・小樽のフォトグラファー | ポートレート・スナップ撮影",
   },
-  description: "Portfolio of Daitan, a photographer based in Otaru, Hokkaido. featuring portraits, snapshots, and conceptual photography.",
+  description: "北海道小樽市を拠点に活動するフォトグラファー DAITAN（ダイタン）のポートフォリオ。ポートレート、スナップ、コスプレ撮影など、一瞬を切り取るクリエイティブな写真を提供します。出張撮影のご依頼も受付中。",
   openGraph: {
     title: "DAITAN | Portrait & Snapshot Photographer",
     description: "Capture the moment. Portfolio of Daitan.",
@@ -36,6 +36,9 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+  },
+  verification: {
+    google: "n0Q1yjElyOG9TOlPhc1LpKl80o8tafJAuLW0MSt7MI8",
   },
 };
 

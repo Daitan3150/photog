@@ -164,7 +164,7 @@ export default async function PhotoPage({ params }: Props) {
                         <Image
                             loader={cloudinaryLoader as any}
                             src={photo.url}
-                            alt={photo.title || 'Portfolio Photography'}
+                            alt={photo.title || `${photo.subjectName || ''} ${photo.category || ''} ポートレート写真 DAITAN`.trim()}
                             fill
                             priority
                             className="object-contain shadow-2xl transition-transform duration-700 group-hover:scale-[1.01]"
