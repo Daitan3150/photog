@@ -296,7 +296,8 @@ export default function StudiosPage() {
                         {filteredStudios.map((studio) => (
                             <div
                                 key={studio.id}
-                                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-300 overflow-hidden group"
+                                onClick={() => handleOpenModal(studio)}
+                                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-300 overflow-hidden group cursor-pointer"
                             >
                                 {/* Card Header */}
                                 <div className="px-6 pt-6 pb-4">
@@ -307,17 +308,17 @@ export default function StudiosPage() {
                                             </div>
                                             <h3 className="text-sm font-bold text-gray-900 truncate">{studio.name}</h3>
                                         </div>
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                        <div className="flex gap-1 flex-shrink-0">
                                             <button
-                                                onClick={() => handleOpenModal(studio)}
+                                                onClick={(e) => { e.stopPropagation(); handleOpenModal(studio); }}
                                                 className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                                                 title="編集"
                                             >
                                                 <Edit2 size={14} />
                                             </button>
                                             <button
-                                                onClick={() => studio.id && handleDelete(studio.id, studio.name)}
-                                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                onClick={(e) => { e.stopPropagation(); studio.id && handleDelete(studio.id, studio.name); }}
+                                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all tracking-tight"
                                                 title="削除"
                                             >
                                                 <Trash2 size={14} />
