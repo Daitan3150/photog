@@ -8,7 +8,9 @@ import { getCategories, Category } from '@/lib/actions/categories';
 import { getSubjects, Subject } from '@/lib/actions/subjects';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, Save, Calendar, User, MapPin, Tag, Link2 } from 'lucide-react';
+import { ArrowLeft, Save, Calendar, User, MapPin, Tag, Link2, X, Plus, Home, Trees, Search, ChevronRight } from 'lucide-react';
+import { getStudios, saveStudio } from '@/lib/actions/studios';
+import { Studio } from '@/types/studio';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import exifr from 'exifr';
@@ -106,6 +108,12 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const [locationCandidates, setLocationCandidates] = useState<any[]>([]);
     const [showLocationConfirm, setShowLocationConfirm] = useState(false);
     const [isLocationConfirmed, setIsLocationConfirmed] = useState(false);
+    const [allStudios, setAllStudios] = useState<Studio[]>([]);
+    const [showLocationDialog, setShowLocationDialog] = useState(false);
+    const [locationSearch, setLocationSearch] = useState('');
+    const [isStudioMode, setIsStudioMode] = useState<boolean | null>(null); // null: initial, true: studio, false: outside
+    const [showNewStudioForm, setShowNewStudioForm] = useState(false);
+    const [newStudio, setNewStudio] = useState({ name: '', url: '', latitude: null as number | null, longitude: null as number | null });
 
     // ✅ Coords Auto-parsing from input string
     useEffect(() => {
@@ -135,6 +143,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
             });
             getExifSuggestions().then(res => {
                 if (res.success && res.data) setExifSuggestions(res.data);
+            });
+            getStudios().then(stds => {
+                setAllStudios(stds);
             });
         }
     }, [user, photoId]);
@@ -265,6 +276,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 // ✅ 写真差し替え時も分数形式に変換
                 if (mergedExif.ExposureTime) newData.exif.ExposureTime = formatShutterSpeed(mergedExif.ExposureTime);
                 if (mergedExif.ISOSpeedRatings || mergedExif.ISO) newData.exif.ISO = mergedExif.ISOSpeedRatings || mergedExif.ISO;
+                if (mergedExif.FocalLength) newData.exif.FocalLength = mergedExif.FocalLength;
 
                 // Update shotAt if available
                 const rawDate = mergedExif.DateTimeOriginal || mergedExif.DateTime;
@@ -585,215 +597,223 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                     <MapPin className="w-4 h-4 mr-2 text-green-500" />
                                     撮影場所
                                 </label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={formData.location}
-                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                        className="flex-1 border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 font-medium"
-                                        placeholder="住所、建物名、または GPS(緯度,経度)"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={async () => {
-                                            if (!formData.location) return;
-                                            try {
-                                                const coords = await getCoordinatesAction(formData.location);
-                                                if (coords) {
-                                                    setFormData(prev => ({
-                                                        ...prev,
-                                                        latitude: coords.lat,
-                                                        longitude: coords.lng,
-                                                        address: coords.displayName || ''
-                                                    }));
-                                                } else {
-                                                    alert('位置情報が見つかりませんでした。別の言葉で試してみてください。');
-                                                }
-                                            } catch (err) {
-                                                console.error('Search error:', err);
-                                                alert('検索中にエラーが発生しました。');
-                                            }
-                                        }}
-                                        className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-lg text-xs font-bold transition-all border border-blue-100"
+                                <div className="flex gap-2 items-center">
+                                    <div
+                                        onClick={() => setShowLocationDialog(true)}
+                                        className="flex-1 flex items-center justify-between border-gray-200 border rounded-xl p-3 bg-white hover:border-blue-400 hover:bg-blue-50/30 cursor-pointer transition-all group shadow-sm active:scale-[0.99]"
                                     >
-                                        検索
-                                    </button>
-                                </div>
-
-                                <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                        <MapPin className="w-3 h-3 text-green-500" />
-                                        詳細な撮影地・住所入力
-                                        <span className="ml-auto text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">最優先</span>
-                                    </label>
-
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className="space-y-1">
-                                            <p className="text-[9px] text-gray-400 font-bold">郵便番号</p>
-                                            <input type="text" value={formData.addressZip} onChange={e => setFormData({ ...formData, addressZip: e.target.value })} className="w-full border-gray-200 border bg-white rounded p-2 text-xs" placeholder="100-0001" />
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                                                <MapPin className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Location Name</p>
+                                                <p className={`text-sm font-bold ${formData.location ? 'text-gray-900' : 'text-gray-300'}`}>
+                                                    {formData.location || '場所を指定してください'}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="space-y-1">
-                                            <p className="text-[9px] text-gray-400 font-bold">都道府県</p>
-                                            <input type="text" value={formData.addressPref} onChange={e => setFormData({ ...formData, addressPref: e.target.value })} className="w-full border-gray-200 border bg-white rounded p-2 text-xs" placeholder="東京都" />
-                                        </div>
+                                        <Search className="w-4 h-4 text-gray-300 group-hover:text-blue-400" />
                                     </div>
-
-                                    <div className="space-y-1">
-                                        <p className="text-[9px] text-gray-400 font-bold">市区町村・番地・建物名</p>
-                                        <input type="text" value={formData.addressCity} onChange={e => setFormData({ ...formData, addressCity: e.target.value })} className="w-full border-gray-200 border bg-white rounded p-2 text-xs" placeholder="ノトカリ市 モシリ野 7-4" />
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <p className="text-[9px] text-gray-400 font-bold tracking-wider">規定住所一括入力 (Smart Parse)</p>
-                                        <textarea
-                                            value={formData.address}
-                                            onChange={(e) => {
-                                                const input = e.target.value;
-                                                const zipMatch = input.match(/(?:〒?\s?)(\d{3}-\d{4}|\d{7})/);
-                                                const zip = zipMatch ? (zipMatch[1].includes('-') ? zipMatch[1] : `${zipMatch[1].slice(0, 3)}-${zipMatch[1].slice(3)}`) : '';
-
-                                                const prefMatch = input.match(/(北海道|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|東京都|神奈川県|新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|京都府|大阪府|兵庫県|奈良県|和歌山県|鳥取県|島根県|岡山県|広島県|山口県|徳島県|香川県|愛媛県|高知県|福岡県|佐賀県|長崎県|熊本県|大分県|宮崎県|鹿児島県|沖縄県)/);
-                                                const pref = prefMatch ? prefMatch[1] : '';
-
-                                                let addr = input;
-                                                if (zipMatch) addr = addr.replace(zipMatch[0], '');
-                                                if (prefMatch) addr = addr.replace(prefMatch[0], '');
-                                                addr = addr.replace(/^[\s　,]+|[\s　,]+$/g, '');
-
+                                    {formData.location && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
                                                 setFormData(prev => ({
                                                     ...prev,
-                                                    address: input,
-                                                    addressZip: zip || prev.addressZip,
-                                                    addressPref: pref || prev.addressPref,
-                                                    addressCity: addr || prev.addressCity
+                                                    location: '',
+                                                    address: '',
+                                                    addressZip: '',
+                                                    addressPref: '',
+                                                    addressCity: '',
+                                                    latitude: null,
+                                                    longitude: null,
+                                                    coordsInput: ''
                                                 }));
                                             }}
-                                            className="w-full border-gray-200 border bg-white rounded p-2 text-xs h-16 resize-none"
-                                            placeholder="例: 〒 XXX-XXXX 蝦夷地 ノトカリ市 モシリ野 7-4"
+                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="リセット"
+                                        >
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="mt-4 space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                    <MapPin className="w-3 h-3 text-green-500" />
+                                    詳細な撮影地・住所入力
+                                    <span className="ml-auto text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">最優先</span>
+                                </label>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] text-gray-400 font-bold">郵便番号</p>
+                                        <input type="text" value={formData.addressZip} onChange={e => setFormData({ ...formData, addressZip: e.target.value })} className="w-full border-gray-200 border bg-white rounded p-2 text-xs" placeholder="100-0001" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] text-gray-400 font-bold">都道府県</p>
+                                        <input type="text" value={formData.addressPref} onChange={e => setFormData({ ...formData, addressPref: e.target.value })} className="w-full border-gray-200 border bg-white rounded p-2 text-xs" placeholder="東京都" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <p className="text-[9px] text-gray-400 font-bold">市区町村・番地・建物名</p>
+                                    <input type="text" value={formData.addressCity} onChange={e => setFormData({ ...formData, addressCity: e.target.value })} className="w-full border-gray-200 border bg-white rounded p-2 text-xs" placeholder="ノトカリ市 モシリ野 7-4" />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <p className="text-[9px] text-gray-400 font-bold tracking-wider">規定住所一括入力 (Smart Parse)</p>
+                                    <textarea
+                                        value={formData.address}
+                                        onChange={(e) => {
+                                            const input = e.target.value;
+                                            const zipMatch = input.match(/(?:〒?\s?)(\d{3}-\d{4}|\d{7})/);
+                                            const zip = zipMatch ? (zipMatch[1].includes('-') ? zipMatch[1] : `${zipMatch[1].slice(0, 3)}-${zipMatch[1].slice(3)}`) : '';
+
+                                            const prefMatch = input.match(/(北海道|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|東京都|神奈川県|新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|京都府|大阪府|兵庫県|奈良県|和歌山県|鳥取県|島根県|岡山県|広島県|山口県|徳島県|香川県|愛媛県|高知県|福岡県|佐賀県|長崎県|熊本県|大分県|宮崎県|鹿児島県|沖縄県)/);
+                                            const pref = prefMatch ? prefMatch[1] : '';
+
+                                            let addr = input;
+                                            if (zipMatch) addr = addr.replace(zipMatch[0], '');
+                                            if (prefMatch) addr = addr.replace(prefMatch[0], '');
+                                            addr = addr.replace(/^[\s　,]+|[\s　,]+$/g, '');
+
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                address: input,
+                                                addressZip: zip || prev.addressZip,
+                                                addressPref: pref || prev.addressPref,
+                                                addressCity: addr || prev.addressCity
+                                            }));
+                                        }}
+                                        className="w-full border-gray-200 border bg-white rounded p-2 text-xs h-16 resize-none"
+                                        placeholder="例: 〒 XXX-XXXX 蝦夷地 ノトカリ市 モシリ野 7-4"
+                                    />
+                                    <p className="text-[9px] text-amber-600 font-medium">※ 住所を貼り付けると郵便番号・都道府県・市区町村を自動抽出します。</p>
+                                </div>
+
+                                <div className="space-y-2 pt-2 border-t border-gray-200">
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase">
+                                        座標 (緯度, 経度)
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={formData.coordsInput}
+                                            onChange={e => setFormData({ ...formData, coordsInput: e.target.value })}
+                                            className="flex-1 border-gray-200 border bg-white rounded p-2 text-xs font-mono"
+                                            placeholder="35.6895, 139.6917"
                                         />
-                                        <p className="text-[9px] text-amber-600 font-medium">※ 住所を貼り付けると郵便番号・都道府県・市区町村を自動抽出します。</p>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                // 1. まず座標入力欄（北... 東... など）の解析を試みる
+                                                if (formData.coordsInput) {
+                                                    const parts = formData.coordsInput.split(/[,，]/);
+                                                    if (parts.length >= 2) {
+                                                        const parseCoord = (s: string, negChar: string) => {
+                                                            const num = parseFloat(s.replace(/[^\d.-]/g, ''));
+                                                            return s.includes(negChar) ? -Math.abs(num) : num;
+                                                        };
+                                                        const la = parseCoord(parts[0], '南');
+                                                        const ln = parseCoord(parts[1], '西');
+                                                        if (!isNaN(la) && !isNaN(ln)) {
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                latitude: la,
+                                                                longitude: ln,
+                                                                coordsInput: `${la}, ${ln}` // 正規化して表示
+                                                            }));
+                                                            return; // 解析できたら終了
+                                                        }
+                                                    }
+                                                }
+
+                                                // 2. 座標欄が空、または解析不能な場合は住所から検索
+                                                const query = formData.address || [formData.addressZip, formData.addressPref, formData.addressCity].filter(Boolean).join(' ');
+                                                if (!query) return;
+                                                setSearchingLocation(true);
+                                                setLocationCandidates([]);
+                                                try {
+                                                    const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+                                                    const results = await searchCoordinatesAction(query);
+
+                                                    if (results && results.length > 0) {
+                                                        if (results.length === 1) {
+                                                            const res = results[0];
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                coordsInput: `${res.lat}, ${res.lng}`,
+                                                                latitude: res.lat,
+                                                                longitude: res.lng,
+                                                                address: prev.address || res.displayName || ''
+                                                            }));
+                                                        } else {
+                                                            // 複数候補がある場合
+                                                            setLocationCandidates(results);
+                                                        }
+                                                    } else {
+                                                        alert('候補が見つかりませんでした。より詳細な住所を入力してください。');
+                                                    }
+                                                } catch (e) {
+                                                    console.error(e);
+                                                    alert('検索中にエラーが発生しました。');
+                                                } finally {
+                                                    setSearchingLocation(false);
+                                                }
+                                            }}
+                                            disabled={searchingLocation}
+                                            className={`px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded text-[10px] font-bold hover:bg-blue-100 transition-colors ${searchingLocation ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            {searchingLocation ? '検索中...' : '反映 & 座標取得'}
+                                        </button>
                                     </div>
 
-                                    <div className="space-y-2 pt-2 border-t border-gray-200">
-                                        <label className="block text-[10px] font-bold text-gray-400 uppercase">
-                                            座標 (緯度, 経度)
-                                        </label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={formData.coordsInput}
-                                                onChange={e => setFormData({ ...formData, coordsInput: e.target.value })}
-                                                className="flex-1 border-gray-200 border bg-white rounded p-2 text-xs font-mono"
-                                                placeholder="35.6895, 139.6917"
-                                            />
+                                    {/* ✅ 候補リストの表示 */}
+                                    {locationCandidates.length > 0 && (
+                                        <div className="mt-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <p className="text-[10px] font-bold text-blue-600 flex items-center gap-1.5 mb-2">
+                                                <MapPin className="w-3 h-3" />
+                                                該当する場所を選択してください ({locationCandidates.length}件見つかりました)
+                                            </p>
+                                            <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                                                {locationCandidates.map((cand, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                coordsInput: `${cand.lat}, ${cand.lng}`,
+                                                                latitude: cand.lat,
+                                                                longitude: cand.lng,
+                                                                address: cand.displayName || prev.address
+                                                            }));
+                                                            setLocationCandidates([]);
+                                                        }}
+                                                        className="w-full text-left p-2 rounded-lg bg-white border border-blue-50 hover:border-blue-300 hover:shadow-sm transition-all group"
+                                                    >
+                                                        <div className="text-[10px] font-bold text-gray-700 group-hover:text-blue-600 truncate">
+                                                            {cand.displayName}
+                                                        </div>
+                                                        <div className="text-[8px] text-gray-400 mt-0.5">
+                                                            {cand.lat.toFixed(5)}, {cand.lng.toFixed(5)} ({cand.type || 'unknown'})
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
                                             <button
                                                 type="button"
-                                                onClick={async () => {
-                                                    // 1. まず座標入力欄（北... 東... など）の解析を試みる
-                                                    if (formData.coordsInput) {
-                                                        const parts = formData.coordsInput.split(/[,，]/);
-                                                        if (parts.length >= 2) {
-                                                            const parseCoord = (s: string, negChar: string) => {
-                                                                const num = parseFloat(s.replace(/[^\d.-]/g, ''));
-                                                                return s.includes(negChar) ? -Math.abs(num) : num;
-                                                            };
-                                                            const la = parseCoord(parts[0], '南');
-                                                            const ln = parseCoord(parts[1], '西');
-                                                            if (!isNaN(la) && !isNaN(ln)) {
-                                                                setFormData(prev => ({
-                                                                    ...prev,
-                                                                    latitude: la,
-                                                                    longitude: ln,
-                                                                    coordsInput: `${la}, ${ln}` // 正規化して表示
-                                                                }));
-                                                                return; // 解析できたら終了
-                                                            }
-                                                        }
-                                                    }
-
-                                                    // 2. 座標欄が空、または解析不能な場合は住所から検索
-                                                    const query = formData.address || [formData.addressZip, formData.addressPref, formData.addressCity].filter(Boolean).join(' ');
-                                                    if (!query) return;
-                                                    setSearchingLocation(true);
-                                                    setLocationCandidates([]);
-                                                    try {
-                                                        const { searchCoordinatesAction } = await import('@/lib/actions/photos');
-                                                        const results = await searchCoordinatesAction(query);
-
-                                                        if (results && results.length > 0) {
-                                                            if (results.length === 1) {
-                                                                const res = results[0];
-                                                                setFormData(prev => ({
-                                                                    ...prev,
-                                                                    coordsInput: `${res.lat}, ${res.lng}`,
-                                                                    latitude: res.lat,
-                                                                    longitude: res.lng,
-                                                                    address: prev.address || res.displayName || ''
-                                                                }));
-                                                            } else {
-                                                                // 複数候補がある場合
-                                                                setLocationCandidates(results);
-                                                            }
-                                                        } else {
-                                                            alert('候補が見つかりませんでした。より詳細な住所を入力してください。');
-                                                        }
-                                                    } catch (e) {
-                                                        console.error(e);
-                                                        alert('検索中にエラーが発生しました。');
-                                                    } finally {
-                                                        setSearchingLocation(false);
-                                                    }
-                                                }}
-                                                disabled={searchingLocation}
-                                                className={`px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded text-[10px] font-bold hover:bg-blue-100 transition-colors ${searchingLocation ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                onClick={() => setLocationCandidates([])}
+                                                className="w-full text-[9px] text-gray-400 hover:text-gray-600 py-1"
                                             >
-                                                {searchingLocation ? '検索中...' : '反映 & 座標取得'}
+                                                キャンセル
                                             </button>
                                         </div>
-
-                                        {/* ✅ 候補リストの表示 */}
-                                        {locationCandidates.length > 0 && (
-                                            <div className="mt-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                                                <p className="text-[10px] font-bold text-blue-600 flex items-center gap-1.5 mb-2">
-                                                    <MapPin className="w-3 h-3" />
-                                                    該当する場所を選択してください ({locationCandidates.length}件見つかりました)
-                                                </p>
-                                                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
-                                                    {locationCandidates.map((cand, idx) => (
-                                                        <button
-                                                            key={idx}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setFormData(prev => ({
-                                                                    ...prev,
-                                                                    coordsInput: `${cand.lat}, ${cand.lng}`,
-                                                                    latitude: cand.lat,
-                                                                    longitude: cand.lng,
-                                                                    address: cand.displayName || prev.address
-                                                                }));
-                                                                setLocationCandidates([]);
-                                                            }}
-                                                            className="w-full text-left p-2 rounded-lg bg-white border border-blue-50 hover:border-blue-300 hover:shadow-sm transition-all group"
-                                                        >
-                                                            <div className="text-[10px] font-bold text-gray-700 group-hover:text-blue-600 truncate">
-                                                                {cand.displayName}
-                                                            </div>
-                                                            <div className="text-[8px] text-gray-400 mt-0.5">
-                                                                {cand.lat.toFixed(5)}, {cand.lng.toFixed(5)} ({cand.type || 'unknown'})
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setLocationCandidates([])}
-                                                    className="w-full text-[9px] text-gray-400 hover:text-gray-600 py-1"
-                                                >
-                                                    キャンセル
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
+                                    )}
                                 </div>
 
                                 {/* ✅ マッププレビュー (OpenStreetMap Fallback) */}
@@ -1101,95 +1121,347 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                             </div>
                         </form>
                     </div>
-                </div >
-            </div >
+                </div>
+            </div>
 
             {/* ✅ ロケーション確認用オーバーレイ */}
             <AnimatePresence>
-                {showLocationConfirm && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
-                    >
+                {
+                    showLocationConfirm && (
                         <motion.div
-                            initial={{ scale: 0.95, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.95, y: 20 }}
-                            className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
                         >
-                            <div className="p-8 text-center space-y-6">
-                                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto ring-8 ring-blue-50">
-                                    <MapPin className="w-8 h-8 text-blue-600" />
-                                </div>
-                                <div className="space-y-2">
-                                    <h4 className="text-xl font-bold text-gray-900 tracking-tight">撮影地の確認</h4>
-                                    <p className="text-sm text-gray-500">この内容で撮影地を設定してよろしいですか？</p>
-                                </div>
-
-                                <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-4">
-                                    <div className="text-left space-y-3">
-                                        <div className="space-y-1">
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Address / Info</span>
-                                            <p className="text-xs text-gray-800 leading-relaxed font-bold">
-                                                {formData.address || formData.location || '住所情報なし'}
-                                            </p>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1">
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Zip Code</span>
-                                                <p className="text-xs text-gray-800 font-mono font-bold">{formData.addressZip || '-'}</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Prefecture</span>
-                                                <p className="text-xs text-gray-800 font-bold">{formData.addressPref || '-'}</p>
-                                            </div>
-                                        </div>
+                            <motion.div
+                                initial={{ scale: 0.95, y: 20 }}
+                                animate={{ scale: 1, y: 0 }}
+                                exit={{ scale: 0.95, y: 20 }}
+                                className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl"
+                            >
+                                <div className="p-8 text-center space-y-6">
+                                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto ring-8 ring-blue-50">
+                                        <MapPin className="w-8 h-8 text-blue-600" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h4 className="text-xl font-bold text-gray-900 tracking-tight">撮影地の確認</h4>
+                                        <p className="text-sm text-gray-500">この内容で撮影地を設定してよろしいですか？</p>
                                     </div>
 
-                                    {formData.latitude !== null && formData.longitude !== null && (
-                                        <div className="w-full h-32 rounded-xl overflow-hidden border border-gray-100 shadow-inner">
-                                            <LeafletMap
-                                                lat={formData.latitude}
-                                                lng={formData.longitude}
-                                                height="128px"
-                                                className="w-full h-full"
-                                            />
+                                    <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-4">
+                                        <div className="text-left space-y-3">
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Address / Info</span>
+                                                <p className="text-xs text-gray-800 leading-relaxed font-bold">
+                                                    {formData.address || formData.location || '住所情報なし'}
+                                                </p>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-1">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Zip Code</span>
+                                                    <p className="text-xs text-gray-800 font-mono font-bold">{formData.addressZip || '-'}</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Prefecture</span>
+                                                    <p className="text-xs text-gray-800 font-bold">{formData.addressPref || '-'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {formData.latitude !== null && formData.longitude !== null && (
+                                            <div className="w-full h-32 rounded-xl overflow-hidden border border-gray-100 shadow-inner">
+                                                <LeafletMap
+                                                    lat={formData.latitude as number}
+                                                    lng={formData.longitude as number}
+                                                    height="128px"
+                                                    className="w-full h-full"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowLocationConfirm(false)}
+                                            className="py-4 rounded-2xl font-bold text-gray-400 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm active:scale-95"
+                                        >
+                                            いいえ、修正
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsLocationConfirmed(true);
+                                                setShowLocationConfirm(false);
+                                                // dispatch submit
+                                                setTimeout(() => {
+                                                    const form = document.querySelector('form');
+                                                    if (form) {
+                                                        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                                                    }
+                                                }, 100);
+                                            }}
+                                            className="py-4 bg-gradient-to-br from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+                                        >
+                                            はい、正しい
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )
+                }
+            </AnimatePresence>
+
+            {/* ✅ 撮影地選択モーダル */}
+            <AnimatePresence>
+                {
+                    showLocationDialog && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                            >
+                                {/* Header */}
+                                <div className="p-6 border-b flex items-center justify-between bg-gray-50/50">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-gray-900 tracking-tight">撮影地の設定</h3>
+                                        <p className="text-xs text-gray-500 mt-1">スタジオか屋外かを選択してください</p>
+                                    </div>
+                                    <button onClick={() => setShowLocationDialog(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-400">
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                </div>
+
+                                <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                                    {isStudioMode === null ? (
+                                        // 初期選択画面
+                                        <div className="grid grid-cols-2 gap-4 py-4">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsStudioMode(true)}
+                                                className="flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-gray-100 hover:border-blue-500 hover:bg-blue-50 group transition-all"
+                                            >
+                                                <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                    <Home className="w-8 h-8 text-blue-600" />
+                                                </div>
+                                                <span className="font-bold text-gray-700">スタジオ撮影</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsStudioMode(false)}
+                                                className="flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-gray-100 hover:border-green-500 hover:bg-green-50 group transition-all"
+                                            >
+                                                <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                    <Trees className="w-8 h-8 text-green-600" />
+                                                </div>
+                                                <span className="font-bold text-gray-700">屋外・その他</span>
+                                            </button>
+                                        </div>
+                                    ) : isStudioMode ? (
+                                        // スタジオ選択画面
+                                        <div className="space-y-4">
+                                            <div className="flex gap-2">
+                                                <button type="button" onClick={() => setIsStudioMode(null)} className="text-xs text-blue-600 font-bold hover:underline py-1">
+                                                    ← 戻る
+                                                </button>
+                                            </div>
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="スタジオ名で検索..."
+                                                    value={locationSearch}
+                                                    onChange={e => setLocationSearch(e.target.value)}
+                                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-1.5 mt-4 max-h-60 overflow-y-auto pr-1">
+                                                {allStudios.filter(s => s.name.toLowerCase().includes(locationSearch.toLowerCase())).map(studio => (
+                                                    <button
+                                                        key={studio.id}
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                location: studio.name,
+                                                                addressZip: studio.addressZip || '',
+                                                                addressPref: studio.addressPref || '',
+                                                                addressCity: studio.addressCity || '',
+                                                                address: studio.address || '',
+                                                                latitude: studio.latitude || null,
+                                                                longitude: studio.longitude || null,
+                                                                coordsInput: (studio.latitude && studio.longitude) ? `${studio.latitude}, ${studio.longitude}` : prev.coordsInput
+                                                            }));
+                                                            setShowLocationDialog(false);
+
+                                                            // 座標登録がない場合のみ検索を試みる
+                                                            if (!studio.latitude || !studio.longitude) {
+                                                                const fullAddr = [studio.addressZip, studio.addressPref, studio.addressCity].filter(Boolean).join(' ');
+                                                                if (fullAddr) {
+                                                                    const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+                                                                    const results = await searchCoordinatesAction(fullAddr);
+                                                                    if (results && results.length > 0) {
+                                                                        setFormData(prev => ({
+                                                                            ...prev,
+                                                                            latitude: results[0].lat,
+                                                                            longitude: results[0].lng,
+                                                                            coordsInput: `${results[0].lat}, ${results[0].lng}`
+                                                                        }));
+                                                                    }
+                                                                }
+                                                            }
+                                                        }}
+                                                        className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-blue-50 group transition-colors border border-transparent hover:border-blue-100"
+                                                    >
+                                                        <div className="text-left">
+                                                            <span className="block text-sm font-bold text-gray-700 group-hover:text-blue-700">{studio.name}</span>
+                                                            <span className="text-[10px] text-gray-400">{studio.addressPref}{studio.addressCity}</span>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-400" />
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            <div className="pt-4 border-t">
+                                                {showNewStudioForm ? (
+                                                    <div className="space-y-3 p-4 bg-gray-50 rounded-2xl animate-in fade-in slide-in-from-top-2">
+                                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">新しいスタジオを登録</p>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="名称 (例: スタジオ ◯◯)"
+                                                            value={newStudio.name}
+                                                            onChange={e => setNewStudio({ ...newStudio, name: e.target.value })}
+                                                            className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="URL (任意)"
+                                                            value={newStudio.url}
+                                                            onChange={e => setNewStudio({ ...newStudio, url: e.target.value })}
+                                                            className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                        />
+                                                        <div className="flex gap-2">
+                                                            <div className="flex-1 space-y-1">
+                                                                <p className="text-[10px] font-bold text-gray-400">緯度</p>
+                                                                <input
+                                                                    type="number"
+                                                                    step="any"
+                                                                    placeholder="35.6895"
+                                                                    value={newStudio.latitude || ''}
+                                                                    onChange={e => setNewStudio({ ...newStudio, latitude: parseFloat(e.target.value) || null })}
+                                                                    className="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs outline-none"
+                                                                />
+                                                            </div>
+                                                            <div className="flex-1 space-y-1">
+                                                                <p className="text-[10px] font-bold text-gray-400">経度</p>
+                                                                <input
+                                                                    type="number"
+                                                                    step="any"
+                                                                    placeholder="139.6917"
+                                                                    value={newStudio.longitude || ''}
+                                                                    onChange={e => setNewStudio({ ...newStudio, longitude: parseFloat(e.target.value) || null })}
+                                                                    className="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs outline-none"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        {formData.latitude && formData.longitude && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setNewStudio({ ...newStudio, latitude: formData.latitude, longitude: formData.longitude })}
+                                                                className="text-[10px] text-blue-500 hover:underline w-full text-right font-bold"
+                                                            >
+                                                                上の地図座標をセット
+                                                            </button>
+                                                        )}
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowNewStudioForm(false)}
+                                                                className="flex-1 py-2 text-xs font-bold text-gray-500"
+                                                            >
+                                                                キャンセル
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                disabled={!newStudio.name}
+                                                                onClick={async () => {
+                                                                    if (!user || !newStudio.name) return;
+                                                                    const idToken = await user.getIdToken();
+                                                                    const res = await saveStudio(newStudio as any, idToken);
+                                                                    if (res.success) {
+                                                                        const stds = await getStudios();
+                                                                        setAllStudios(stds);
+                                                                        setFormData(prev => ({
+                                                                            ...prev,
+                                                                            location: newStudio.name,
+                                                                            latitude: newStudio.latitude || prev.latitude,
+                                                                            longitude: newStudio.longitude || prev.longitude,
+                                                                            coordsInput: (newStudio.latitude && newStudio.longitude) ? `${newStudio.latitude}, ${newStudio.longitude}` : prev.coordsInput
+                                                                        }));
+                                                                        setShowLocationDialog(false);
+                                                                        setShowNewStudioForm(false);
+                                                                        setNewStudio({ name: '', url: '', latitude: null, longitude: null });
+                                                                    } else {
+                                                                        alert('登録に失敗しました: ' + res.error);
+                                                                    }
+                                                                }}
+                                                                className="flex-[2] py-2 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-sm disabled:opacity-50"
+                                                            >
+                                                                保存して選択
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowNewStudioForm(true)}
+                                                        className="w-full py-3 flex items-center justify-center gap-2 text-sm font-bold text-blue-600 border-2 border-dashed border-blue-100 rounded-xl hover:bg-blue-50 transition-colors"
+                                                    >
+                                                        <Plus className="w-4 h-4" />
+                                                        新しいスタジオを登録
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        // 屋外・その他入力画面
+                                        <div className="space-y-4">
+                                            <div className="flex gap-2 mb-4">
+                                                <button type="button" onClick={() => setIsStudioMode(null)} className="text-xs text-blue-600 font-bold hover:underline py-1">
+                                                    ← 戻る
+                                                </button>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-bold text-gray-500">撮影地名</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="例: 代々木公園, 幕張メッセ"
+                                                    value={formData.location}
+                                                    onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-bold"
+                                                />
+                                            </div>
+                                            <div className="pt-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowLocationDialog(false)}
+                                                    className="w-full py-3 bg-green-600 text-white rounded-xl font-bold shadow-lg shadow-green-100 active:scale-[0.98] transition-all"
+                                                >
+                                                    決定
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-3 pt-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowLocationConfirm(false)}
-                                        className="py-4 rounded-2xl font-bold text-gray-400 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm active:scale-95"
-                                    >
-                                        いいえ、修正
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsLocationConfirmed(true);
-                                            setShowLocationConfirm(false);
-                                            // dispatch submit
-                                            setTimeout(() => {
-                                                const form = document.querySelector('form');
-                                                if (form) {
-                                                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                                                }
-                                            }, 100);
-                                        }}
-                                        className="py-4 bg-gradient-to-br from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
-                                    >
-                                        はい、正しい
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
+                            </motion.div>
+                        </div>
+                    )
+                }
             </AnimatePresence>
         </div>
     );

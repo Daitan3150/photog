@@ -6,6 +6,8 @@ export interface Studio {
     addressCity?: string;
     address?: string; // Full address
     url?: string;
+    latitude?: number | null;
+    longitude?: number | null;
     createdAt?: Date;
     updatedAt?: Date;
 }

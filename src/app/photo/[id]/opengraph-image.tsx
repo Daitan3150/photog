@@ -106,7 +106,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                             marginBottom: 12,
                         }}
                     >
-                        {photo.characterName || photo.subjectName || 'Photography'}
+                        {photo.seriesName ? `${photo.seriesName} | ${photo.characterName || photo.subjectName}` : (photo.characterName || photo.subjectName || 'Photography')}
                     </div>
                     <div
                         style={{
@@ -117,7 +117,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                             letterSpacing: '-0.02em',
                         }}
                     >
-                        {photo.title || 'DAITAN Portfolio'}
+                        {photo.displayMode === 'character' ? photo.characterName : (photo.title || 'DAITAN Portfolio')}
                     </div>
 
                     <div

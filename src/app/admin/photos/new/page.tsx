@@ -1697,15 +1697,21 @@ export default function NewPhotoPage() {
                                                             if (studio.address) setAddress(studio.address);
                                                             setShowLocationDialog(false);
 
-                                                            // 座標取得
-                                                            const fullAddr = [studio.addressZip, studio.addressPref, studio.addressCity].filter(Boolean).join(' ');
-                                                            if (fullAddr) {
-                                                                const { searchCoordinatesAction } = await import('@/lib/actions/photos');
-                                                                const results = await searchCoordinatesAction(fullAddr);
-                                                                if (results && results.length > 0) {
-                                                                    setLatitude(results[0].lat);
-                                                                    setLongitude(results[0].lng);
-                                                                    setCoordsInput(`${results[0].lat}, ${results[0].lng}`);
+                                                            // 座標取得 (スタジオに登録があれば優先)
+                                                            if (studio.latitude !== undefined && studio.longitude !== undefined && studio.latitude !== null) {
+                                                                setLatitude(studio.latitude);
+                                                                setLongitude(studio.longitude);
+                                                                setCoordsInput(`${studio.latitude}, ${studio.longitude}`);
+                                                            } else {
+                                                                const fullAddr = [studio.addressZip, studio.addressPref, studio.addressCity].filter(Boolean).join(' ');
+                                                                if (fullAddr) {
+                                                                    const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+                                                                    const results = await searchCoordinatesAction(fullAddr);
+                                                                    if (results && results.length > 0) {
+                                                                        setLatitude(results[0].lat);
+                                                                        setLongitude(results[0].lng);
+                                                                        setCoordsInput(`${results[0].lat}, ${results[0].lng}`);
+                                                                    }
                                                                 }
                                                             }
                                                         }}
@@ -1743,6 +1749,39 @@ export default function NewPhotoPage() {
                                                             onChange={e => setNewStudio({ ...newStudio, url: e.target.value })}
                                                             className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                                         />
+                                                        <div className="flex gap-2">
+                                                            <div className="flex-1 space-y-1">
+                                                                <p className="text-[10px] font-bold text-gray-400">緯度</p>
+                                                                <input
+                                                                    type="number"
+                                                                    step="any"
+                                                                    placeholder="35.6895"
+                                                                    value={newStudio.latitude || ''}
+                                                                    onChange={e => setNewStudio({ ...newStudio, latitude: parseFloat(e.target.value) || null })}
+                                                                    className="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs outline-none"
+                                                                />
+                                                            </div>
+                                                            <div className="flex-1 space-y-1">
+                                                                <p className="text-[10px] font-bold text-gray-400">経度</p>
+                                                                <input
+                                                                    type="number"
+                                                                    step="any"
+                                                                    placeholder="139.6917"
+                                                                    value={newStudio.longitude || ''}
+                                                                    onChange={e => setNewStudio({ ...newStudio, longitude: parseFloat(e.target.value) || null })}
+                                                                    className="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs outline-none"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        {latitude && longitude && !newStudio.latitude && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setNewStudio({ ...newStudio, latitude, longitude })}
+                                                                className="text-[10px] text-blue-500 hover:underline w-full text-right"
+                                                            >
+                                                                現在の地図座標 ({latitude.toFixed(4)}, {longitude.toFixed(4)}) をセット
+                                                            </button>
+                                                        )}
                                                         <div className="flex gap-2">
                                                             <button
                                                                 type="button"

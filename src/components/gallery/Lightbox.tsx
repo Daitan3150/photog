@@ -185,20 +185,31 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                     ? photo.characterName
                                     : photo.title}
                             </h2>
-                            <div className="flex flex-col gap-1">
-                                {photo.displayMode === 'character' && photo.seriesName && (
-                                    <p className="text-xs text-purple-600 font-bold tracking-wider">{photo.seriesName}</p>
-                                )}
-                                {photo.displayMode === 'character' && photo.title && (
-                                    <p className="text-sm text-gray-400 font-serif italic">{photo.title}</p>
-                                )}
-                                {photo.displayMode !== 'character' && (photo.characterName || photo.seriesName) && (
-                                    <p className="text-xs text-gray-400">
-                                        {photo.characterName && <span className="mr-2">Character: {photo.characterName}</span>}
-                                        {photo.seriesName && <span>Series: {photo.seriesName}</span>}
-                                    </p>
-                                )}
-                            </div>
+                            {photo.displayMode === 'character' && (
+                                <div className="flex flex-col gap-1">
+                                    {photo.seriesName && (
+                                        <p className="text-[10px] text-pink-600 font-black tracking-[0.2em] uppercase">{photo.seriesName}</p>
+                                    )}
+                                    {photo.title && (
+                                        <p className="text-sm text-gray-400 font-serif italic">{photo.title}</p>
+                                    )}
+                                </div>
+                            )}
+                            {photo.displayMode !== 'character' && (photo.characterName || photo.seriesName) && (
+                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 font-bold">
+                                    {photo.characterName && (
+                                        <span className="flex items-center gap-1">
+                                            <User size={10} className="text-pink-400" />
+                                            {photo.characterName}
+                                        </span>
+                                    )}
+                                    {photo.seriesName && (
+                                        <span className="opacity-70">
+                                            # {photo.seriesName}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
 
                             {/* --- 🧠 知識 (Knowledge): Stats Display --- */}
                             <div className="flex items-center gap-4 pt-2">

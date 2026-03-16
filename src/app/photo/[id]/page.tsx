@@ -63,13 +63,7 @@ export async function generateMetadata(
         openGraph: {
             title,
             description,
-            images: [
-                {
-                    url: ogUrl,
-                    width: 1200,
-                    height: 630,
-                }
-            ],
+            images: [],
             type: 'article',
             section: photo.category,
             tags: photo.tags,
@@ -227,20 +221,33 @@ export default async function PhotoPage({ params }: Props) {
                                 {photo.displayMode === 'character' ? photo.characterName : (photo.title || '無題')}
                             </h2>
                             <div className="flex flex-col gap-2">
-                                {photo.displayMode === 'character' && photo.seriesName && (
-                                    <p className="text-pink-600 font-bold tracking-wider text-sm md:text-base">
-                                        <span className="opacity-50 text-[10px] uppercase tracking-widest mr-2">Series:</span>
-                                        {photo.seriesName}
-                                    </p>
-                                )}
-                                {photo.displayMode === 'character' && photo.title && (
-                                    <p className="text-black/40 text-lg font-medium italic underline underline-offset-8 decoration-pink-500/20">{photo.title}</p>
+                                {photo.displayMode === 'character' && (
+                                    <div className="flex flex-col gap-1">
+                                        {photo.seriesName && (
+                                            <p className="text-pink-600 font-black tracking-widest text-sm uppercase mb-1">
+                                                {photo.seriesName}
+                                            </p>
+                                        )}
+                                        {photo.title && (
+                                            <p className="text-black/40 text-lg font-medium italic underline underline-offset-8 decoration-pink-500/20">{photo.title}</p>
+                                        )}
+                                    </div>
                                 )}
                                 {photo.displayMode !== 'character' && (photo.characterName || photo.seriesName) && (
-                                    <p className="text-black/60 font-medium text-sm">
-                                        {photo.characterName && <span className="mr-3">Character: {photo.characterName}</span>}
-                                        {photo.seriesName && <span>Series: {photo.seriesName}</span>}
-                                    </p>
+                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1 text-black/60 font-bold text-sm">
+                                        {photo.characterName && (
+                                            <span className="flex items-center gap-1.5">
+                                                <User className="w-3 h-3 text-pink-500" />
+                                                {photo.characterName}
+                                            </span>
+                                        )}
+                                        {photo.seriesName && (
+                                            <span className="flex items-center gap-1.5 opacity-80">
+                                                <Hash className="w-3 h-3 text-purple-500" />
+                                                {photo.seriesName}
+                                            </span>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>
