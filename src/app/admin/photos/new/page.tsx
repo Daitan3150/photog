@@ -15,7 +15,10 @@ import SmartDatePicker from '@/components/admin/SmartDatePicker';
 import LeafletMap from '@/components/common/LeafletMap';
 import { Calendar, User, MapPin, Tag, Link2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-import { STUDIOS, StudioInfo } from '@/lib/constants/studios';
+import { STUDIOS as STATIC_STUDIOS, StudioInfo } from '@/lib/constants/studios';
+import { getStudios, saveStudio } from '@/lib/actions/studios';
+import { Studio } from '@/types/studio';
+import { X, Plus, Home, Trees, Search, ChevronRight } from 'lucide-react';
 
 // ✅ ファイル検証定数
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
@@ -238,6 +241,14 @@ export default function NewPhotoPage() {
     const [showLocationConfirm, setShowLocationConfirm] = useState(false);
     const [isLocationConfirmed, setIsLocationConfirmed] = useState(false);
 
+    // ✅ スタジオ・撮影地選択機能
+    const [allStudios, setAllStudios] = useState<Studio[]>([]);
+    const [showLocationDialog, setShowLocationDialog] = useState(false);
+    const [locationSearch, setLocationSearch] = useState('');
+    const [isStudioMode, setIsStudioMode] = useState<boolean | null>(null);
+    const [showNewStudioForm, setShowNewStudioForm] = useState(false);
+    const [newStudio, setNewStudio] = useState<Partial<Studio>>({ name: '', url: '' });
+
     // ✅ 署名取得
     const fetchSignature = async (paramsToSign: Record<string, any>) => {
         const idToken = await user?.getIdToken();
@@ -308,12 +319,14 @@ export default function NewPhotoPage() {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                const [catResult, subResult] = await Promise.all([
+                const [catResult, subResult, studiosData] = await Promise.all([
                     getCategories(),
-                    getSubjects()
+                    getSubjects(),
+                    getStudios()
                 ]);
                 if (catResult.success) setCategories(catResult.data);
                 if (subResult.success) setSubjects(subResult.data);
+                setAllStudios(studiosData);
 
                 if (user) {
                     const idToken = await user.getIdToken();
@@ -1205,39 +1218,45 @@ export default function NewPhotoPage() {
                                 詳細な撮影地・住所入力
                             </label>
 
-                            <div className="space-y-2">
-                                <p className="text-[10px] text-gray-400 font-bold">スタジオ・場所の選択</p>
-                                <select
-                                    className="w-full border p-2 rounded text-sm bg-white"
-                                    onChange={async (e) => {
-                                        const studioName = e.target.value;
-                                        const studio = STUDIOS.find(s => s.name === studioName);
-                                        if (studio) {
-                                            setLocation(studio.name);
-                                            if (studio.addressZip) setAddressZip(studio.addressZip);
-                                            if (studio.addressPref) setAddressPref(studio.addressPref);
-                                            if (studio.addressCity) setAddressCity(studio.addressCity);
-                                            if (studio.address) setAddress(studio.address);
+                            <div className="space-y-3">
+                                <label className="block text-sm font-bold text-gray-700 flex items-center justify-between">
+                                    <span>撮影地・スタジオ</span>
+                                    {location && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setLocation('');
+                                                setIsStudioMode(null);
+                                            }}
+                                            className="text-[10px] text-red-500 hover:underline"
+                                        >
+                                            リセット
+                                        </button>
+                                    )}
+                                </label>
 
-                                            // 住所が揃っていれば座標も自動取得を試みる
-                                            const fullAddr = [studio.addressZip, studio.addressPref, studio.addressCity].filter(Boolean).join(' ');
-                                            if (fullAddr) {
-                                                const { searchCoordinatesAction } = await import('@/lib/actions/photos');
-                                                const results = await searchCoordinatesAction(fullAddr);
-                                                if (results && results.length > 0) {
-                                                    setLatitude(results[0].lat);
-                                                    setLongitude(results[0].lng);
-                                                    setCoordsInput(`${results[0].lat}, ${results[0].lng}`);
-                                                }
-                                            }
-                                        }
-                                    }}
+                                <div
+                                    onClick={() => setShowLocationDialog(true)}
+                                    className={`relative w-full p-4 rounded-xl border-2 border-dashed cursor-pointer transition-all hover:bg-gray-100 flex flex-col items-center justify-center gap-2 ${location ? 'border-blue-500 bg-blue-50/30' : 'border-gray-200 bg-white'}`}
                                 >
-                                    <option value="">スタジオを選択 (自動入力)</option>
-                                    {STUDIOS.map((s) => (
-                                        <option key={s.name} value={s.name}>{s.name}</option>
-                                    ))}
-                                </select>
+                                    {location ? (
+                                        <>
+                                            <div className="flex items-center gap-2 text-blue-600 font-bold">
+                                                {isStudioMode ? <Home className="w-4 h-4" /> : <Trees className="w-4 h-4" />}
+                                                {location}
+                                            </div>
+                                            <p className="text-[10px] text-gray-400">クリックして変更</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                                                <MapPin className="w-5 h-5" />
+                                            </div>
+                                            <p className="text-xs font-bold text-gray-500">撮影場所を入力または選択</p>
+                                            <p className="text-[10px] text-gray-400">スタジオ・屋外・イベント会場など</p>
+                                        </>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1579,6 +1598,233 @@ export default function NewPhotoPage() {
                                 </div>
                             </motion.div>
                         </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* ✅ 撮影地選択ダイアログ */}
+                <AnimatePresence>
+                    {showLocationDialog && (
+                        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                                onClick={() => setShowLocationDialog(false)}
+                            />
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+                            >
+                                {/* Header */}
+                                <div className="p-6 border-b flex justify-between items-center bg-gray-50/50">
+                                    <div>
+                                        <h3 className="font-bold text-gray-900">撮影場所の設定</h3>
+                                        <p className="text-xs text-gray-500 mt-0.5">スタジオか、屋外撮影かを選択してください</p>
+                                    </div>
+                                    <button onClick={() => setShowLocationDialog(false)} className="p-2 hover:bg-white rounded-full transition-colors text-gray-400">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <div className="p-6">
+                                    {isStudioMode === null ? (
+                                        // 選択画面
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsStudioMode(true)}
+                                                className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-gray-100 hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                                            >
+                                                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                                                    <Home className="w-8 h-8" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <span className="block font-bold text-gray-900">スタジオ</span>
+                                                    <span className="text-[10px] text-gray-500">屋内・登録済み施設</span>
+                                                </div>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsStudioMode(false);
+                                                    setLocationSearch('');
+                                                }}
+                                                className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-gray-100 hover:border-green-500 hover:bg-green-50 transition-all group"
+                                            >
+                                                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform">
+                                                    <Trees className="w-8 h-8" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <span className="block font-bold text-gray-900">屋外・その他</span>
+                                                    <span className="text-[10px] text-gray-500">外ロケ・イベント会場など</span>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    ) : isStudioMode ? (
+                                        // スタジオ選択画面
+                                        <div className="space-y-4">
+                                            <div className="flex gap-2 mb-4">
+                                                <button type="button" onClick={() => setIsStudioMode(null)} className="text-xs text-blue-600 font-bold hover:underline py-1">
+                                                    ← 戻る
+                                                </button>
+                                            </div>
+
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <input
+                                                    autoFocus
+                                                    type="text"
+                                                    value={locationSearch}
+                                                    onChange={e => setLocationSearch(e.target.value)}
+                                                    placeholder="スタジオ名で保存済みを検索..."
+                                                    className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                />
+                                            </div>
+
+                                            <div className="max-h-60 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                                                {allStudios.filter(s => s.name.toLowerCase().includes(locationSearch.toLowerCase())).map(studio => (
+                                                    <button
+                                                        key={studio.id}
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            setLocation(studio.name);
+                                                            if (studio.addressZip) setAddressZip(studio.addressZip);
+                                                            if (studio.addressPref) setAddressPref(studio.addressPref);
+                                                            if (studio.addressCity) setAddressCity(studio.addressCity);
+                                                            if (studio.address) setAddress(studio.address);
+                                                            setShowLocationDialog(false);
+
+                                                            // 座標取得
+                                                            const fullAddr = [studio.addressZip, studio.addressPref, studio.addressCity].filter(Boolean).join(' ');
+                                                            if (fullAddr) {
+                                                                const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+                                                                const results = await searchCoordinatesAction(fullAddr);
+                                                                if (results && results.length > 0) {
+                                                                    setLatitude(results[0].lat);
+                                                                    setLongitude(results[0].lng);
+                                                                    setCoordsInput(`${results[0].lat}, ${results[0].lng}`);
+                                                                }
+                                                            }
+                                                        }}
+                                                        className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-blue-50 group transition-colors border border-transparent hover:border-blue-100"
+                                                    >
+                                                        <div className="text-left">
+                                                            <span className="block text-sm font-bold text-gray-700 group-hover:text-blue-700">{studio.name}</span>
+                                                            <span className="text-[10px] text-gray-400">{studio.addressPref}{studio.addressCity}</span>
+                                                        </div>
+                                                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-400" />
+                                                    </button>
+                                                ))}
+                                                {allStudios.filter(s => s.name.toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
+                                                    <div className="py-8 text-center text-gray-400 italic text-xs">
+                                                        該当するスタジオが見つかりません
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="pt-4 border-t">
+                                                {showNewStudioForm ? (
+                                                    <div className="space-y-3 p-4 bg-gray-50 rounded-2xl animate-in fade-in slide-in-from-top-2">
+                                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">新しいスタジオを登録</p>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="名称 (例: スタジオ ◯◯)"
+                                                            value={newStudio.name}
+                                                            onChange={e => setNewStudio({ ...newStudio, name: e.target.value })}
+                                                            className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="URL (任意)"
+                                                            value={newStudio.url}
+                                                            onChange={e => setNewStudio({ ...newStudio, url: e.target.value })}
+                                                            className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                        />
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowNewStudioForm(false)}
+                                                                className="flex-1 py-2 text-xs font-bold text-gray-500"
+                                                            >
+                                                                キャンセル
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                disabled={!newStudio.name}
+                                                                onClick={async () => {
+                                                                    if (!user || !newStudio.name) return;
+                                                                    const idToken = await user.getIdToken();
+                                                                    const res = await saveStudio(newStudio as any, idToken);
+                                                                    if (res.success) {
+                                                                        const stds = await getStudios();
+                                                                        setAllStudios(stds);
+                                                                        setLocation(newStudio.name);
+                                                                        setShowLocationDialog(false);
+                                                                        setShowNewStudioForm(false);
+                                                                        setNewStudio({ name: '', url: '' });
+                                                                    } else {
+                                                                        alert('登録に失敗しました: ' + res.error);
+                                                                    }
+                                                                }}
+                                                                className="flex-[2] py-2 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-sm disabled:opacity-50"
+                                                            >
+                                                                保存して選択
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowNewStudioForm(true)}
+                                                        className="w-full py-3 flex items-center justify-center gap-2 text-sm font-bold text-blue-600 border-2 border-dashed border-blue-100 rounded-xl hover:bg-blue-50 transition-colors"
+                                                    >
+                                                        <Plus className="w-4 h-4" />
+                                                        新しいスタジオを登録
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        // 屋外・その他入力画面
+                                        <div className="space-y-4">
+                                            <div className="flex gap-2 mb-4">
+                                                <button type="button" onClick={() => setIsStudioMode(null)} className="text-xs text-blue-600 font-bold hover:underline py-1">
+                                                    ← 戻る
+                                                </button>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-bold text-gray-500">撮影地名</label>
+                                                <input
+                                                    autoFocus
+                                                    type="text"
+                                                    value={locationSearch}
+                                                    onChange={e => setLocationSearch(e.target.value)}
+                                                    placeholder="例: 東京都 ◯◯公園"
+                                                    className="w-full p-3 bg-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-green-500 outline-none font-bold"
+                                                />
+                                            </div>
+                                            <p className="text-[10px] text-gray-400">
+                                                屋外の場合は具体的な公園名やイベント会場名を記入してください。
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setLocation(locationSearch);
+                                                    setShowLocationDialog(false);
+                                                }}
+                                                disabled={!locationSearch}
+                                                className="w-full py-3 bg-green-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-green-200 disabled:opacity-50 transition-all active:scale-[0.98]"
+                                            >
+                                                決定
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </div>
                     )}
                 </AnimatePresence>
             </div>
