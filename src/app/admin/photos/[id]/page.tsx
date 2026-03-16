@@ -113,7 +113,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const [locationSearch, setLocationSearch] = useState('');
     const [isStudioMode, setIsStudioMode] = useState<boolean | null>(null); // null: initial, true: studio, false: outside
     const [showNewStudioForm, setShowNewStudioForm] = useState(false);
-    const [newStudio, setNewStudio] = useState({ name: '', url: '', addressZip: '', addressPref: '', addressCity: '', latitude: null as number | null, longitude: null as number | null });
+    const [newStudio, setNewStudio] = useState({ name: '', url: '', addressZip: '', addressPref: '', addressCity: '', latitude: null as number | null, longitude: null as number | null, coordsInput: '' });
 
     // ✅ Coords Auto-parsing from input string
     useEffect(() => {
@@ -1379,7 +1379,12 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                         const { searchCoordinatesAction } = await import('@/lib/actions/photos');
                                                                         const results = await searchCoordinatesAction(query);
                                                                         if (results && results.length > 0) {
-                                                                            setNewStudio(prev => ({ ...prev, latitude: results[0].lat, longitude: results[0].lng }));
+                                                                            setNewStudio(prev => ({
+                                                                                ...prev,
+                                                                                latitude: results[0].lat,
+                                                                                longitude: results[0].lng,
+                                                                                coordsInput: `${results[0].lat}, ${results[0].lng}`
+                                                                            }));
                                                                         }
                                                                     } catch (err) { console.error(err); }
                                                                 }}
@@ -1388,29 +1393,30 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                 座標取得
                                                             </button>
                                                         </div>
-                                                        <div className="flex gap-2">
-                                                            <div className="flex-1 space-y-1">
-                                                                <p className="text-[10px] font-bold text-gray-400">緯度</p>
-                                                                <input
-                                                                    type="number"
-                                                                    step="any"
-                                                                    placeholder="35.6895"
-                                                                    value={newStudio.latitude || ''}
-                                                                    onChange={e => setNewStudio({ ...newStudio, latitude: parseFloat(e.target.value) || null })}
-                                                                    className="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs outline-none"
-                                                                />
-                                                            </div>
-                                                            <div className="flex-1 space-y-1">
-                                                                <p className="text-[10px] font-bold text-gray-400">経度</p>
-                                                                <input
-                                                                    type="number"
-                                                                    step="any"
-                                                                    placeholder="139.6917"
-                                                                    value={newStudio.longitude || ''}
-                                                                    onChange={e => setNewStudio({ ...newStudio, longitude: parseFloat(e.target.value) || null })}
-                                                                    className="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs outline-none"
-                                                                />
-                                                            </div>
+                                                        <div className="space-y-1">
+                                                            <p className="text-[10px] font-bold text-gray-400">GPS座標 (緯度, 経度)</p>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="35.6895, 139.6917"
+                                                                value={newStudio.coordsInput}
+                                                                onChange={e => {
+                                                                    const val = e.target.value;
+                                                                    setNewStudio(prev => {
+                                                                        const next = { ...prev, coordsInput: val };
+                                                                        const parts = val.split(/[,，]/).map(p => p.trim());
+                                                                        if (parts.length >= 2) {
+                                                                            const lat = parseFloat(parts[0]);
+                                                                            const lng = parseFloat(parts[1]);
+                                                                            if (!isNaN(lat) && !isNaN(lng)) {
+                                                                                next.latitude = lat;
+                                                                                next.longitude = lng;
+                                                                            }
+                                                                        }
+                                                                        return next;
+                                                                    });
+                                                                }}
+                                                                className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                            />
                                                         </div>
                                                         {formData.latitude && formData.longitude && (
                                                             <button
@@ -1435,7 +1441,8 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                 onClick={async () => {
                                                                     if (!user || !newStudio.name) return;
                                                                     const idToken = await user.getIdToken();
-                                                                    const res = await saveStudio(newStudio as any, idToken);
+                                                                    const { coordsInput, ...studioData } = newStudio;
+                                                                    const res = await saveStudio(studioData as any, idToken);
                                                                     if (res.success) {
                                                                         const stds = await getStudios();
                                                                         setAllStudios(stds);
@@ -1448,7 +1455,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                         }));
                                                                         setShowLocationDialog(false);
                                                                         setShowNewStudioForm(false);
-                                                                        setNewStudio({ name: '', url: '', addressZip: '', addressPref: '', addressCity: '', latitude: null, longitude: null });
+                                                                        setNewStudio({ name: '', url: '', addressZip: '', addressPref: '', addressCity: '', latitude: null, longitude: null, coordsInput: '' });
                                                                     } else {
                                                                         alert('登録に失敗しました: ' + res.error);
                                                                     }
