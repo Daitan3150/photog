@@ -39,10 +39,10 @@ export default async function Image({ params }: { params: Promise<{ id: string }
     if (bgUrl.includes('res.cloudinary.com')) {
         let transform = 'c_fill,w_1200,h_630,q_auto,f_auto';
         if (photo.focalPoint && photo.focalPoint.x !== undefined && photo.focalPoint.y !== undefined) {
-            // Convert 0-100 percentage to 0.0-1.0 decimal
-            const x = (photo.focalPoint.x / 100).toFixed(3);
-            const y = (photo.focalPoint.y / 100).toFixed(3);
-            transform = `c_fill,g_xy_center,x_${x},y_${y},w_1200,h_630,q_auto,f_auto`;
+            // Use percentage string (e.g. x_50p) for Cloudinary.
+            const x = Math.round(photo.focalPoint.x);
+            const y = Math.round(photo.focalPoint.y);
+            transform = `c_fill,g_xy_center,x_${x}p,y_${y}p,w_1200,h_630,q_auto,f_auto`;
         } else {
             transform = 'c_fill,g_auto,w_1200,h_630,q_auto,f_auto';
         }

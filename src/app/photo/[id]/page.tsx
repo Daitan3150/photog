@@ -43,12 +43,12 @@ export async function generateMetadata(
         if (fp || (photo.focalPoint && photo.focalPoint.x !== undefined && photo.focalPoint.y !== undefined)) {
             const [xRaw, yRaw] = fp ? fp.split('_') : [photo.focalPoint?.x?.toString() || '50', photo.focalPoint?.y?.toString() || '50'];
 
-            // Convert 0-100 percentage to 0.0-1.0 decimal for Cloudinary.
-            // This is safer as it avoids fl_relative which can conflict with pixel-based width/height.
-            const x = (parseFloat(xRaw) / 100).toFixed(3);
-            const y = (parseFloat(yRaw) / 100).toFixed(3);
+            // Use percentage string (e.g. x_50p) for Cloudinary.
+            // This is the most reliable way to target a relative point without affecting w/h pixels.
+            const x = Math.round(parseFloat(xRaw));
+            const y = Math.round(parseFloat(yRaw));
 
-            transform = `c_fill,g_xy_center,x_${x},y_${y},w_1200,h_630,q_auto,f_auto`;
+            transform = `c_fill,g_xy_center,x_${x}p,y_${y}p,w_1200,h_630,q_auto,f_auto`;
         } else {
             // Default to AI face/subject detection if no focal point provided
             transform = 'c_fill,g_auto,w_1200,h_630,q_auto,f_auto';
