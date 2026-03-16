@@ -102,6 +102,8 @@ export default function StudiosPage() {
                     addressPref: result.address1 || '',
                     addressCity: (result.address2 || '') + (result.address3 || ''),
                 }));
+                // Auto Search Coords after state update
+                setTimeout(() => handleCoordinateSearch(), 100);
             } else {
                 setError('該当する住所が見つかりませんでした。');
             }
@@ -142,16 +144,26 @@ export default function StudiosPage() {
     };
 
     const handleCoordsInputChange = (val: string) => {
-        setFormData(prev => ({ ...prev, coordsInput: val }));
-        // Parse "lat, lng"
-        const parts = val.split(',').map(p => p.trim());
-        if (parts.length === 2) {
-            const lat = parseFloat(parts[0]);
-            const lng = parseFloat(parts[1]);
-            if (!isNaN(lat) && !isNaN(lng)) {
-                setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+        // Parse "lat, lng" - handle both half-width and full-width commas
+        const parts = val.split(/[,，]/).map(p => p.trim());
+        let lat = formData.latitude;
+        let lng = formData.longitude;
+
+        if (parts.length >= 2) {
+            const parsedLat = parseFloat(parts[0]);
+            const parsedLng = parseFloat(parts[1]);
+            if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+                lat = parsedLat;
+                lng = parsedLng;
             }
         }
+
+        setFormData(prev => ({
+            ...prev,
+            coordsInput: val,
+            latitude: lat,
+            longitude: lng
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
