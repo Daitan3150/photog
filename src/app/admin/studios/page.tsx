@@ -5,6 +5,7 @@ import { useAuth } from '@/components/admin/AuthProvider';
 import { getStudios, saveStudio, updateStudio, deleteStudio } from '@/lib/actions/studios';
 import { Studio, StudioFormData } from '@/types/studio';
 import { Plus, Edit2, Trash2, X, ExternalLink, Home, MapPin, Search } from 'lucide-react';
+import LeafletMap from '@/components/common/LeafletMap';
 
 export default function StudiosPage() {
     const { user } = useAuth();
@@ -12,13 +13,16 @@ export default function StudiosPage() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingStudio, setEditingStudio] = useState<Studio | null>(null);
-    const [formData, setFormData] = useState<StudioFormData>({
+    const [formData, setFormData] = useState<StudioFormData & { coordsInput?: string }>({
         name: '',
         addressZip: '',
         addressPref: '',
         addressCity: '',
         address: '',
         url: '',
+        latitude: null,
+        longitude: null,
+        coordsInput: '',
     });
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -50,6 +54,9 @@ export default function StudiosPage() {
                 addressCity: studio.addressCity || '',
                 address: studio.address || '',
                 url: studio.url || '',
+                latitude: studio.latitude || null,
+                longitude: studio.longitude || null,
+                coordsInput: (studio.latitude && studio.longitude) ? `${studio.latitude}, ${studio.longitude}` : '',
             });
         } else {
             setEditingStudio(null);
@@ -60,6 +67,9 @@ export default function StudiosPage() {
                 addressCity: '',
                 address: '',
                 url: '',
+                latitude: null,
+                longitude: null,
+                coordsInput: '',
             });
         }
         setError('');
@@ -102,6 +112,48 @@ export default function StudiosPage() {
         }
     };
 
+    const handleCoordinateSearch = async () => {
+        const query = [formData.addressPref, formData.addressCity, formData.address].filter(Boolean).join(' ');
+        if (!query) {
+            setError('住所情報を入力してから検索してください。');
+            return;
+        }
+
+        setIsLookingUpZip(true);
+        setError('');
+        try {
+            const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+            const results = await searchCoordinatesAction(query);
+            if (results && results.length > 0) {
+                setFormData(prev => ({
+                    ...prev,
+                    latitude: results[0].lat,
+                    longitude: results[0].lng,
+                    coordsInput: `${results[0].lat}, ${results[0].lng}`
+                }));
+            } else {
+                setError('座標が見つかりませんでした。住所を詳しく入力してください。');
+            }
+        } catch (err) {
+            setError('座標の検索中にエラーが発生しました。');
+        } finally {
+            setIsLookingUpZip(false);
+        }
+    };
+
+    const handleCoordsInputChange = (val: string) => {
+        setFormData(prev => ({ ...prev, coordsInput: val }));
+        // Parse "lat, lng"
+        const parts = val.split(',').map(p => p.trim());
+        if (parts.length === 2) {
+            const lat = parseFloat(parts[0]);
+            const lng = parseFloat(parts[1]);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+            }
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name) {
@@ -120,11 +172,14 @@ export default function StudiosPage() {
                 return;
             }
 
+            // Remove coordsInput helper from data to save
+            const { coordsInput, ...dataToSave } = formData;
+
             let result;
             if (editingStudio?.id) {
-                result = await updateStudio(editingStudio.id, formData, idToken);
+                result = await updateStudio(editingStudio.id, dataToSave, idToken);
             } else {
-                result = await saveStudio(formData, idToken);
+                result = await saveStudio(dataToSave, idToken);
             }
 
             if (result.success) {
@@ -319,7 +374,7 @@ export default function StudiosPage() {
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
                         <header className="px-8 py-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
                             <h2 className="text-xl font-bold text-gray-900">
                                 {editingStudio ? 'スタジオ情報の編集' : '新規スタジオの登録'}
@@ -329,114 +384,171 @@ export default function StudiosPage() {
                             </button>
                         </header>
 
-                        <form onSubmit={handleSubmit} className="px-8 py-8 space-y-6 overflow-y-auto flex-1">
+                        <form onSubmit={handleSubmit} className="px-8 py-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
                             {error && (
                                 <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100">
                                     {error}
                                 </div>
                             )}
 
-                            {/* スタジオ名 */}
-                            <div className="space-y-2">
-                                <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                    スタジオ名 (必須)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                    placeholder="例: スタジオ シェア"
-                                    required
-                                />
-                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* 左カラム */}
+                                <div className="space-y-6">
+                                    {/* スタジオ名 */}
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                            スタジオ名 (必須)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            placeholder="例: スタジオ シェア"
+                                            required
+                                        />
+                                    </div>
 
-                            {/* 郵便番号 + 自動入力 */}
-                            <div className="space-y-2">
-                                <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                    郵便番号
-                                </label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={formData.addressZip || ''}
-                                        onChange={(e) => {
-                                            const val = e.target.value.replace(/[^0-9-]/g, '');
-                                            setFormData({ ...formData, addressZip: val });
-                                        }}
-                                        className="flex-1 px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                        placeholder="123-4567"
-                                        maxLength={8}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={handleZipLookup}
-                                        disabled={isLookingUpZip}
-                                        className="px-4 py-3.5 bg-gray-800 text-white rounded-2xl hover:bg-gray-900 transition-all text-xs font-bold whitespace-nowrap active:scale-95 disabled:opacity-50 flex items-center gap-2"
-                                    >
-                                        {isLookingUpZip ? (
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        ) : (
-                                            <MapPin size={14} />
+                                    {/* 郵便番号 + 自動入力 */}
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                            郵便番号
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={formData.addressZip || ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(/[^0-9-]/g, '');
+                                                    setFormData({ ...formData, addressZip: val });
+                                                }}
+                                                className="flex-1 px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                                placeholder="123-4567"
+                                                maxLength={8}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleZipLookup}
+                                                disabled={isLookingUpZip}
+                                                className="px-4 py-3.5 bg-gray-800 text-white rounded-2xl hover:bg-gray-900 transition-all text-xs font-bold whitespace-nowrap active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                                            >
+                                                {isLookingUpZip ? (
+                                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                ) : (
+                                                    <MapPin size={14} />
+                                                )}
+                                                検索
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* 都道府県 */}
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                            都道府県
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.addressPref || ''}
+                                            onChange={(e) => setFormData({ ...formData, addressPref: e.target.value })}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            placeholder="東京都"
+                                        />
+                                    </div>
+
+                                    {/* 市区町村・番地 */}
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                            市区町村・番地・建物名
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.addressCity || ''}
+                                            onChange={(e) => setFormData({ ...formData, addressCity: e.target.value })}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            placeholder="墨田区立川4-11-20 プロスパリティ1 101"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* 右カラム */}
+                                <div className="space-y-6">
+                                    {/* URL */}
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                            WEBサイト URL (任意)
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={formData.url || ''}
+                                            onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            placeholder="https://www.studio-example.com/"
+                                        />
+                                    </div>
+
+                                    {/* 座標設定 */}
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                                GPS座標 (緯度, 経度)
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={handleCoordinateSearch}
+                                                className="text-[9px] text-blue-600 font-bold hover:underline"
+                                            >
+                                                住所から取得
+                                            </button>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={formData.coordsInput}
+                                            onChange={(e) => handleCoordsInputChange(e.target.value)}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            placeholder="35.6895, 139.6917"
+                                        />
+                                    </div>
+
+                                    {/* 地図プレビュー */}
+                                    <div className="w-full aspect-video rounded-2xl overflow-hidden border border-gray-100 shadow-inner bg-gray-50 relative">
+                                        <LeafletMap
+                                            lat={formData.latitude || 35.6895}
+                                            lng={formData.longitude || 139.6917}
+                                            height="100%"
+                                        />
+                                        {!formData.latitude && (
+                                            <div className="absolute inset-0 bg-black/5 flex items-center justify-center p-4 text-center">
+                                                <p className="text-[10px] text-gray-400 font-bold">有効な座標が入力されると<br />ここに地図が表示されます</p>
+                                            </div>
                                         )}
-                                        住所検索
-                                    </button>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* 都道府県 */}
-                            <div className="space-y-2">
-                                <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                    都道府県
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.addressPref || ''}
-                                    onChange={(e) => setFormData({ ...formData, addressPref: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                    placeholder="東京都"
-                                />
-                            </div>
-
-                            {/* 市区町村・番地 */}
-                            <div className="space-y-2">
-                                <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                    市区町村・番地・建物名
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.addressCity || ''}
-                                    onChange={(e) => setFormData({ ...formData, addressCity: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                    placeholder="墨田区立川4-11-20 プロスパリティ1 101"
-                                />
-                            </div>
-
-                            {/* URL */}
-                            <div className="space-y-2">
-                                <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                    WEBサイト URL (任意)
-                                </label>
-                                <input
-                                    type="url"
-                                    value={formData.url || ''}
-                                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                    placeholder="https://www.studio-example.com/"
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={isSaving}
-                                className="w-full bg-blue-600 text-white py-4 rounded-2xl hover:bg-blue-700 transition-all font-bold shadow-xl shadow-blue-100 active:scale-95 disabled:opacity-50 mt-4 h-14"
-                            >
-                                {isSaving ? (
-                                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
-                                ) : (
-                                    editingStudio ? '変更を保存する' : '新しく登録する'
+                            <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                                {editingStudio && (
+                                    <button
+                                        type="button"
+                                        onClick={() => editingStudio.id && handleDelete(editingStudio.id, editingStudio.name)}
+                                        className="flex-[1] flex items-center justify-center gap-2 py-4 rounded-2xl text-red-500 font-bold border-2 border-red-50 hover:bg-red-50 transition-all active:scale-95 text-xs"
+                                    >
+                                        <Trash2 size={16} />
+                                        スタジオを削除
+                                    </button>
                                 )}
-                            </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSaving}
+                                    className="flex-[2] bg-blue-600 text-white py-4 rounded-2xl hover:bg-blue-700 transition-all font-bold shadow-xl shadow-blue-100 active:scale-95 disabled:opacity-50 h-14"
+                                >
+                                    {isSaving ? (
+                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                                    ) : (
+                                        editingStudio ? '変更を保存する' : '新しく登録する'
+                                    )}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>

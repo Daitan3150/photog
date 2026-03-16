@@ -113,7 +113,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const [locationSearch, setLocationSearch] = useState('');
     const [isStudioMode, setIsStudioMode] = useState<boolean | null>(null); // null: initial, true: studio, false: outside
     const [showNewStudioForm, setShowNewStudioForm] = useState(false);
-    const [newStudio, setNewStudio] = useState({ name: '', url: '', latitude: null as number | null, longitude: null as number | null });
+    const [newStudio, setNewStudio] = useState({ name: '', url: '', addressZip: '', addressPref: '', addressCity: '', latitude: null as number | null, longitude: null as number | null });
 
     // ✅ Coords Auto-parsing from input string
     useEffect(() => {
@@ -1346,6 +1346,49 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                             className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                                         />
                                                         <div className="flex gap-2">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="郵便番号 (123-4567)"
+                                                                value={newStudio.addressZip}
+                                                                onChange={e => setNewStudio({ ...newStudio, addressZip: e.target.value })}
+                                                                className="flex-1 p-2.5 bg-white border border-gray-200 rounded-lg text-xs outline-none"
+                                                                maxLength={8}
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                placeholder="都道府県"
+                                                                value={newStudio.addressPref}
+                                                                onChange={e => setNewStudio({ ...newStudio, addressPref: e.target.value })}
+                                                                className="flex-1 p-2.5 bg-white border border-gray-200 rounded-lg text-xs outline-none"
+                                                            />
+                                                        </div>
+                                                        <div className="flex gap-2 items-center">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="市区町村・番地"
+                                                                value={newStudio.addressCity}
+                                                                onChange={e => setNewStudio({ ...newStudio, addressCity: e.target.value })}
+                                                                className="flex-1 p-2.5 bg-white border border-gray-200 rounded-lg text-xs outline-none font-medium"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={async () => {
+                                                                    const query = [newStudio.addressPref, newStudio.addressCity].filter(Boolean).join(' ');
+                                                                    if (!query) return;
+                                                                    try {
+                                                                        const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+                                                                        const results = await searchCoordinatesAction(query);
+                                                                        if (results && results.length > 0) {
+                                                                            setNewStudio(prev => ({ ...prev, latitude: results[0].lat, longitude: results[0].lng }));
+                                                                        }
+                                                                    } catch (err) { console.error(err); }
+                                                                }}
+                                                                className="text-[10px] bg-gray-800 text-white px-3 py-2.5 rounded-lg font-bold active:scale-95 transition-all"
+                                                            >
+                                                                座標取得
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex gap-2">
                                                             <div className="flex-1 space-y-1">
                                                                 <p className="text-[10px] font-bold text-gray-400">緯度</p>
                                                                 <input
@@ -1405,7 +1448,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                         }));
                                                                         setShowLocationDialog(false);
                                                                         setShowNewStudioForm(false);
-                                                                        setNewStudio({ name: '', url: '', latitude: null, longitude: null });
+                                                                        setNewStudio({ name: '', url: '', addressZip: '', addressPref: '', addressCity: '', latitude: null, longitude: null });
                                                                     } else {
                                                                         alert('登録に失敗しました: ' + res.error);
                                                                     }
