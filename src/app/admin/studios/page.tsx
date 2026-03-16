@@ -439,7 +439,42 @@ export default function StudiosPage() {
                                         />
                                     </div>
 
-                                    {/* 郵便番号 + 自動入力 */}
+                                    {/* 住所スマートパース (貼り付け用) */}
+                                    <div className="space-y-1">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-blue-500 ml-1 flex items-center gap-2">
+                                            <Search size={12} />
+                                            住所一括入力 (Smart Parse)
+                                        </label>
+                                        <textarea
+                                            value={formData.address || ''}
+                                            onChange={(e) => {
+                                                const input = e.target.value;
+                                                const zipMatch = input.match(/(?:〒?\s?)(\d{3}-\d{4}|\d{7})/);
+                                                const zip = zipMatch ? (zipMatch[1].includes('-') ? zipMatch[1] : `${zipMatch[1].slice(0, 3)}-${zipMatch[1].slice(3)}`) : '';
+
+                                                const prefMatch = input.match(/(北海道|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|東京都|神奈川県|新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|京都府|大阪府|兵庫県|奈良県|和歌山県|鳥取県|島根県|岡山県|広島県|山口県|徳島県|香川県|愛媛県|高知県|福岡県|佐賀県|長崎県|熊本県|大分県|宮崎県|鹿児島県|沖縄県)/);
+                                                const pref = prefMatch ? prefMatch[1] : '';
+
+                                                let addr = input;
+                                                if (zipMatch) addr = addr.replace(zipMatch[0], '');
+                                                if (prefMatch) addr = addr.replace(prefMatch[0], '');
+                                                addr = addr.replace(/^[\s　,]+|[\s　,]+$/g, '');
+
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    address: input,
+                                                    addressZip: zip || prev.addressZip,
+                                                    addressPref: pref || prev.addressPref,
+                                                    addressCity: addr || prev.addressCity
+                                                }));
+                                            }}
+                                            className="w-full px-5 py-3.5 bg-blue-50/30 border border-blue-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-xs h-24 resize-none"
+                                            placeholder="例: 〒 123-4567 東京都墨田区立川4-11-20"
+                                        />
+                                        <p className="text-[9px] text-amber-600 font-medium ml-1">※ 住所を貼り付けると自動抽出されます</p>
+                                    </div>
+
+                                    {/* 郵便番号 */}
                                     <div className="space-y-2">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
                                             郵便番号
@@ -448,56 +483,40 @@ export default function StudiosPage() {
                                             <input
                                                 type="text"
                                                 value={formData.addressZip || ''}
-                                                onChange={(e) => {
-                                                    const val = e.target.value.replace(/[^0-9-]/g, '');
-                                                    setFormData({ ...formData, addressZip: val });
-                                                }}
+                                                onChange={(e) => setFormData({ ...formData, addressZip: e.target.value })}
                                                 className="flex-1 px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
                                                 placeholder="123-4567"
                                                 maxLength={8}
                                             />
-                                            <button
-                                                type="button"
-                                                onClick={handleZipLookup}
-                                                disabled={isLookingUpZip}
-                                                className="px-4 py-3.5 bg-gray-800 text-white rounded-2xl hover:bg-gray-900 transition-all text-xs font-bold whitespace-nowrap active:scale-95 disabled:opacity-50 flex items-center gap-2"
-                                            >
-                                                {isLookingUpZip ? (
-                                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                ) : (
-                                                    <MapPin size={14} />
-                                                )}
-                                                検索
-                                            </button>
                                         </div>
                                     </div>
 
-                                    {/* 都道府県 */}
-                                    <div className="space-y-2">
-                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                            都道府県
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.addressPref || ''}
-                                            onChange={(e) => setFormData({ ...formData, addressPref: e.target.value })}
-                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                            placeholder="東京都"
-                                        />
-                                    </div>
-
-                                    {/* 市区町村・番地 */}
-                                    <div className="space-y-2">
-                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                            市区町村・番地・建物名
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.addressCity || ''}
-                                            onChange={(e) => setFormData({ ...formData, addressCity: e.target.value })}
-                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                            placeholder="墨田区立川4-11-20 プロスパリティ1 101"
-                                        />
+                                    {/* 都道府県 & 市区町村 */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                                都道府県
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.addressPref || ''}
+                                                onChange={(e) => setFormData({ ...formData, addressPref: e.target.value })}
+                                                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                                placeholder="東京都"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                                市区町村・番地
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.addressCity || ''}
+                                                onChange={(e) => setFormData({ ...formData, addressCity: e.target.value })}
+                                                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                                placeholder="墨田区立川..."
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
