@@ -29,6 +29,7 @@ interface Photo {
     subjectName?: string;
     snsUrl?: string;
     characterName?: string;
+    seriesName?: string;
     event?: string;
     displayMode?: 'title' | 'character';
     aspectRatio?: "portrait" | "landscape" | "square";
@@ -174,11 +175,18 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                             )}
 
                                             <div className="flex justify-between items-center mt-1 border-t border-white/10 pt-1.5">
-                                                <h3 className="text-[10px] md:text-xs font-serif tracking-[0.05em] line-clamp-1">
-                                                    {photo.displayMode === 'character' && photo.characterName
-                                                        ? photo.characterName
-                                                        : (photo.title || 'Untitled')}
-                                                </h3>
+                                                <div className="flex flex-col">
+                                                    <h3 className="text-[10px] md:text-xs font-serif tracking-[0.05em] line-clamp-1">
+                                                        {photo.displayMode === 'character' && photo.characterName
+                                                            ? photo.characterName
+                                                            : (photo.title || 'Untitled')}
+                                                    </h3>
+                                                    {photo.seriesName && (
+                                                        <p className="text-[8px] md:text-[9px] text-white/50 tracking-wider truncate">
+                                                            {photo.seriesName}
+                                                        </p>
+                                                    )}
+                                                </div>
 
                                                 {/* Attribution Avatar */}
                                                 {(photo.uploaderName || photo.subjectName) && (() => {

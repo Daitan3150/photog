@@ -185,9 +185,20 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                     ? photo.characterName
                                     : photo.title}
                             </h2>
-                            {photo.displayMode === 'character' && photo.title && (
-                                <p className="text-sm text-gray-400 font-serif italic">{photo.title}</p>
-                            )}
+                            <div className="flex flex-col gap-1">
+                                {photo.displayMode === 'character' && photo.seriesName && (
+                                    <p className="text-xs text-purple-600 font-bold tracking-wider">{photo.seriesName}</p>
+                                )}
+                                {photo.displayMode === 'character' && photo.title && (
+                                    <p className="text-sm text-gray-400 font-serif italic">{photo.title}</p>
+                                )}
+                                {photo.displayMode !== 'character' && (photo.characterName || photo.seriesName) && (
+                                    <p className="text-xs text-gray-400">
+                                        {photo.characterName && <span className="mr-2">Character: {photo.characterName}</span>}
+                                        {photo.seriesName && <span>Series: {photo.seriesName}</span>}
+                                    </p>
+                                )}
+                            </div>
 
                             {/* --- 🧠 知識 (Knowledge): Stats Display --- */}
                             <div className="flex items-center gap-4 pt-2">

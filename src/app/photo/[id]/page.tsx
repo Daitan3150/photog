@@ -226,9 +226,23 @@ export default async function PhotoPage({ params }: Props) {
                             <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-2">
                                 {photo.displayMode === 'character' ? photo.characterName : (photo.title || '無題')}
                             </h2>
-                            {photo.displayMode === 'character' && photo.title && (
-                                <p className="text-black/40 text-lg font-medium italic underline underline-offset-8 decoration-pink-500/20">{photo.title}</p>
-                            )}
+                            <div className="flex flex-col gap-2">
+                                {photo.displayMode === 'character' && photo.seriesName && (
+                                    <p className="text-pink-600 font-bold tracking-wider text-sm md:text-base">
+                                        <span className="opacity-50 text-[10px] uppercase tracking-widest mr-2">Series:</span>
+                                        {photo.seriesName}
+                                    </p>
+                                )}
+                                {photo.displayMode === 'character' && photo.title && (
+                                    <p className="text-black/40 text-lg font-medium italic underline underline-offset-8 decoration-pink-500/20">{photo.title}</p>
+                                )}
+                                {photo.displayMode !== 'character' && (photo.characterName || photo.seriesName) && (
+                                    <p className="text-black/60 font-medium text-sm">
+                                        {photo.characterName && <span className="mr-3">Character: {photo.characterName}</span>}
+                                        {photo.seriesName && <span>Series: {photo.seriesName}</span>}
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 gap-6">
