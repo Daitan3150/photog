@@ -96,13 +96,15 @@ export default function StudiosPage() {
 
             if (data && data.results && data.results.length > 0) {
                 const result = data.results[0];
+                const pref = result.address1 || '';
+                const city = (result.address2 || '') + (result.address3 || '');
                 setFormData(prev => ({
                     ...prev,
-                    addressPref: result.address1 || '',
-                    addressCity: (result.address2 || '') + (result.address3 || ''),
+                    addressPref: pref,
+                    addressCity: city,
                 }));
-                // Auto Search Coords after state update
-                setTimeout(() => handleCoordinateSearch(), 100);
+                // Auto Search Coords with the fresh values
+                handleCoordinateSearch(`${pref} ${city}`);
             } else {
                 setError('該当する住所が見つかりませんでした。');
             }
@@ -113,8 +115,8 @@ export default function StudiosPage() {
         }
     };
 
-    const handleCoordinateSearch = async () => {
-        const query = [formData.addressPref, formData.addressCity, formData.address].filter(Boolean).join(' ');
+    const handleCoordinateSearch = async (forcedQuery?: string) => {
+        const query = forcedQuery || [formData.addressPref, formData.addressCity, formData.address].filter(Boolean).join(' ');
         if (!query) {
             setError('住所情報を入力してから検索してください。');
             return;
@@ -124,7 +126,14 @@ export default function StudiosPage() {
         setError('');
         try {
             const { searchCoordinatesAction } = await import('@/lib/actions/photos');
-            const results = await searchCoordinatesAction(query);
+            let results = await searchCoordinatesAction(query);
+
+            // Fallback: If not found, try without the detailed address
+            if ((!results || results.length === 0) && !forcedQuery && formData.address) {
+                const secondaryQuery = [formData.addressPref, formData.addressCity].filter(Boolean).join(' ');
+                results = await searchCoordinatesAction(secondaryQuery);
+            }
+
             if (results && results.length > 0) {
                 setFormData(prev => ({
                     ...prev,
@@ -516,7 +525,7 @@ export default function StudiosPage() {
                                             </label>
                                             <button
                                                 type="button"
-                                                onClick={handleCoordinateSearch}
+                                                onClick={() => handleCoordinateSearch()}
                                                 className="text-[9px] text-blue-600 font-bold hover:underline"
                                             >
                                                 住所から取得

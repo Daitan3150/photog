@@ -56,9 +56,13 @@ export async function searchCoordinates(locationName: string): Promise<LocationS
             headers: { 'User-Agent': 'NextPortfolio/1.0 (daitan3150-portfolio-contact)' }
         });
 
-        if (!response.ok) return [];
+        if (!response.ok) {
+            console.error('Nominatim search failed:', response.status, response.statusText);
+            return [];
+        }
 
         const data = await response.json() as any[];
+        console.log(`Geocoding search for "${normalized}" returned ${data.length} results.`);
         if (!data || data.length === 0) return [];
 
         return data.map(item => {
