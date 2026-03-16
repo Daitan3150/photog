@@ -74,6 +74,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const [formData, setFormData] = useState({
         title: '',
         subjectName: '',
+        seriesName: '',
         characterName: '',
         location: '',
         address: '', // [NEW] Formal address
@@ -149,6 +150,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
             setFormData({
                 title: data.title || '',
                 subjectName: data.subjectName || '',
+                seriesName: data.seriesName || '',
                 characterName: data.characterName || '',
                 location: data.location || '',
                 shotAt: data.shotAt ? data.shotAt.split('T')[0] : '',
@@ -552,6 +554,20 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
 
                             <div>
                                 <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
+                                    <Tag className="w-4 h-4 mr-2 text-purple-500" />
+                                    作品名 / アニメ名 (任意)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.seriesName}
+                                    onChange={(e) => setFormData({ ...formData, seriesName: e.target.value })}
+                                    className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="例: 葬送のフリーレン"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
                                     <User className="w-4 h-4 mr-2 text-indigo-500" />
                                     キャラクター名 (任意)
                                 </label>
@@ -560,7 +576,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                     value={formData.characterName}
                                     onChange={(e) => setFormData({ ...formData, characterName: e.target.value })}
                                     className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="例: 博麗霊夢 (東方Project)"
+                                    placeholder="例: フリーレン"
                                 />
                             </div>
 

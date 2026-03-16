@@ -5,6 +5,7 @@ import CategoryFilter from "@/components/portfolio/CategoryFilter";
 import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
 import EmptyPortfolio from "@/components/portfolio/EmptyPortfolio";
 import PortraitScrollSection from "@/components/gallery/PortraitScrollSection";
+import CosplayScrollSection from "@/components/gallery/CosplayScrollSection";
 import { Metadata } from 'next';
 
 // Revalidate every 1 hour (ISR)
@@ -23,26 +24,39 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
     // URLからカテゴリーと写真IDを取得
     const params = await searchParams;
     let currentCategory = params.category || 'cosplay';
-    // const imgId = params.img; // Not used but available
 
     // サーバーサイドでのフィルタリング（Firestoreクエリを使用）
     const allPhotos = await searchPhotos('', {
         category: currentCategory,
-        limit: 100 // より多くの写真を表示可能に
+        limit: 100
     });
 
     const filteredPhotos = allPhotos as any[];
 
-    // ポートレートカテゴリーの場合のみ、モデル名（subjectName）ごとにグループ化する
+    // ポートレートまたはコスプレカテゴリーの場合、モデル名（subjectName）ごとにグループ化する
     const isPortrait = currentCategory === 'portrait';
-    const groupedPhotos: Record<string, any[]> = {};
+    const isCosplay = currentCategory === 'cosplay';
+    const shouldGroup = isPortrait || isCosplay;
 
-    if (isPortrait) {
+    const groupedPhotos: Record<string, any[]> = {};
+    const singlePhotos: any[] = []; // コスプレで1枚だけのモデルは通常グリッド表示
+
+    if (shouldGroup) {
         filteredPhotos.forEach((photo: any) => {
-            const modelName = photo.subjectName || 'Unknown Model';
+            const modelName = photo.subjectName || 'Unknown';
             if (!groupedPhotos[modelName]) groupedPhotos[modelName] = [];
             groupedPhotos[modelName].push(photo);
         });
+
+        // コスプレの場合: 複数枚あるモデルはスライド、1枚のモデルは通常グリッドへ
+        if (isCosplay) {
+            Object.entries(groupedPhotos).forEach(([name, photos]) => {
+                if (photos.length < 2) {
+                    singlePhotos.push(...photos);
+                    delete groupedPhotos[name];
+                }
+            });
+        }
     }
 
     return (
@@ -65,6 +79,32 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
                                         />
                                     ))}
                                 </div>
+                            ) : isCosplay ? (
+                                <div className="space-y-20">
+                                    {/* グループ化されたモデル（2枚以上）→ 横スライド表示 */}
+                                    {Object.entries(groupedPhotos).map(([modelName, photos]) => (
+                                        <CosplayScrollSection
+                                            key={modelName}
+                                            modelName={modelName}
+                                            photos={photos}
+                                        />
+                                    ))}
+
+                                    {/* 1枚だけのモデル → 通常のPhotoGridで表示 */}
+                                    {singlePhotos.length > 0 && (
+                                        <div>
+                                            {Object.keys(groupedPhotos).length > 0 && (
+                                                <div className="px-6 md:px-0 mb-8">
+                                                    <span className="text-[10px] md:text-xs text-neutral-400 uppercase tracking-[0.5em] block mb-2 font-light">
+                                                        More Cosplay
+                                                    </span>
+                                                    <div className="w-12 h-[1px] bg-neutral-200" />
+                                                </div>
+                                            )}
+                                            <PhotoGrid photos={singlePhotos} />
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
                                 <PhotoGrid photos={filteredPhotos} />
                             )
@@ -77,4 +117,3 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
         </main>
     );
 }
-

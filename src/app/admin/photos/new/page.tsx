@@ -15,6 +15,7 @@ import SmartDatePicker from '@/components/admin/SmartDatePicker';
 import LeafletMap from '@/components/common/LeafletMap';
 import { Calendar, User, MapPin, Tag, Link2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
+import { STUDIOS, StudioInfo } from '@/lib/constants/studios';
 
 // ✅ ファイル検証定数
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
@@ -183,6 +184,7 @@ export default function NewPhotoPage() {
     // フォーム状態
     const [title, setTitle] = useState('');
     const [subjectName, setSubjectName] = useState('');
+    const [seriesName, setSeriesName] = useState('');
     const [characterName, setCharacterName] = useState('');
     const [location, setLocation] = useState('');
     const [address, setAddress] = useState('');
@@ -689,6 +691,7 @@ export default function NewPhotoPage() {
                     publicId: file.publicId,
                     title,
                     subjectName,
+                    seriesName,
                     characterName,
                     location,
                     address: fullAddress,
@@ -1069,9 +1072,14 @@ export default function NewPhotoPage() {
                                 </datalist>
                             </div>
                             <div className="space-y-2">
-                                <label className="block text-sm font-bold text-gray-700">キャラクター名</label>
-                                <input type="text" value={characterName} onChange={(e) => setCharacterName(e.target.value)} className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" placeholder="例: キャラ名 (作品名)" />
+                                <label className="block text-sm font-bold text-gray-700">作品名 (アニメ等)</label>
+                                <input type="text" value={seriesName} onChange={(e) => setSeriesName(e.target.value)} className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" placeholder="例: 葬送のフリーレン" />
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-bold text-gray-700">キャラクター名</label>
+                            <input type="text" value={characterName} onChange={(e) => setCharacterName(e.target.value)} className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" placeholder="例: フリーレン" />
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1196,6 +1204,41 @@ export default function NewPhotoPage() {
                                 <MapPin className="w-4 h-4 text-green-500" />
                                 詳細な撮影地・住所入力
                             </label>
+
+                            <div className="space-y-2">
+                                <p className="text-[10px] text-gray-400 font-bold">スタジオ・場所の選択</p>
+                                <select
+                                    className="w-full border p-2 rounded text-sm bg-white"
+                                    onChange={async (e) => {
+                                        const studioName = e.target.value;
+                                        const studio = STUDIOS.find(s => s.name === studioName);
+                                        if (studio) {
+                                            setLocation(studio.name);
+                                            if (studio.addressZip) setAddressZip(studio.addressZip);
+                                            if (studio.addressPref) setAddressPref(studio.addressPref);
+                                            if (studio.addressCity) setAddressCity(studio.addressCity);
+                                            if (studio.address) setAddress(studio.address);
+
+                                            // 住所が揃っていれば座標も自動取得を試みる
+                                            const fullAddr = [studio.addressZip, studio.addressPref, studio.addressCity].filter(Boolean).join(' ');
+                                            if (fullAddr) {
+                                                const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+                                                const results = await searchCoordinatesAction(fullAddr);
+                                                if (results && results.length > 0) {
+                                                    setLatitude(results[0].lat);
+                                                    setLongitude(results[0].lng);
+                                                    setCoordsInput(`${results[0].lat}, ${results[0].lng}`);
+                                                }
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <option value="">スタジオを選択 (自動入力)</option>
+                                    {STUDIOS.map((s) => (
+                                        <option key={s.name} value={s.name}>{s.name}</option>
+                                    ))}
+                                </select>
+                            </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div className="space-y-1">

@@ -160,6 +160,7 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             title: data.title || null,
             subjectName: data.subjectName || null,
             characterName: data.characterName || null,
+            seriesName: data.seriesName || null,
             event: data.event || null,
             location: data.location || null,
             address: (data as any).address || null,
@@ -282,6 +283,7 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 title: data.title || null,
                 subjectName: data.subjectName || null,
                 characterName: data.characterName || null,
+                seriesName: data.seriesName || null,
                 event: data.event || null,
                 location: data.location || null,
                 address: (data as any).address || null,
@@ -546,6 +548,7 @@ export async function bulkUpdatePhotos(
         shotAt?: string; // ISO string
         title?: string;
         event?: string;
+        seriesName?: string;
         characterName?: string;
         displayMode?: 'title' | 'character';
         address?: string;
@@ -599,6 +602,7 @@ export async function bulkUpdatePhotos(
         // but if valid string is passed, apply it (e.g. setting same series title).
         if (data.title) updateData.title = data.title;
         if (data.event !== undefined) updateData.event = data.event;
+        if (data.seriesName !== undefined) updateData.seriesName = data.seriesName;
         if (data.characterName !== undefined) updateData.characterName = data.characterName;
         if (data.displayMode !== undefined) updateData.displayMode = data.displayMode;
         if (data.address !== undefined) updateData.address = data.address;
@@ -697,13 +701,27 @@ export async function refreshPhotoMetadata(photoId: string, idToken: string): Pr
             return null;
         };
 
+        const parseExifNumber = (val: any) => {
+            if (val === undefined || val === null) return null;
+            if (Array.isArray(val)) val = val[0];
+            if (typeof val === 'string') {
+                if (val.includes('/')) {
+                    const [num, den] = val.split('/').map(Number);
+                    return den !== 0 ? num / den : null;
+                }
+                const parsed = parseFloat(val);
+                return isNaN(parsed) ? null : parsed;
+            }
+            return typeof val === 'number' ? val : null;
+        };
+
         const exifUpdates: any = {
             Model: metadata.Model || metadata.Make || null,
             LensModel: metadata.LensModel || metadata.Lens || metadata.LensInfo || null,
-            FNumber: parseFraction(metadata.FNumber || metadata.ApertureValue),
+            FNumber: parseExifNumber(metadata.FNumber || metadata.ApertureValue),
             ExposureTime: parseFraction(metadata.ExposureTime || metadata.ShutterSpeedValue),
-            ISO: metadata.ISO ? parseInt(String(metadata.ISO)) : (metadata.ISOSpeedRatings ? parseInt(String(metadata.ISOSpeedRatings)) : null),
-            FocalLength: parseFraction(metadata.FocalLength),
+            ISO: metadata.ISO ? parseInt(String(Array.isArray(metadata.ISO) ? metadata.ISO[0] : metadata.ISO)) : (metadata.ISOSpeedRatings ? parseInt(String(Array.isArray(metadata.ISOSpeedRatings) ? metadata.ISOSpeedRatings[0] : metadata.ISOSpeedRatings)) : null),
+            FocalLength: parseExifNumber(metadata.FocalLength),
         };
 
         console.log(`[EXIF REFRESH] Updates for ${photoId}: `, exifUpdates);
@@ -1128,6 +1146,7 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         if (data.title !== undefined) updates.title = data.title;
         if (data.subjectName !== undefined) updates.subjectName = data.subjectName;
         if (data.characterName !== undefined) updates.characterName = data.characterName;
+        if (data.seriesName !== undefined) updates.seriesName = data.seriesName;
         if (data.location !== undefined) updates.location = data.location;
         if (data.snsUrl !== undefined) updates.snsUrl = data.snsUrl;
         if (data.categoryId !== undefined) updates.categoryId = data.categoryId;

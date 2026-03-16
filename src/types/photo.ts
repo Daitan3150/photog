@@ -11,6 +11,7 @@ export interface Photo {
     addressPref?: string; // [NEW] Prefecture
     addressCity?: string; // [NEW] City/Street/Building
     characterName?: string; // [NEW] For cosplayers
+    seriesName?: string; // [NEW] Series/Anime name
     event?: string; // [NEW] Event name (especially for cosplay)
     shotAt: Date; // Will be stored as Timestamp in Firestore
     snsUrl?: string; // Link to Instagram/X
@@ -32,6 +33,7 @@ export type PhotoFormData = Omit<Photo, 'id' | 'uploaderId' | 'createdAt' | 'upd
     addressPref?: string;
     addressCity?: string;
     characterName?: string;
+    seriesName?: string;
     event?: string;
     categoryId?: string;
     displayMode: 'title' | 'character';

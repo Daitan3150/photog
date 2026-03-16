@@ -89,8 +89,21 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                             } ${isCollapsed ? 'justify-center' : ''}`}
                     >
                         <LayoutDashboard size={20} className={pathname === '/admin' ? '' : 'text-slate-400 group-hover:text-white'} />
-                        {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">スタジオ</span>}
+                        {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">ダッシュボード</span>}
                     </Link>
+
+                    {isAdmin && (
+                        <Link
+                            href="/admin/studios"
+                            className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/studios')
+                                ? `${accentColor} text-white ${glowClass}`
+                                : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
+                                } ${isCollapsed ? 'justify-center' : ''}`}
+                        >
+                            <Home size={20} className={pathname.startsWith('/admin/studios') ? '' : 'text-slate-400 group-hover:text-white'} />
+                            {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">スタジオ管理</span>}
+                        </Link>
+                    )}
 
                     <Link
                         href="/admin/photos"

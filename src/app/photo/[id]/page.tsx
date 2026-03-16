@@ -357,11 +357,17 @@ export default async function PhotoPage({ params }: Props) {
                                         </div>
                                         <div className="space-y-1">
                                             <p className="text-[9px] text-black/30 uppercase tracking-widest font-bold">ISO</p>
-                                            <p className="text-sm font-black">{photo.exif.ISO || '-'}</p>
+                                            <p className="text-sm font-black">
+                                                {photo.exif.ISO !== undefined && photo.exif.ISO !== null && photo.exif.ISO !== '' ? photo.exif.ISO : '-'}
+                                            </p>
                                         </div>
                                         <div className="space-y-1">
                                             <p className="text-[9px] text-black/30 uppercase tracking-widest font-bold">Focal Length</p>
-                                            <p className="text-sm font-black">{photo.exif.FocalLength ? `${Math.round(photo.exif.FocalLength)}mm` : '-'}</p>
+                                            <p className="text-sm font-black">
+                                                {photo.exif.FocalLength !== undefined && photo.exif.FocalLength !== null && photo.exif.FocalLength !== ''
+                                                    ? `${Math.round(Number(photo.exif.FocalLength))}mm`
+                                                    : '-'}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
