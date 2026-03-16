@@ -1346,14 +1346,48 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                             className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                                         />
                                                         <div className="flex gap-2">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="郵便番号 (123-4567)"
-                                                                value={newStudio.addressZip}
-                                                                onChange={e => setNewStudio({ ...newStudio, addressZip: e.target.value })}
-                                                                className="flex-1 p-2.5 bg-white border border-gray-200 rounded-lg text-xs outline-none"
-                                                                maxLength={8}
-                                                            />
+                                                            <div className="flex-1 flex gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="郵便番号"
+                                                                    value={newStudio.addressZip}
+                                                                    onChange={e => setNewStudio({ ...newStudio, addressZip: e.target.value })}
+                                                                    className="flex-1 p-2.5 bg-white border border-gray-200 rounded-lg text-xs outline-none"
+                                                                    maxLength={8}
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={async () => {
+                                                                        const zip = newStudio.addressZip?.replace(/[^0-9]/g, '');
+                                                                        if (!zip || zip.length !== 7) return;
+                                                                        try {
+                                                                            const { getZipAddressAction } = await import('@/lib/actions/studios');
+                                                                            const data = await getZipAddressAction(zip) as any;
+                                                                            if (data && data.results && data.results.length > 0) {
+                                                                                const res = data.results[0];
+                                                                                const pref = res.address1 || '';
+                                                                                const city = (res.address2 || '') + (res.address3 || '');
+                                                                                setNewStudio(prev => ({ ...prev, addressPref: pref, addressCity: city }));
+
+                                                                                // Auto Coordinate Search
+                                                                                const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+                                                                                const coords = await searchCoordinatesAction(`${pref}${city}`);
+                                                                                if (coords && coords.length > 0) {
+                                                                                    setNewStudio(prev => ({
+                                                                                        ...prev,
+                                                                                        latitude: coords[0].lat,
+                                                                                        longitude: coords[0].lng,
+                                                                                        coordsInput: `${coords[0].lat}, ${coords[0].lng}`
+                                                                                    }));
+                                                                                }
+                                                                            }
+                                                                        } catch (err) { console.error(err); }
+                                                                    }}
+                                                                    className="px-3 bg-blue-600 text-white rounded-lg text-[10px] font-bold active:scale-95"
+                                                                >
+                                                                    検索
+                                                                </button>
+                                                            </div>
                                                             <input
                                                                 type="text"
                                                                 placeholder="都道府県"

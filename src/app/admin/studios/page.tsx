@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/admin/AuthProvider';
-import { getStudios, saveStudio, updateStudio, deleteStudio } from '@/lib/actions/studios';
+import { getStudios, saveStudio, updateStudio, deleteStudio, getZipAddressAction } from '@/lib/actions/studios';
 import { Studio, StudioFormData } from '@/types/studio';
 import { Plus, Edit2, Trash2, X, ExternalLink, Home, MapPin, Search } from 'lucide-react';
 import LeafletMap from '@/components/common/LeafletMap';
@@ -92,10 +92,9 @@ export default function StudiosPage() {
         setIsLookingUpZip(true);
         setError('');
         try {
-            const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${zip}`);
-            const data = await res.json() as { results: { address1: string; address2: string; address3: string }[] | null };
+            const data = await getZipAddressAction(zip) as any;
 
-            if (data.results && data.results.length > 0) {
+            if (data && data.results && data.results.length > 0) {
                 const result = data.results[0];
                 setFormData(prev => ({
                     ...prev,

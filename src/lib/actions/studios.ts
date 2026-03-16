@@ -82,7 +82,7 @@ export async function updateStudio(id: string, data: Partial<StudioFormData>, id
 }
 
 /**
- * スタジオを削除する
+ * 削除する
  */
 export async function deleteStudio(id: string, idToken: string): Promise<{ success: boolean; error?: string }> {
     try {
@@ -98,5 +98,20 @@ export async function deleteStudio(id: string, idToken: string): Promise<{ succe
     } catch (error: any) {
         console.error('Error deleting studio:', error);
         return { success: false, error: error.message };
+    }
+}
+
+/**
+ * 郵便番号から住所を取得する (Server Action to avoid CORS)
+ */
+export async function getZipAddressAction(zipCode: string) {
+    try {
+        const zip = zipCode.replace(/[^0-9]/g, '');
+        const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${zip}`);
+        const data = await res.json();
+        return data;
+    } catch (error) {
+        console.error('Zip lookup failed:', error);
+        return { status: 500, message: 'Internal Server Error' };
     }
 }
