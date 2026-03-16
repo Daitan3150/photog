@@ -41,12 +41,17 @@ export async function generateMetadata(
     if (ogUrl.includes('res.cloudinary.com')) {
         let transform = 'c_fill,w_1200,h_630,q_auto,f_auto';
         if (fp || (photo.focalPoint && photo.focalPoint.x !== undefined && photo.focalPoint.y !== undefined)) {
-            const [x, y] = fp ? fp.split('_') : [photo.focalPoint?.x?.toString() || '50', photo.focalPoint?.y?.toString() || '50'];
-            // Use focal point coordinates with fl_relative for robustness
-            transform += `,g_xy_center,x_${x},y_${y},fl_relative`;
+            const [xRaw, yRaw] = fp ? fp.split('_') : [photo.focalPoint?.x?.toString() || '50', photo.focalPoint?.y?.toString() || '50'];
+
+            // Convert 0-100 percentage to 0.0-1.0 decimal for Cloudinary.
+            // This is safer as it avoids fl_relative which can conflict with pixel-based width/height.
+            const x = (parseFloat(xRaw) / 100).toFixed(3);
+            const y = (parseFloat(yRaw) / 100).toFixed(3);
+
+            transform = `c_fill,g_xy_center,x_${x},y_${y},w_1200,h_630,q_auto,f_auto`;
         } else {
             // Default to AI face/subject detection if no focal point provided
-            transform += ',g_auto';
+            transform = 'c_fill,g_auto,w_1200,h_630,q_auto,f_auto';
         }
         ogUrl = ogUrl.replace('/upload/', `/upload/${transform}/`);
     }
