@@ -1403,10 +1403,19 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                     const val = e.target.value;
                                                                     setNewStudio(prev => {
                                                                         const next = { ...prev, coordsInput: val };
-                                                                        const parts = val.split(/[,，]/).map(p => p.trim());
+                                                                        const parts = val.split(/[,，\s/]+/).map(p => p.trim()).filter(Boolean);
                                                                         if (parts.length >= 2) {
-                                                                            const lat = parseFloat(parts[0]);
-                                                                            const lng = parseFloat(parts[1]);
+                                                                            const parseCoord = (s: string, negChars: string[]) => {
+                                                                                const match = s.match(/[-]?\d+(\.\d+)?/);
+                                                                                if (!match) return NaN;
+                                                                                let num = parseFloat(match[0]);
+                                                                                if (negChars.some(c => s.includes(c))) num = -Math.abs(num);
+                                                                                return num;
+                                                                            };
+
+                                                                            const lat = parseCoord(parts[0], ['南', 'S', 's']);
+                                                                            const lng = parseCoord(parts[1], ['西', 'W', 'w']);
+
                                                                             if (!isNaN(lat) && !isNaN(lng)) {
                                                                                 next.latitude = lat;
                                                                                 next.longitude = lng;

@@ -144,14 +144,23 @@ export default function StudiosPage() {
     };
 
     const handleCoordsInputChange = (val: string) => {
-        // Parse "lat, lng" - handle both half-width and full-width commas
-        const parts = val.split(/[,，]/).map(p => p.trim());
+        // Parse "lat, lng" - handle both half-width and full-width commas, and spaces
+        const parts = val.split(/[,，\s/]+/).map(p => p.trim()).filter(Boolean);
         let lat = formData.latitude;
         let lng = formData.longitude;
 
         if (parts.length >= 2) {
-            const parsedLat = parseFloat(parts[0]);
-            const parsedLng = parseFloat(parts[1]);
+            const parseCoord = (s: string, negChars: string[]) => {
+                const match = s.match(/[-]?\d+(\.\d+)?/);
+                if (!match) return NaN;
+                let num = parseFloat(match[0]);
+                if (negChars.some(c => s.includes(c))) num = -Math.abs(num);
+                return num;
+            };
+
+            const parsedLat = parseCoord(parts[0], ['南', 'S', 's']);
+            const parsedLng = parseCoord(parts[1], ['西', 'W', 'w']);
+
             if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
                 lat = parsedLat;
                 lng = parsedLng;
