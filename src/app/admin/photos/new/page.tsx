@@ -462,7 +462,8 @@ export default function NewPhotoPage() {
                 try {
                     updateStatus('processing', 5);
                     clientExif = await exifr.parse(file, {
-                        tiff: true, xmp: true, exif: true, gps: true,
+                        pick: ['Make', 'Model', 'LensModel', 'FNumber', 'ExposureTime', 'ISO', 'FocalLength', 'DateTimeOriginal'],
+                        gps: true,
                     });
                     if (clientExif) {
                         setFileExifMap(prev => new Map(prev).set(fileHash, clientExif));
@@ -670,6 +671,10 @@ export default function NewPhotoPage() {
             const extraTags = batchTags ? batchTags.split(',').map(t => t.trim()).filter(Boolean) : [];
 
             const dataList = uploadedFiles.map(file => {
+                // ✅ 最終的なデータ構築: Cloudinary EXIF と Client EXIF をマージ
+                const clientExif = fileExifMap.get(file.fileHash || '') || {};
+                const mergedExif = { ...clientExif, ...(file.exif || {}) };
+
                 // ✅ 撮影日の決定ロジック
                 let finalShotAt = '';
                 if (shotAtEnabled) {
@@ -678,8 +683,10 @@ export default function NewPhotoPage() {
                         finalShotAt = shotAt;
                     } else {
                         // 2. 共通入力が空なら、写真自体のEXIFから取得を試みる
-                        const rawDate = (file.exif?.DateTimeOriginal || file.exif?.DateTime) as string | undefined;
-                        if (rawDate && typeof rawDate === 'string' && /^\d{4}[:\-]\d{2}[:\-]\d{2}/.test(rawDate)) {
+                        const rawDate = (file.exif?.DateTimeOriginal || file.exif?.DateTime || clientExif?.DateTimeOriginal) as string | Date | undefined;
+                        if (rawDate instanceof Date) {
+                            finalShotAt = rawDate.toISOString().split('T')[0];
+                        } else if (rawDate && typeof rawDate === 'string' && /^\d{4}[:\-]\d{2}[:\-]\d{2}/.test(rawDate)) {
                             finalShotAt = rawDate.substring(0, 10).replace(/:/g, '-');
                         } else {
                             // 3. どちらもなければ今日の日付（追加日）
@@ -687,10 +694,6 @@ export default function NewPhotoPage() {
                         }
                     }
                 }
-
-                // ✅ 最終的なデータ構築: Cloudinary EXIF と Client EXIF をマージ
-                const clientExif = fileExifMap.get(file.fileHash || '') || {};
-                const mergedExif = { ...clientExif, ...(file.exif || {}) };
 
                 // ✅ 座標の決定 (個別ファイルごとではなく共通設定を使用)
                 const finalLat = latitude;

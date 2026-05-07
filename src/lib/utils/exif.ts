@@ -41,10 +41,10 @@ export function formatShutterSpeed(exposureTime: number | string | null | undefi
  */
 export function validateShutterSpeed(value: string): boolean {
     if (!value) return true;
-    // 分数形式 "1/125"
-    if (/^1\/\d+$/.test(value)) return true;
-    // 整数形式 "1", "10"
-    if (/^\d+$/.test(value)) return true;
+    // 分数形式 "1/250", "1/1.3", "13/10" など
+    if (/^\d+(\.\d+)?\/\d+(\.\d+)?$/.test(value)) return true;
+    // 小数・整数形式 "1", "0.5", "10" など
+    if (/^\d+(\.\d+)?$/.test(value)) return true;
     return false;
 }
 
