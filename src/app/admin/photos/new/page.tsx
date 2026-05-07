@@ -249,6 +249,16 @@ export default function NewPhotoPage() {
     const [showNewStudioForm, setShowNewStudioForm] = useState(false);
     const [newStudio, setNewStudio] = useState<Partial<Studio>>({ name: '', url: '' });
 
+    // ✅ 新機能: 項目表示制御
+    const [activeFields, setActiveFields] = useState({
+        event: true,
+        subject: true,
+        series: true,
+        character: true
+    });
+    const [showFieldWizard, setShowFieldWizard] = useState(false);
+    const [wizardStep, setWizardStep] = useState<'ask' | 'select'>('ask');
+
     // ✅ 署名取得
     const fetchSignature = async (paramsToSign: Record<string, any>) => {
         const idToken = await user?.getIdToken();
@@ -1047,7 +1057,17 @@ export default function NewPhotoPage() {
 
                         <div className="space-y-2">
                             <label className="block text-sm font-bold text-gray-700">カテゴリー</label>
-                            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="mt-1 block w-full px-3 py-2 border rounded-md bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                            <select
+                                value={categoryId}
+                                onChange={(e) => {
+                                    setCategoryId(e.target.value);
+                                    if (e.target.value) {
+                                        setShowFieldWizard(true);
+                                        setWizardStep('ask');
+                                    }
+                                }}
+                                className="mt-1 block w-full px-3 py-2 border rounded-md bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                            >
                                 <option value="">未設定 (公開されません)</option>
                                 {categories.map((cat) => (
                                     <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -1055,48 +1075,133 @@ export default function NewPhotoPage() {
                             </select>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="block text-sm font-bold text-gray-700">イベント名</label>
-                            <input
-                                type="text"
-                                value={event}
-                                onChange={(e) => setEvent(e.target.value)}
-                                className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-                                placeholder="例: コミケ105, デザインフェスタ"
-                            />
-                            <p className="text-[10px] text-gray-400">※ 全カテゴリーで入力可能です。ポートフォリオで強調表示されます。</p>
-                        </div>
+                        {/* ✅ 項目表示ウィザード */}
+                        <AnimatePresence>
+                            {showFieldWizard && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3"
+                                >
+                                    {wizardStep === 'ask' ? (
+                                        <>
+                                            <p className="text-xs font-bold text-blue-800 text-center">
+                                                イベント名や被写体名などの詳細項目を使用しますか？
+                                            </p>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setActiveFields({ event: true, subject: true, series: true, character: true });
+                                                        setWizardStep('select');
+                                                    }}
+                                                    className="flex-1 bg-white border border-blue-300 text-blue-600 py-2 rounded text-xs font-bold hover:bg-blue-100"
+                                                >
+                                                    はい（項目を選ぶ）
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setActiveFields({ event: false, subject: false, series: false, character: false });
+                                                        setShowFieldWizard(false);
+                                                    }}
+                                                    className="flex-1 bg-gray-200 text-gray-600 py-2 rounded text-xs font-bold hover:bg-gray-300"
+                                                >
+                                                    いいえ（全て隠す）
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-[10px] font-bold text-blue-800 uppercase tracking-widest text-center">
+                                                表示する項目を選択してください
+                                            </p>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {[
+                                                    { id: 'event', label: 'イベント名' },
+                                                    { id: 'subject', label: '被写体/モデル' },
+                                                    { id: 'series', label: '作品名' },
+                                                    { id: 'character', label: 'キャラ名' }
+                                                ].map(field => (
+                                                    <label key={field.id} className="flex items-center gap-2 bg-white p-2 rounded border cursor-pointer hover:bg-blue-50 transition-colors">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={(activeFields as any)[field.id]}
+                                                            onChange={(e) => setActiveFields(prev => ({ ...prev, [field.id]: e.target.checked }))}
+                                                            className="w-4 h-4 rounded text-blue-600"
+                                                        />
+                                                        <span className="text-[10px] font-bold text-gray-700">{field.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowFieldWizard(false)}
+                                                className="w-full bg-blue-600 text-white py-2 rounded text-xs font-bold hover:bg-blue-700 shadow-sm mt-2"
+                                            >
+                                                設定を完了する
+                                            </button>
+                                        </>
+                                    )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {activeFields.event && (
                             <div className="space-y-2">
-                                <label className="block text-sm font-bold text-gray-700">共通モデル名</label>
+                                <label className="block text-sm font-bold text-gray-700">イベント名</label>
                                 <input
                                     type="text"
-                                    list="subject-candidates"
-                                    value={subjectName}
-                                    onChange={(e) => {
-                                        const newValue = e.target.value;
-                                        setSubjectName(newValue);
-                                        const matchedSubject = subjects.find(s => s.name === newValue);
-                                        if (matchedSubject?.snsUrl) setSnsUrl(matchedSubject.snsUrl);
-                                    }}
-                                    className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="例: モデル名"
+                                    value={event}
+                                    onChange={(e) => setEvent(e.target.value)}
+                                    className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+                                    placeholder="例: コミケ105, デザインフェスタ"
                                 />
-                                <datalist id="subject-candidates">
-                                    {subjects.map((s) => <option key={s.id} value={s.name} />)}
-                                </datalist>
+                                <p className="text-[10px] text-gray-400">※ ポートフォリオで強調表示されます。</p>
                             </div>
-                            <div className="space-y-2">
-                                <label className="block text-sm font-bold text-gray-700">作品名 (アニメ等)</label>
-                                <input type="text" value={seriesName} onChange={(e) => setSeriesName(e.target.value)} className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" placeholder="例: 葬送のフリーレン" />
-                            </div>
-                        </div>
+                        )}
 
-                        <div className="space-y-2">
-                            <label className="block text-sm font-bold text-gray-700">キャラクター名</label>
-                            <input type="text" value={characterName} onChange={(e) => setCharacterName(e.target.value)} className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" placeholder="例: フリーレン" />
-                        </div>
+                        {(activeFields.subject || activeFields.series || activeFields.character) && (
+                            <div className="space-y-4 pt-2 border-t border-gray-100">
+                                {activeFields.subject && (
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-bold text-gray-700">共通モデル名</label>
+                                        <input
+                                            type="text"
+                                            list="subject-candidates"
+                                            value={subjectName}
+                                            onChange={(e) => {
+                                                const newValue = e.target.value;
+                                                setSubjectName(newValue);
+                                                const matchedSubject = subjects.find(s => s.name === newValue);
+                                                if (matchedSubject?.snsUrl) setSnsUrl(matchedSubject.snsUrl);
+                                            }}
+                                            className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="例: モデル名"
+                                        />
+                                        <datalist id="subject-candidates">
+                                            {subjects.map((s) => <option key={s.id} value={s.name} />)}
+                                        </datalist>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {activeFields.series && (
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-bold text-gray-700">作品名 (アニメ等)</label>
+                                            <input type="text" value={seriesName} onChange={(e) => setSeriesName(e.target.value)} className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" placeholder="例: 葬送のフリーレン" />
+                                        </div>
+                                    )}
+                                    {activeFields.character && (
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-bold text-gray-700">キャラクター名</label>
+                                            <input type="text" value={characterName} onChange={(e) => setCharacterName(e.target.value)} className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500" placeholder="例: フリーレン" />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">

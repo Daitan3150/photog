@@ -115,6 +115,16 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const [showNewStudioForm, setShowNewStudioForm] = useState(false);
     const [newStudio, setNewStudio] = useState({ name: '', url: '', addressZip: '', addressPref: '', addressCity: '', latitude: null as number | null, longitude: null as number | null, coordsInput: '' });
 
+    // ✅ 新機能: 項目表示制御
+    const [activeFields, setActiveFields] = useState({
+        event: true,
+        subject: true,
+        series: true,
+        character: true
+    });
+    const [showFieldWizard, setShowFieldWizard] = useState(false);
+    const [wizardStep, setWizardStep] = useState<'ask' | 'select'>('ask');
+
     // ✅ Coords Auto-parsing from input string
     useEffect(() => {
         if (!formData.coordsInput) return;
@@ -186,6 +196,14 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 addressZip: (data as any).addressZip || '',
                 addressPref: (data as any).addressPref || '',
                 addressCity: (data as any).addressCity || ''
+            });
+
+            // ✅ 初期表示時の項目表示判定
+            setActiveFields({
+                event: !!data.event,
+                subject: !!data.subjectName,
+                series: !!data.seriesName,
+                character: !!data.characterName
             });
         }
         setLoading(false);
@@ -510,7 +528,13 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                 </label>
                                 <select
                                     value={formData.categoryId}
-                                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, categoryId: e.target.value });
+                                        if (e.target.value) {
+                                            setShowFieldWizard(true);
+                                            setWizardStep('ask');
+                                        }
+                                    }}
                                     className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                                 >
                                     <option value="">未設定 (公開されません)</option>
@@ -522,75 +546,157 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
-                                    <Tag className="w-4 h-4 mr-2 text-blue-500" />
-                                    イベント名
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.event}
-                                    onChange={(e) => setFormData({ ...formData, event: e.target.value })}
-                                    className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                    placeholder="例: コミケ105, デザインフェスタ"
-                                />
-                                <p className="text-[10px] text-gray-400 mt-1">※ 全カテゴリーで入力可能です。ポートフォリオで強調表示されます。</p>
-                            </div>
+                            {/* ✅ 項目表示ウィザード */}
+                            <AnimatePresence>
+                                {showFieldWizard && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className="p-4 bg-blue-50 border border-blue-200 rounded-xl space-y-4"
+                                    >
+                                        {wizardStep === 'ask' ? (
+                                            <>
+                                                <p className="text-sm font-bold text-blue-800 text-center">
+                                                    詳細項目（イベント、被写体、作品、キャラ）を使用しますか？
+                                                </p>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setWizardStep('select')}
+                                                        className="flex-1 bg-white border border-blue-300 text-blue-600 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-100 transition-colors"
+                                                    >
+                                                        はい（選ぶ）
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setActiveFields({ event: false, subject: false, series: false, character: false });
+                                                            setShowFieldWizard(false);
+                                                        }}
+                                                        className="flex-1 bg-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-bold hover:bg-gray-300 transition-colors"
+                                                    >
+                                                        いいえ（全て隠す）
+                                                    </button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <p className="text-xs font-bold text-blue-800 uppercase tracking-widest text-center">
+                                                    表示する項目を選択してください
+                                                </p>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    {[
+                                                        { id: 'event', label: 'イベント名' },
+                                                        { id: 'subject', label: '被写体/モデル' },
+                                                        { id: 'series', label: '作品名' },
+                                                        { id: 'character', label: 'キャラ名' }
+                                                    ].map(field => (
+                                                        <label key={field.id} className="flex items-center gap-3 bg-white p-3 rounded-lg border-2 border-transparent hover:border-blue-200 cursor-pointer transition-all has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={(activeFields as any)[field.id]}
+                                                                onChange={(e) => setActiveFields(prev => ({ ...prev, [field.id]: e.target.checked }))}
+                                                                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                            />
+                                                            <span className="text-xs font-bold text-gray-700">{field.label}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowFieldWizard(false)}
+                                                    className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md transition-all active:scale-[0.98]"
+                                                >
+                                                    設定を保存する
+                                                </button>
+                                            </>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
-                            <div>
-                                <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
-                                    <User className="w-4 h-4 mr-2 text-pink-500" />
-                                    被写体名 / モデル名
-                                </label>
-                                <input
-                                    type="text"
-                                    list="subject-candidates"
-                                    value={formData.subjectName}
-                                    onChange={(e) => {
-                                        const newValue = e.target.value;
-                                        setFormData({ ...formData, subjectName: newValue });
-                                        // Auto-populate SNS URL if exact match
-                                        const matchedSubject = subjects.find(s => s.name === newValue);
-                                        if (matchedSubject?.snsUrl) {
-                                            setFormData(prev => ({ ...prev, snsUrl: matchedSubject.snsUrl || prev.snsUrl }));
-                                        }
-                                    }}
-                                    className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                <datalist id="subject-candidates">
-                                    {subjects.map((s) => (
-                                        <option key={s.id} value={s.name} />
-                                    ))}
-                                </datalist>
-                            </div>
+                            {activeFields.event && (
+                                <div>
+                                    <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
+                                        <Tag className="w-4 h-4 mr-2 text-blue-500" />
+                                        イベント名
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.event}
+                                        onChange={(e) => setFormData({ ...formData, event: e.target.value })}
+                                        className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                        placeholder="例: コミケ105, デザインフェスタ"
+                                    />
+                                    <p className="text-[10px] text-gray-400 mt-1">※ 全カテゴリーで入力可能です。ポートフォリオで強調表示されます。</p>
+                                </div>
+                            )}
 
-                            <div>
-                                <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
-                                    <Tag className="w-4 h-4 mr-2 text-purple-500" />
-                                    作品名 / アニメ名 (任意)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.seriesName}
-                                    onChange={(e) => setFormData({ ...formData, seriesName: e.target.value })}
-                                    className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="例: 葬送のフリーレン"
-                                />
-                            </div>
+                            {(activeFields.subject || activeFields.series || activeFields.character) && (
+                                <div className="space-y-5 pt-2 border-t border-gray-100">
+                                    {activeFields.subject && (
+                                        <div>
+                                            <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
+                                                <User className="w-4 h-4 mr-2 text-pink-500" />
+                                                被写体名 / モデル名
+                                            </label>
+                                            <input
+                                                type="text"
+                                                list="subject-candidates"
+                                                value={formData.subjectName}
+                                                onChange={(e) => {
+                                                    const newValue = e.target.value;
+                                                    setFormData({ ...formData, subjectName: newValue });
+                                                    // Auto-populate SNS URL if exact match
+                                                    const matchedSubject = subjects.find(s => s.name === newValue);
+                                                    if (matchedSubject?.snsUrl) {
+                                                        setFormData(prev => ({ ...prev, snsUrl: matchedSubject.snsUrl || prev.snsUrl }));
+                                                    }
+                                                }}
+                                                className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <datalist id="subject-candidates">
+                                                {subjects.map((s) => (
+                                                    <option key={s.id} value={s.name} />
+                                                ))}
+                                            </datalist>
+                                        </div>
+                                    )}
 
-                            <div>
-                                <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
-                                    <User className="w-4 h-4 mr-2 text-indigo-500" />
-                                    キャラクター名 (任意)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.characterName}
-                                    onChange={(e) => setFormData({ ...formData, characterName: e.target.value })}
-                                    className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="例: フリーレン"
-                                />
-                            </div>
+                                    {activeFields.series && (
+                                        <div>
+                                            <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
+                                                <Tag className="w-4 h-4 mr-2 text-purple-500" />
+                                                作品名 / アニメ名 (任意)
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.seriesName}
+                                                onChange={(e) => setFormData({ ...formData, seriesName: e.target.value })}
+                                                className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="例: 葬送のフリーレン"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {activeFields.character && (
+                                        <div>
+                                            <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
+                                                <User className="w-4 h-4 mr-2 text-indigo-500" />
+                                                キャラクター名 (任意)
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.characterName}
+                                                onChange={(e) => setFormData({ ...formData, characterName: e.target.value })}
+                                                className="w-full border-gray-200 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="例: フリーレン"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div>
                                 <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
