@@ -32,6 +32,10 @@ export async function updateProfile(data: Profile, idToken: string): Promise<Sav
             updatedAt: new Date().toISOString(),
         }, { merge: true });
 
+        const { revalidatePath } = await import('next/cache');
+        revalidatePath('/about');
+        revalidatePath('/admin/profile');
+
         return { success: true };
     } catch (error: any) {
         console.error('Error updating profile:', error);
