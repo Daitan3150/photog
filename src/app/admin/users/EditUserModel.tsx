@@ -17,6 +17,7 @@ interface EditUserModelProps {
         birthDay?: string;
         approximateAge?: string;
         showBirthYear?: boolean;
+        showAge?: boolean;
         deceasedDate?: string;
         deceasedYear?: string;
         deceasedMonth?: string;
