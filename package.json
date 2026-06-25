@@ -12,7 +12,6 @@
     "verify-auth": "node scripts/verify-firebase.js"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.86",
     "@ai-sdk/google": "^3.0.83",
     "@ai-sdk/react": "^3.0.211",
     "@aws-sdk/client-s3": "^3.989.0",

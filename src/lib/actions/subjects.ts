@@ -64,6 +64,7 @@ export async function getSubjects() {
                     birthDay: d.birthDay || '',
                     approximateAge: d.approximateAge || '',
                     showBirthYear: d.showBirthYear === true,
+                    showAge: d.showAge !== false,
                     deceasedDate: d.deceasedDate || '',
                     deceasedYear: d.deceasedYear || '',
                     deceasedMonth: d.deceasedMonth || '',

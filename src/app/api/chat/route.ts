@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { google } from '@ai-sdk/google';
-import { anthropic } from '@ai-sdk/anthropic';
-import { streamText, generateText } from 'ai';
+import { streamText } from 'ai';
 import { aiTools } from '@/lib/ai/tools';
 
 // Allow streaming responses up to 30 seconds
@@ -10,27 +9,12 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   const { messages }: { messages: any[] } = await req.json();
 
-  // Get the latest user message
-  const lastMessage = messages[messages.length - 1];
-  const userPrompt = lastMessage?.content || '';
-
-  // Simple auto-routing logic:
-  // Use a fast model to classify the intent, or use regex/keywords for speed.
-  // Here we use a keyword-based approach for zero latency overhead, 
-  // but it can be enhanced to use generateText with gemini-1.5-flash for classification.
-  
-  const isComplexTask = /コード|デザイン|長文|ブログ(書|作成)|プログラム|実装/i.test(userPrompt);
-  
-  // Select model based on routing logic
-  const model = isComplexTask 
-    ? anthropic('claude-3-5-sonnet-latest') 
-    : google('gemini-1.5-pro-latest');
-
-  console.log(`[AI Copilot] Routing task to: ${isComplexTask ? 'Claude 3.5 Sonnet' : 'Gemini 1.5 Pro'}`);
+  // Always use Gemini 2.0 Flash (latest, fastest, most capable free model)
+  const model = google('gemini-2.0-flash-001');
 
   const systemPrompt = `
 あなたは管理画面に常駐する「最新・自己学習型AIアシスタント（Admin Copilot）」です。
-あなたは現在 ${isComplexTask ? 'Claude 3.5 Sonnet' : 'Gemini 1.5 Pro'} モデルとして動作しています。
+あなたは Gemini 2.0 Flash として動作しています。
 あなたの役割は、ユーザーのサイト（ポートフォリオ、ブログ等）の管理・更新をサポートすることです。
 
 【重要ルール】
