@@ -237,6 +237,7 @@ export async function adminUpdateUserProfile(
         birthMonth?: string;
         birthDay?: string;
         approximateAge?: string;
+        showBirthYear?: boolean;
         deceasedDate?: string;
         deceasedYear?: string;
         deceasedMonth?: string;
@@ -256,6 +257,7 @@ export async function adminUpdateUserProfile(
         if (data.birthMonth !== undefined) updateData.birthMonth = data.birthMonth;
         if (data.birthDay !== undefined) updateData.birthDay = data.birthDay;
         if (data.approximateAge !== undefined) updateData.approximateAge = data.approximateAge;
+        if (data.showBirthYear !== undefined) updateData.showBirthYear = data.showBirthYear;
         if (data.deceasedDate !== undefined) updateData.deceasedDate = data.deceasedDate;
         if (data.deceasedYear !== undefined) updateData.deceasedYear = data.deceasedYear;
         if (data.deceasedMonth !== undefined) updateData.deceasedMonth = data.deceasedMonth;
@@ -295,6 +297,7 @@ export async function getPublicModels(): Promise<{
         birthMonth?: string;
         birthDay?: string;
         approximateAge?: string;
+        showBirthYear?: boolean;
         deceasedDate?: string; 
         deceasedYear?: string;
         deceasedMonth?: string;
@@ -321,6 +324,7 @@ export async function getPublicModels(): Promise<{
                 birthMonth: data.birthMonth || '',
                 birthDay: data.birthDay || '',
                 approximateAge: data.approximateAge || '',
+                showBirthYear: data.showBirthYear === true,
                 deceasedDate: data.deceasedDate || '',
                 deceasedYear: data.deceasedYear || '',
                 deceasedMonth: data.deceasedMonth || '',
@@ -338,6 +342,7 @@ export async function getPublicModels(): Promise<{
                 birthMonth: data.birthMonth || '',
                 birthDay: data.birthDay || '',
                 approximateAge: data.approximateAge || '',
+                showBirthYear: data.showBirthYear === true,
                 deceasedDate: data.deceasedDate || '',
                 deceasedYear: data.deceasedYear || '',
                 deceasedMonth: data.deceasedMonth || '',

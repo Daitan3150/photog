@@ -13,6 +13,7 @@ export interface Subject {
     birthMonth?: string;
     birthDay?: string;
     approximateAge?: string;
+    showBirthYear?: boolean;
     deceasedDate?: string;
     deceasedYear?: string;
     deceasedMonth?: string;
@@ -30,6 +31,7 @@ export interface SubjectFormData {
     birthMonth?: string;
     birthDay?: string;
     approximateAge?: string;
+    showBirthYear?: boolean;
     deceasedDate?: string;
     deceasedYear?: string;
     deceasedMonth?: string;
@@ -59,6 +61,7 @@ export async function getSubjects() {
                     birthMonth: d.birthMonth || '',
                     birthDay: d.birthDay || '',
                     approximateAge: d.approximateAge || '',
+                    showBirthYear: d.showBirthYear === true,
                     deceasedDate: d.deceasedDate || '',
                     deceasedYear: d.deceasedYear || '',
                     deceasedMonth: d.deceasedMonth || '',

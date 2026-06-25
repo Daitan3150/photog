@@ -16,6 +16,7 @@ interface EditUserModelProps {
         birthMonth?: string;
         birthDay?: string;
         approximateAge?: string;
+        showBirthYear?: boolean;
         deceasedDate?: string;
         deceasedYear?: string;
         deceasedMonth?: string;
@@ -33,6 +34,7 @@ export default function EditUserModel({ user }: EditUserModelProps) {
     const [birthMonth, setBirthMonth] = useState(user.birthMonth || (user.birthday ? user.birthday.split('-')[1] : ''));
     const [birthDay, setBirthDay] = useState(user.birthDay || (user.birthday ? user.birthday.split('-')[2] : ''));
     const [approximateAge, setApproximateAge] = useState(user.approximateAge || '');
+    const [showBirthYear, setShowBirthYear] = useState<boolean>(user.showBirthYear === true);
     const [deceasedYear, setDeceasedYear] = useState(user.deceasedYear || (user.deceasedDate ? user.deceasedDate.split('-')[0] : ''));
     const [deceasedMonth, setDeceasedMonth] = useState(user.deceasedMonth || (user.deceasedDate ? user.deceasedDate.split('-')[1] : ''));
     const [deceasedDay, setDeceasedDay] = useState(user.deceasedDay || (user.deceasedDate ? user.deceasedDate.split('-')[2] : ''));
@@ -48,13 +50,19 @@ export default function EditUserModel({ user }: EditUserModelProps) {
         setLoading(true);
 
         try {
+            const birthdayStr = birthYear && birthMonth && birthDay ? `${birthYear}-${birthMonth}-${birthDay}` : '';
+            const deceasedDateStr = deceasedChecked && deceasedYear && deceasedMonth && deceasedDay ? `${deceasedYear}-${deceasedMonth}-${deceasedDay}` : '';
+
             const result = await adminUpdateUserProfile(user.uid, {
                 displayName,
                 realName: realName.trim() || '',
+                birthday: birthdayStr,
                 birthYear,
                 birthMonth,
                 birthDay,
                 approximateAge,
+                showBirthYear,
+                deceasedDate: deceasedDateStr,
                 deceasedYear: deceasedChecked ? deceasedYear : '',
                 deceasedMonth: deceasedChecked ? deceasedMonth : '',
                 deceasedDay: deceasedChecked ? deceasedDay : '',
@@ -142,6 +150,8 @@ export default function EditUserModel({ user }: EditUserModelProps) {
                                     onApproximateAgeChange={setApproximateAge}
                                     label="生年月日"
                                     labelColor="text-gray-700"
+                                    showBirthYear={showBirthYear}
+                                    onShowBirthYearChange={setShowBirthYear}
                                 />
 
                                 <PartialDateInput

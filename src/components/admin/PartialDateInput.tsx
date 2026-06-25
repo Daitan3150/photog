@@ -15,6 +15,9 @@ interface PartialDateInputProps {
     useCheckbox?: boolean;
     checkboxChecked?: boolean;
     onCheckboxChange?: (checked: boolean) => void;
+    // 年を公開するかどうか
+    showBirthYear?: boolean;
+    onShowBirthYearChange?: (val: boolean) => void;
 }
 
 export default function PartialDateInput({
@@ -24,6 +27,7 @@ export default function PartialDateInput({
     onYearChange, onMonthChange, onDayChange, onApproximateAgeChange,
     label, labelColor = 'text-gray-400',
     useCheckbox = false, checkboxChecked = false, onCheckboxChange,
+    showBirthYear, onShowBirthYearChange,
 }: PartialDateInputProps) {
     const years = useMemo(() => {
         const currentYear = new Date().getFullYear();
@@ -88,6 +92,8 @@ export default function PartialDateInput({
     };
 
     const isDisabled = useCheckbox && !checkboxChecked;
+    // showBirthYear が明示的に渡されている場合のみ「年を公開」チェックを表示
+    const hasYearVisibilityToggle = onShowBirthYearChange !== undefined;
 
     return (
         <div className="space-y-1.5">
@@ -132,6 +138,28 @@ export default function PartialDateInput({
                             {days.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
                     </div>
+
+                    {/* 年を公開するかどうかのチェック（生年月日専用） */}
+                    {hasYearVisibilityToggle && year && (
+                        <label className="flex items-center gap-2 cursor-pointer mt-2 group select-none">
+                            <div className="relative flex-shrink-0">
+                                <input
+                                    type="checkbox"
+                                    checked={showBirthYear === true}
+                                    onChange={e => onShowBirthYearChange!(e.target.checked)}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-10 h-5 bg-gray-200 peer-checked:bg-indigo-500 rounded-full transition-colors duration-200" />
+                                <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 peer-checked:translate-x-5" />
+                            </div>
+                            <span className="text-[11px] font-semibold text-gray-500 group-hover:text-gray-700 transition-colors">
+                                年をポートフォリオに公開する
+                                <span className="ml-1 font-normal text-gray-400">
+                                    {showBirthYear ? `（${year}年 公開中）` : '（月日のみ表示）'}
+                                </span>
+                            </span>
+                        </label>
+                    )}
 
                     {showApproximateAge && !year && onApproximateAgeChange && (
                         <div className="pt-2">

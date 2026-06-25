@@ -43,6 +43,7 @@ interface PortraitScrollSectionProps {
     birthMonth?: string;
     birthDay?: string;
     approximateAge?: string;
+    showBirthYear?: boolean;
     deceasedDate?: string;
     deceasedYear?: string;
     deceasedMonth?: string;
@@ -52,7 +53,7 @@ interface PortraitScrollSectionProps {
 
 export default function PortraitScrollSection({ 
     modelName, photos, 
-    birthday, birthYear, birthMonth, birthDay, approximateAge, 
+    birthday, birthYear, birthMonth, birthDay, approximateAge, showBirthYear,
     deceasedDate, deceasedYear, deceasedMonth, deceasedDay, realName
 }: PortraitScrollSectionProps) {
     const searchParams = useSearchParams();
@@ -121,55 +122,73 @@ export default function PortraitScrollSection({
                         </h2>
 
                         {/* 生没年表示 */}
-                        {(birthday || deceasedDate || birthMonth) && (() => {
+                        {(birthday || deceasedDate || birthMonth || approximateAge) && (() => {
                             const hasDeceased = !!(deceasedDate || deceasedMonth);
-                            
+                            const showYear = showBirthYear && !!birthYear;
+
                             const formatB = () => {
-                                if (birthYear && birthMonth && birthDay) return `${birthYear}.${birthMonth}.${birthDay}`;
-                                if (birthMonth && birthDay) return `${birthMonth}.${birthDay}`;
+                                if (showYear && birthYear && birthMonth && birthDay) return `${birthYear}.${birthMonth}.${birthDay}`;
+                                if (showYear && birthYear && birthMonth) return `${birthYear}.${birthMonth}`;
+                                if (showYear && birthYear) return `${birthYear}`;
+                                if (birthMonth && birthDay) return `${birthMonth}/${birthDay}`;
+                                if (birthday && !showYear) {
+                                    const parts = birthday.split('-');
+                                    return parts.length >= 3 ? `${parts[1]}/${parts[2]}` : birthday.replace(/-/g, '.');
+                                }
                                 if (birthday) return birthday.replace(/-/g, '.');
                                 return '????';
                             };
-                            
+
                             const formatD = () => {
                                 if (deceasedYear && deceasedMonth && deceasedDay) return `${deceasedYear}.${deceasedMonth}.${deceasedDay}`;
                                 if (deceasedMonth && deceasedDay) return `${deceasedMonth}.${deceasedDay}`;
                                 if (deceasedDate) return deceasedDate.replace(/-/g, '.');
                                 return '';
                             };
-                            
-                            const age = (() => {
-                                if (!hasDeceased) return null;
-                                if (approximateAge) return `${approximateAge}↗︎`;
-                                if (birthYear && deceasedYear) {
-                                    const bY = parseInt(birthYear), bM = parseInt(birthMonth || '1'), bD = parseInt(birthDay || '1');
-                                    const dY = parseInt(deceasedYear), dM = parseInt(deceasedMonth || '1'), dD = parseInt(deceasedDay || '1');
+
+                            const calcAge = (() => {
+                                if (approximateAge) return parseInt(approximateAge);
+                                const refDate = (deceasedDate || (deceasedYear && deceasedMonth && deceasedDay))
+                                    ? new Date(deceasedDate || `${deceasedYear}-${deceasedMonth}-${deceasedDay}`)
+                                    : new Date();
+                                if (birthYear && birthMonth && birthDay) {
+                                    const bY = parseInt(birthYear), bM = parseInt(birthMonth), bD = parseInt(birthDay);
+                                    const dY = refDate.getFullYear(), dM = refDate.getMonth() + 1, dD = refDate.getDate();
                                     let a = dY - bY;
                                     if (dM < bM || (dM === bM && dD < bD)) a--;
                                     return a;
                                 }
-                                if (birthday && deceasedDate) {
-                                    const b = new Date(birthday), d = new Date(deceasedDate);
-                                    let a = d.getFullYear() - b.getFullYear();
-                                    const m = d.getMonth() - b.getMonth();
-                                    if (m < 0 || (m === 0 && d.getDate() < b.getDate())) a--;
-                                    return a;
+                                if (birthday) {
+                                    const b = new Date(birthday);
+                                    if (!isNaN(b.getTime())) {
+                                        let a = refDate.getFullYear() - b.getFullYear();
+                                        const m = refDate.getMonth() - b.getMonth();
+                                        if (m < 0 || (m === 0 && refDate.getDate() < b.getDate())) a--;
+                                        return a;
+                                    }
                                 }
                                 return null;
                             })();
 
+                            const ageLabel = (() => {
+                                if (calcAge === null) return null;
+                                if (hasDeceased) return `享年 ${calcAge} 歳`;
+                                if (calcAge >= 20) return `${calcAge}↗︎`;
+                                return `${calcAge}`;
+                            })();
+
                             if (hasDeceased) {
                                 return (
-                                    <div className="mt-4 flex items-center gap-3">
+                                    <div className="mt-3 flex items-center gap-3">
                                         <div className="flex flex-col gap-0.5">
                                             <p className="text-[11px] text-neutral-400 font-light tracking-[0.3em] uppercase">
                                                 {formatB()}
                                                 <span className="mx-2 text-neutral-300">—</span>
                                                 {formatD()}
                                             </p>
-                                            {age !== null && (
-                                                <p className="text-[10px] text-neutral-400 tracking-widest font-serif italic">
-                                                    享年 {age} 歳
+                                            {ageLabel && (
+                                                <p className="text-[10px] text-neutral-500 tracking-widest font-serif italic">
+                                                    {ageLabel}
                                                 </p>
                                             )}
                                         </div>
@@ -177,9 +196,36 @@ export default function PortraitScrollSection({
                                 );
                             } else if (birthday || birthMonth) {
                                 return (
-                                    <p className="text-[10px] text-neutral-400 font-light tracking-[0.3em] mt-3">
-                                        b. {formatB()}
-                                    </p>
+                                    <div className="mt-3 flex items-center gap-3">
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-3">
+                                                <p className={`font-medium ${
+                                                    showYear
+                                                        ? 'text-[11px] text-neutral-400 tracking-[0.3em] uppercase font-light'
+                                                        : 'text-[22px] md:text-[28px] text-neutral-800 font-black tracking-tight'
+                                                }`}>
+                                                    {!showYear && (
+                                                        <span className="text-[9px] text-neutral-300 mr-2 font-light tracking-[0.4em] uppercase">b.</span>
+                                                    )}
+                                                    {formatB()}
+                                                </p>
+                                                {ageLabel && (
+                                                    <span className="text-[13px] md:text-[15px] text-neutral-600 font-bold tracking-widest bg-neutral-200/60 px-3 py-1.5 rounded-full shadow-sm">
+                                                        {ageLabel}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            } else if (approximateAge && ageLabel) {
+                                // 生年月日不明だが大体の年齢が入力されている場合
+                                return (
+                                    <div className="mt-3 flex items-center gap-3">
+                                        <span className="text-[13px] md:text-[15px] text-neutral-600 font-bold tracking-widest bg-neutral-200/60 px-3 py-1.5 rounded-full shadow-sm">
+                                            {ageLabel}
+                                        </span>
+                                    </div>
                                 );
                             }
                             return null;

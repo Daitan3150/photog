@@ -67,6 +67,7 @@ function SubjectEditModal({
         snsUrl: subject.snsUrl || '',
         notes: subject.notes || '',
     });
+    const [showBirthYear, setShowBirthYear] = useState<boolean>(subject.showBirthYear === true);
     const [deceasedChecked, setDeceasedChecked] = useState(
         !!(subject.deceasedDate || subject.deceasedYear || subject.deceasedMonth)
     );
@@ -94,19 +95,13 @@ function SubjectEditModal({
                 birthday: birthdayStr,
                 deceasedDate: deceasedDateStr,
                 birthYear: form.birthYear || '',
-                birthMonth: form.birthYear ? form.birthMonth : '',
-                birthDay: form.birthYear ? form.birthDay : '',
+                birthMonth: form.birthMonth || '',
+                birthDay: form.birthDay || '',
                 deceasedYear: deceasedChecked ? form.deceasedYear : '',
                 deceasedMonth: deceasedChecked ? form.deceasedMonth : '',
                 deceasedDay: deceasedChecked ? form.deceasedDay : '',
+                showBirthYear,
             };
-
-            // 年が不明の場合は月日とbirthdayを空にする
-            if (!form.birthYear) {
-                saveData.birthMonth = '';
-                saveData.birthDay = '';
-                saveData.birthday = '';
-            }
 
             const result = isNew
                 ? await saveSubject(saveData)
@@ -186,6 +181,8 @@ function SubjectEditModal({
                             onApproximateAgeChange={v => set('approximateAge', v)}
                             label="生年月日"
                             labelColor="text-gray-400"
+                            showBirthYear={showBirthYear}
+                            onShowBirthYearChange={setShowBirthYear}
                         />
                         <PartialDateInput
                             year={form.deceasedYear}
