@@ -122,6 +122,12 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
     
+    // AI Memory collection (for self-learning AI Assistant)
+    match /ai_memory/{memoryId} {
+      // Read/Write: Super Admin only
+      allow read, write: if isSuperAdmin();
+    }
+    
     // Request logs collection (for audit trail, if implemented)
     match /logs/{logId} {
       // Read: Super Admin only
