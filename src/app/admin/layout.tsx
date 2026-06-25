@@ -9,7 +9,9 @@ import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Menu, Camera, Home, User, Mail, AlertTriangle, Globe, LogOut, FileText, Settings, Users, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert, Star } from 'lucide-react';
 import { useAuth } from '@/components/admin/AuthProvider';
-import AICopilot from '@/components/admin/AICopilot';
+import dynamic from 'next/dynamic';
+
+const AICopilot = dynamic(() => import('@/components/admin/AICopilot'), { ssr: false });
 
 
 function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; toggleSidebar: () => void }) {
