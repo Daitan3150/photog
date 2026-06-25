@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import PhotoGrid from "@/components/gallery/PhotoGrid";
 import { searchPhotos } from '@/lib/actions/photos';
+import { getPublicModels } from '@/lib/actions/users';
 import CategoryFilter from "@/components/portfolio/CategoryFilter";
 import PortfolioHeader from "@/components/portfolio/PortfolioHeader";
 import EmptyPortfolio from "@/components/portfolio/EmptyPortfolio";
@@ -33,6 +34,37 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
 
     const filteredPhotos = allPhotos as any[];
 
+    // 公開用モデルデータ（生没年）の取得とマッピング
+    const modelsResult = await getPublicModels();
+    const publicModelsMap = new Map<string, { 
+        birthday?: string; 
+        birthYear?: string;
+        birthMonth?: string;
+        birthDay?: string;
+        approximateAge?: string;
+        deceasedDate?: string; 
+        deceasedYear?: string;
+        deceasedMonth?: string;
+        deceasedDay?: string;
+        realName?: string;
+    }>();
+    if (modelsResult.success && modelsResult.models) {
+        modelsResult.models.forEach(m => {
+            publicModelsMap.set(m.displayName, { 
+                birthday: m.birthday, 
+                birthYear: m.birthYear,
+                birthMonth: m.birthMonth,
+                birthDay: m.birthDay,
+                approximateAge: m.approximateAge,
+                deceasedDate: m.deceasedDate,
+                deceasedYear: m.deceasedYear,
+                deceasedMonth: m.deceasedMonth,
+                deceasedDay: m.deceasedDay,
+                realName: m.name
+            });
+        });
+    }
+
     // ポートレートまたはコスプレカテゴリーの場合、モデル名（subjectName）ごとにグループ化する
     const isPortrait = currentCategory === 'portrait';
     const isCosplay = currentCategory === 'cosplay';
@@ -48,15 +80,8 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
             groupedPhotos[modelName].push(photo);
         });
 
-        // コスプレの場合: 複数枚あるモデルはスライド、1枚のモデルは通常グリッドへ
-        if (isCosplay) {
-            Object.entries(groupedPhotos).forEach(([name, photos]) => {
-                if (photos.length < 2) {
-                    singlePhotos.push(...photos);
-                    delete groupedPhotos[name];
-                }
-            });
-        }
+        // コスプレの場合でも、ポートレートと同様に全てのモデルをグループとして表示し、名前や生年月日が表示されるようにする
+        // (以前は1枚だけのモデルを通常のグリッドに分けていたが、要望によりすべてセクション表示する)
     }
 
     return (
@@ -71,24 +96,50 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
                         {filteredPhotos.length > 0 ? (
                             isPortrait ? (
                                 <div className="space-y-24">
-                                    {Object.entries(groupedPhotos).map(([modelName, photos]) => (
-                                        <PortraitScrollSection
-                                            key={modelName}
-                                            modelName={modelName}
-                                            photos={photos}
-                                        />
-                                    ))}
+                                    {Object.entries(groupedPhotos).map(([modelName, photos]) => {
+                                        const modelInfo = publicModelsMap.get(modelName);
+                                        return (
+                                            <PortraitScrollSection
+                                                key={modelName}
+                                                modelName={modelName}
+                                                photos={photos}
+                                                birthday={modelInfo?.birthday}
+                                                birthYear={modelInfo?.birthYear}
+                                                birthMonth={modelInfo?.birthMonth}
+                                                birthDay={modelInfo?.birthDay}
+                                                approximateAge={modelInfo?.approximateAge}
+                                                deceasedDate={modelInfo?.deceasedDate}
+                                                deceasedYear={modelInfo?.deceasedYear}
+                                                deceasedMonth={modelInfo?.deceasedMonth}
+                                                deceasedDay={modelInfo?.deceasedDay}
+                                                realName={modelInfo?.realName}
+                                            />
+                                        );
+                                    })}
                                 </div>
                             ) : isCosplay ? (
                                 <div className="space-y-20">
                                     {/* グループ化されたモデル（2枚以上）→ 横スライド表示 */}
-                                    {Object.entries(groupedPhotos).map(([modelName, photos]) => (
-                                        <CosplayScrollSection
-                                            key={modelName}
-                                            modelName={modelName}
-                                            photos={photos}
-                                        />
-                                    ))}
+                                    {Object.entries(groupedPhotos).map(([modelName, photos]) => {
+                                        const modelInfo = publicModelsMap.get(modelName);
+                                        return (
+                                            <CosplayScrollSection
+                                                key={modelName}
+                                                modelName={modelName}
+                                                photos={photos}
+                                                birthday={modelInfo?.birthday}
+                                                birthYear={modelInfo?.birthYear}
+                                                birthMonth={modelInfo?.birthMonth}
+                                                birthDay={modelInfo?.birthDay}
+                                                approximateAge={modelInfo?.approximateAge}
+                                                deceasedDate={modelInfo?.deceasedDate}
+                                                deceasedYear={modelInfo?.deceasedYear}
+                                                deceasedMonth={modelInfo?.deceasedMonth}
+                                                deceasedDay={modelInfo?.deceasedDay}
+                                                realName={modelInfo?.realName}
+                                            />
+                                        );
+                                    })}
 
                                     {/* 1枚だけのモデル → 通常のPhotoGridで表示 */}
                                     {singlePhotos.length > 0 && (

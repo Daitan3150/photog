@@ -24,12 +24,11 @@ interface UserModel {
     photoCount?: number;
 }
 
-const calculateAge = (birth: string, death?: string): number | null => {
-    if (!birth) return null;
+const calculateAge = (birth: string, death: string): number | null => {
+    if (!birth || !death) return null;
     const b = new Date(birth);
-    if (isNaN(b.getTime())) return null;
-    const d = death ? new Date(death) : new Date();
-    if (isNaN(d.getTime())) return null;
+    const d = new Date(death);
+    if (isNaN(b.getTime()) || isNaN(d.getTime())) return null;
     let age = d.getFullYear() - b.getFullYear();
     const m = d.getMonth() - b.getMonth();
     if (m < 0 || (m === 0 && d.getDate() < b.getDate())) age--;
@@ -81,33 +80,13 @@ function SubjectEditModal({
         setSaving(true);
         setError('');
         try {
-            // 生年月日の組み立て
-            const hasBirth = form.birthYear && form.birthMonth && form.birthDay;
-            const birthdayStr = hasBirth ? `${form.birthYear}-${form.birthMonth}-${form.birthDay}` : '';
-
-            // 逝去日の組み立て
-            const hasDeceased = deceasedChecked && form.deceasedYear && form.deceasedMonth && form.deceasedDay;
-            const deceasedDateStr = hasDeceased ? `${form.deceasedYear}-${form.deceasedMonth}-${form.deceasedDay}` : '';
-
             const saveData = {
                 ...form,
-                birthday: birthdayStr,
-                deceasedDate: deceasedDateStr,
-                birthYear: form.birthYear || '',
-                birthMonth: form.birthYear ? form.birthMonth : '',
-                birthDay: form.birthYear ? form.birthDay : '',
                 deceasedYear: deceasedChecked ? form.deceasedYear : '',
                 deceasedMonth: deceasedChecked ? form.deceasedMonth : '',
                 deceasedDay: deceasedChecked ? form.deceasedDay : '',
+                deceasedDate: deceasedChecked ? form.deceasedDate : '',
             };
-
-            // 年が不明の場合は月日とbirthdayを空にする
-            if (!form.birthYear) {
-                saveData.birthMonth = '';
-                saveData.birthDay = '';
-                saveData.birthday = '';
-            }
-
             const result = isNew
                 ? await saveSubject(saveData)
                 : await updateSubject(subject.id!, saveData);
@@ -243,24 +222,162 @@ function SubjectEditModal({
     );
 }
 
+// ===== ユーザーモデル 編集モーダル =====
+function UserEditModal({
+    user,
+    onClose,
+    onSaved,
+}: {
+    user: UserModel;
+    onClose: () => void;
+    onSaved: () => void;
+}) {
+    const [form, setForm] = useState({
+        displayName: user.displayName,
+        realName: user.realName || '',
+        birthday: user.birthday || '',
+        birthYear: user.birthYear || (user.birthday ? user.birthday.split('-')[0] : ''),
+        birthMonth: user.birthMonth || (user.birthday ? user.birthday.split('-')[1] : ''),
+        birthDay: user.birthDay || (user.birthday ? user.birthday.split('-')[2] : ''),
+        approximateAge: user.approximateAge || '',
+        deceasedDate: user.deceasedDate || '',
+        deceasedYear: user.deceasedYear || (user.deceasedDate ? user.deceasedDate.split('-')[0] : ''),
+        deceasedMonth: user.deceasedMonth || (user.deceasedDate ? user.deceasedDate.split('-')[1] : ''),
+        deceasedDay: user.deceasedDay || (user.deceasedDate ? user.deceasedDate.split('-')[2] : ''),
+    });
+    const [deceasedChecked, setDeceasedChecked] = useState(
+        !!(user.deceasedDate || user.deceasedYear || user.deceasedMonth)
+    );
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
 
+    const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }));
+
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
+        setError('');
+        try {
+            const result = await adminUpdateUserProfile(user.uid, {
+                ...form,
+                deceasedYear: deceasedChecked ? form.deceasedYear : '',
+                deceasedMonth: deceasedChecked ? form.deceasedMonth : '',
+                deceasedDay: deceasedChecked ? form.deceasedDay : '',
+                deceasedDate: deceasedChecked ? form.deceasedDate : '',
+            });
+            if (result.success) { await onSaved(); onClose(); }
+            else setError(result.error || '更新に失敗しました。');
+        } catch (err: any) {
+            setError(err.message || 'エラーが発生しました。');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+            <div
+                className="bg-white w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                    <div className="w-10 h-1 bg-gray-200 rounded-full" />
+                </div>
+
+                <div className="px-7 pt-4 pb-2 flex justify-between items-center">
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">編集</h2>
+                        <p className="text-xs text-gray-400 mt-0.5">{user.email}</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-xl hover:bg-gray-100">
+                        <X size={22} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSave} className="px-7 pb-8 pt-3 space-y-4 overflow-y-auto max-h-[80vh]">
+                    {error && <p className="text-red-600 text-xs font-bold bg-red-50 border border-red-100 p-3 rounded-xl">{error}</p>}
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs uppercase tracking-widest font-bold text-gray-400 block">表示名（活動名）</label>
+                        <input type="text" value={form.displayName} onChange={e => set('displayName', e.target.value)}
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-400 focus:bg-white transition-all" required />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs uppercase tracking-widest font-bold text-gray-400 block">本名 <span className="normal-case font-normal text-gray-300">（管理画面のみ・非公開）</span></label>
+                        <input type="text" value={form.realName} onChange={e => set('realName', e.target.value)}
+                            placeholder="本名を入力"
+                            className="w-full px-4 py-3 bg-amber-50/60 border border-amber-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-amber-300 focus:bg-white transition-all" />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                        <PartialDateInput
+                            year={form.birthYear}
+                            month={form.birthMonth}
+                            day={form.birthDay}
+                            approximateAge={form.approximateAge}
+                            showApproximateAge={true}
+                            onYearChange={v => set('birthYear', v)}
+                            onMonthChange={v => set('birthMonth', v)}
+                            onDayChange={v => set('birthDay', v)}
+                            onApproximateAgeChange={v => set('approximateAge', v)}
+                            label="生年月日"
+                            labelColor="text-gray-400"
+                        />
+                        <PartialDateInput
+                            year={form.deceasedYear}
+                            month={form.deceasedMonth}
+                            day={form.deceasedDay}
+                            onYearChange={v => set('deceasedYear', v)}
+                            onMonthChange={v => set('deceasedMonth', v)}
+                            onDayChange={v => set('deceasedDay', v)}
+                            label="逝去日"
+                            labelColor="text-rose-400"
+                            useCheckbox={true}
+                            checkboxChecked={deceasedChecked}
+                            onCheckboxChange={setDeceasedChecked}
+                        />
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                        <button type="button" onClick={onClose}
+                            className="flex-1 py-3 text-gray-500 border border-gray-200 hover:bg-gray-50 rounded-2xl text-sm font-bold transition-all">
+                            キャンセル
+                        </button>
+                        <button type="submit" disabled={saving}
+                            className="flex-1 py-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-2xl text-sm font-bold disabled:opacity-50 transition-all shadow-lg shadow-indigo-100 active:scale-95">
+                            {saving ? '保存中...' : '保存'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
 
 // ===== メインページ =====
 export default function SubjectsPage() {
     const { user } = useAuth();
 
     const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [userModels, setUserModels] = useState<UserModel[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [editingSubject, setEditingSubject] = useState<Subject | null | 'new'>(null);
+    const [editingUser, setEditingUser] = useState<UserModel | null>(null);
 
     useEffect(() => {
-        fetchSubjects().finally(() => setLoading(false));
+        Promise.all([fetchSubjects(), fetchUsers()]).finally(() => setLoading(false));
     }, []);
 
     const fetchSubjects = async () => {
         const result = await getSubjects();
         if (result.success) setSubjects(result.data);
+    };
+
+    const fetchUsers = async () => {
+        const result = await getUsers();
+        if (result.success && result.users) setUserModels(result.users as UserModel[]);
     };
 
     if (!user) return null;
@@ -303,10 +420,8 @@ export default function SubjectsPage() {
                                 </button>
                             </div>
                         ) : (
-                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
-                                {subjects.map(s => {
-                                    const age = s.birthday ? calculateAge(s.birthday, s.deceasedDate) : null;
-
+                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-5{sucts.map(s => {
+                                    const age = s.birthday && s.deceasedDate ? calculateAge(s.birthday, s.deceasedDate) : null;
                                     return (
                                         <button
                                             key={s.id}
@@ -323,26 +438,69 @@ export default function SubjectsPage() {
                                                 <div className="font-bold text-gray-900 text-sm">{s.name}</div>
                                                 <div className="text-xs text-gray-400 mt-0.5 space-x-2">
                                                     {s.realName && <span className="text-amber-600">{s.realName}</span>}
-                                                    {s.birthday && !s.deceasedDate && (
-                                                        <span>
-                                                            {formatDate(s.birthday)} 生
-                                                            {age !== null && `（${age}歳）`}
-                                                        </span>
-                                                    )}
+                                                    {s.birthday && !s.deceasedDate && <span>{formatDate(s.birthday)} 生</span>}
                                                     {s.birthday && s.deceasedDate && (
                                                         <span className="text-rose-500">
                                                             {formatDate(s.birthday)} - {formatDate(s.deceasedDate)}
                                                             {age !== null && `（享年 ${age}歳）`}
                                                         </span>
                                                     )}
-                                                    {!s.birthday && s.approximateAge && !s.deceasedDate && (
-                                                        <span>大体の年齢: {s.approximateAge}歳</span>
-                                                    )}
-                                                    {!s.realName && !s.birthday && !s.deceasedDate && !s.approximateAge && s.snsUrl && (
+                                                    {!s.realName && !s.birthday && !s.deceasedDate && s.snsUrl && (
                                                         <span className="text-blue-400 truncate">{s.snsUrl.replace(/^https?:\/\//, '')}</span>
                                                     )}
-                                                    {!s.realName && !s.birthday && !s.deceasedDate && !s.approximateAge && !s.snsUrl && (
+                                                    {!s.realName && !s.birthday && !s.deceasedDate && !s.snsUrl && (
                                                         <span className="italic">情報未登録</span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-400 transition-colors shrink-0" />
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </section>
+
+                    <section>
+                        <div className="flex items-center gap-2 mb-3">
+                            <Users size={15} className="text-indigo-400" />
+                            <span className="text-sm font-bold text-gray-700">アカウント連携モデル ({userModels.length})</span>
+                        </div>
+
+                        {userModels.length === 0 ? (
+                            <div className="text-center py-10 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100">
+                                <p className="text-gray-400 text-sm">登録ユーザーがいません</p>
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
+                                {userModels.map(u => {
+                                    const age = u.birthday && u.deceasedDate ? calculateAge(u.birthday, u.deceasedDate) : null;
+                                    return (
+                                        <button
+                                            key={u.uid}
+                                            onClick={() => setEditingUser(u)}
+                                            className={`w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-indigo-50/40 active:bg-indigo-50 transition-colors group ${u.deceasedDate ? 'bg-rose-50/20' : ''}`}
+                                        >
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-bold shrink-0 ${u.deceasedDate ? 'bg-rose-100 text-rose-400' : 'bg-indigo-100 text-indigo-500'}`}>
+                                                {u.deceasedDate
+                                                    ? <Heart size={16} fill="currentColor" />
+                                                    : u.displayName.charAt(0)}
+                                            </div>
+
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-bold text-gray-900 text-sm">{u.displayName}</div>
+                                                <div className="text-xs text-gray-400 mt-0.5 space-x-2">
+                                                    {u.realName && <span className="text-amber-600">{u.realName}</span>}
+                                                    {u.birthday && !u.deceasedDate && <span>{formatDate(u.birthday)} 生</span>}
+                                                    {u.birthday && u.deceasedDate && (
+                                                        <span className="text-rose-500">
+                                                            {formatDate(u.birthday)} - {formatDate(u.deceasedDate)}
+                                                            {age !== null && `（享年 ${age}歳）`}
+                                                        </span>
+                                                    )}
+                                                    {!u.realName && !u.birthday && !u.deceasedDate && (
+                                                        <span className="italic">{u.email}</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -364,6 +522,13 @@ export default function SubjectsPage() {
                     onClose={() => setEditingSubject(null)}
                     onSaved={fetchSubjects}
                     onDeleted={fetchSubjects}
+                />
+            )}
+            {editingUser && (
+                <UserEditModal
+                    user={editingUser}
+                    onClose={() => setEditingUser(null)}
+                    onSaved={fetchUsers}
                 />
             )}
         </div>

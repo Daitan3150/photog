@@ -38,9 +38,23 @@ interface Photo {
 interface CosplayScrollSectionProps {
     modelName: string;
     photos: Photo[];
+    birthday?: string;
+    birthYear?: string;
+    birthMonth?: string;
+    birthDay?: string;
+    approximateAge?: string;
+    deceasedDate?: string;
+    deceasedYear?: string;
+    deceasedMonth?: string;
+    deceasedDay?: string;
+    realName?: string;
 }
 
-export default function CosplayScrollSection({ modelName, photos }: CosplayScrollSectionProps) {
+export default function CosplayScrollSection({ 
+    modelName, photos, 
+    birthday, birthYear, birthMonth, birthDay, approximateAge, 
+    deceasedDate, deceasedYear, deceasedMonth, deceasedDay, realName
+}: CosplayScrollSectionProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
@@ -103,7 +117,77 @@ export default function CosplayScrollSection({ modelName, photos }: CosplayScrol
                         </span>
                         <h2 className="text-3xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500 leading-none">
                             {modelName}
+                            {realName && realName !== modelName && (
+                                <span className="text-xl md:text-2xl ml-4 font-medium opacity-80 text-purple-400">
+                                    ({realName})
+                                </span>
+                            )}
                         </h2>
+
+                        {/* 生没年表示 */}
+                        {(birthday || deceasedDate || birthMonth) && (() => {
+                            const hasDeceased = !!(deceasedDate || deceasedMonth);
+                            
+                            const formatB = () => {
+                                if (birthYear && birthMonth && birthDay) return `${birthYear}.${birthMonth}.${birthDay}`;
+                                if (birthMonth && birthDay) return `${birthMonth}.${birthDay}`;
+                                if (birthday) return birthday.replace(/-/g, '.');
+                                return '????';
+                            };
+                            
+                            const formatD = () => {
+                                if (deceasedYear && deceasedMonth && deceasedDay) return `${deceasedYear}.${deceasedMonth}.${deceasedDay}`;
+                                if (deceasedMonth && deceasedDay) return `${deceasedMonth}.${deceasedDay}`;
+                                if (deceasedDate) return deceasedDate.replace(/-/g, '.');
+                                return '';
+                            };
+                            
+                            const age = (() => {
+                                if (!hasDeceased) return null;
+                                if (approximateAge) return `${approximateAge}↗︎`;
+                                if (birthYear && deceasedYear) {
+                                    const bY = parseInt(birthYear), bM = parseInt(birthMonth || '1'), bD = parseInt(birthDay || '1');
+                                    const dY = parseInt(deceasedYear), dM = parseInt(deceasedMonth || '1'), dD = parseInt(deceasedDay || '1');
+                                    let a = dY - bY;
+                                    if (dM < bM || (dM === bM && dD < bD)) a--;
+                                    return a;
+                                }
+                                if (birthday && deceasedDate) {
+                                    const b = new Date(birthday), d = new Date(deceasedDate);
+                                    let a = d.getFullYear() - b.getFullYear();
+                                    const m = d.getMonth() - b.getMonth();
+                                    if (m < 0 || (m === 0 && d.getDate() < b.getDate())) a--;
+                                    return a;
+                                }
+                                return null;
+                            })();
+
+                            if (hasDeceased) {
+                                return (
+                                    <div className="mt-4 flex items-center gap-3">
+                                        <div className="flex flex-col gap-0.5">
+                                            <p className="text-[11px] text-fuchsia-200/60 font-medium tracking-[0.3em] uppercase">
+                                                {formatB()}
+                                                <span className="mx-2 text-fuchsia-300/30">—</span>
+                                                {formatD()}
+                                            </p>
+                                            {age !== null && (
+                                                <p className="text-[10px] text-fuchsia-200/80 tracking-widest font-black italic mt-0.5">
+                                                    享年 {age} 歳
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            } else if (birthday || birthMonth) {
+                                return (
+                                    <p className="text-[10px] text-fuchsia-200/60 font-medium tracking-[0.3em] mt-3 uppercase">
+                                        b. {formatB()}
+                                    </p>
+                                );
+                            }
+                            return null;
+                        })()}
 
                         {/* Character / Series Tags */}
                         <div className="flex flex-wrap gap-2 mt-4">

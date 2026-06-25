@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Menu, Camera, Home, User, Mail, AlertTriangle, Globe, LogOut, FileText, Settings, Users, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Camera, Home, User, Mail, AlertTriangle, Globe, LogOut, FileText, Settings, Users, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert, Star } from 'lucide-react';
 import { useAuth } from '@/components/admin/AuthProvider';
 
 
@@ -141,6 +141,17 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                             >
                                 <UserPlus size={20} className={pathname.startsWith('/admin/invite') ? '' : 'text-slate-400 group-hover:text-white'} />
                                 {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">招待管理</span>}
+                            </Link>
+
+                            <Link
+                                href="/admin/subjects"
+                                className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/subjects')
+                                    ? `${accentColor} text-white ${glowClass}`
+                                    : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
+                                    } ${isCollapsed ? 'justify-center' : ''}`}
+                            >
+                                <Star size={20} className={pathname.startsWith('/admin/subjects') ? '' : 'text-slate-400 group-hover:text-white'} />
+                                {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">モデル管理</span>}
                             </Link>
 
                             <Link

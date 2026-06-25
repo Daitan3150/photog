@@ -2,10 +2,25 @@ import { getUsers } from '@/lib/actions/users';
 import Link from 'next/link';
 import ResetPasswordForm from './ResetPasswordForm';
 import DeleteUserButton from './DeleteUserButton';
+import EditUserModel from './EditUserModel';
 import { UserPlus } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+const calculateLifespan = (birth: string, death: string) => {
+    if (!birth || !death) return null;
+    const b = new Date(birth);
+    const d = new Date(death);
+    if (isNaN(b.getTime()) || isNaN(d.getTime())) return null;
+    
+    let age = d.getFullYear() - b.getFullYear();
+    const m = d.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && d.getDate() < b.getDate())) {
+        age--;
+    }
+    return age;
+};
 
 export default async function UsersPage() {
     const { success, users, error } = await getUsers();
@@ -42,6 +57,7 @@ export default async function UsersPage() {
                         <tr>
                             <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">ユーザー</th>
                             <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">メールアドレス</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">本名・生没年</th>
                             <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">モデルID</th>
                             <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">投稿写真数</th>
                             <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">登録日</th>
@@ -70,6 +86,25 @@ export default async function UsersPage() {
                                 <td className="px-6 py-4 text-sm text-gray-600">
                                     {user.email}
                                 </td>
+                                <td className="px-6 py-4 text-sm text-gray-600">
+                                    {user.realName && <div className="font-semibold text-gray-900">{user.realName}</div>}
+                                    <div className="text-[11px] text-gray-500 mt-1 space-y-0.5 leading-normal">
+                                        {user.birthday && <div>生: {user.birthday.replace(/-/g, '/')}</div>}
+                                        {user.deceasedDate && (
+                                            <div className="text-red-600 font-medium flex items-center gap-1">
+                                                <span>没: {user.deceasedDate.replace(/-/g, '/')}</span>
+                                                {user.birthday && (
+                                                    <span className="text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded-full font-bold">
+                                                        享年 {calculateLifespan(user.birthday, user.deceasedDate)}歳
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {!user.realName && !user.birthday && !user.deceasedDate && (
+                                        <span className="text-gray-400 text-xs italic">-</span>
+                                    )}
+                                </td>
                                 <td className="px-6 py-4 text-center">
                                     <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
                                         {user.modelId || 'N/A'}
@@ -89,6 +124,7 @@ export default async function UsersPage() {
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex justify-end gap-2 items-center">
+                                        <EditUserModel user={user} />
                                         <ResetPasswordForm userId={user.uid} userEmail={user.email || ''} />
                                         <DeleteUserButton userId={user.uid} userEmail={user.email || ''} />
                                     </div>

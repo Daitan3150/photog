@@ -19,6 +19,7 @@ import { STUDIOS as STATIC_STUDIOS, StudioInfo } from '@/lib/constants/studios';
 import { getStudios, saveStudio } from '@/lib/actions/studios';
 import { Studio } from '@/types/studio';
 import { X, Plus, Home, Trees, Search, ChevronRight } from 'lucide-react';
+import SubjectSelect from '@/components/admin/SubjectSelect';
 
 // ✅ ファイル検証定数
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];

@@ -7,6 +7,16 @@ export interface Subject {
     name: string;
     snsUrl?: string;
     notes?: string;
+    realName?: string;
+    birthday?: string;
+    birthYear?: string;
+    birthMonth?: string;
+    birthDay?: string;
+    approximateAge?: string;
+    deceasedDate?: string;
+    deceasedYear?: string;
+    deceasedMonth?: string;
+    deceasedDay?: string;
     createdAt?: string;
 }
 
@@ -14,6 +24,16 @@ export interface SubjectFormData {
     name: string;
     snsUrl?: string;
     notes?: string;
+    realName?: string;
+    birthday?: string;
+    birthYear?: string;
+    birthMonth?: string;
+    birthDay?: string;
+    approximateAge?: string;
+    deceasedDate?: string;
+    deceasedYear?: string;
+    deceasedMonth?: string;
+    deceasedDay?: string;
 }
 
 const COLLECTION_NAME = 'subjects';
@@ -26,11 +46,27 @@ export async function getSubjects() {
 
         return {
             success: true,
-            data: snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || doc.data().createdAt,
-            })) as Subject[]
+            data: snapshot.docs.map(doc => {
+                const d = doc.data();
+                return {
+                    id: doc.id,
+                    name: d.name || '',
+                    snsUrl: d.snsUrl || '',
+                    notes: d.notes || '',
+                    realName: d.realName || '',
+                    birthday: d.birthday || '',
+                    birthYear: d.birthYear || '',
+                    birthMonth: d.birthMonth || '',
+                    birthDay: d.birthDay || '',
+                    approximateAge: d.approximateAge || '',
+                    deceasedDate: d.deceasedDate || '',
+                    deceasedYear: d.deceasedYear || '',
+                    deceasedMonth: d.deceasedMonth || '',
+                    deceasedDay: d.deceasedDay || '',
+                    createdAt: d.createdAt?.toDate?.()?.toISOString() ?? d.createdAt ?? '',
+                    updatedAt: d.updatedAt?.toDate?.()?.toISOString() ?? d.updatedAt ?? '',
+                };
+            }) as Subject[]
         };
     } catch (error: any) {
         console.error('Error fetching subjects:', error);

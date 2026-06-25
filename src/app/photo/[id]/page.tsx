@@ -1,5 +1,6 @@
 import { Metadata, ResolvingMetadata } from 'next';
 import { getPhotoPublic } from '@/lib/actions/photos';
+import { getPublicModels } from '@/lib/actions/users';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -83,6 +84,13 @@ export default async function PhotoPage({ params }: Props) {
 
     if (!photo) {
         notFound();
+    }
+
+    // モデル情報の生没年データを公開データから取得
+    const modelsResult = await getPublicModels();
+    let modelInfo = null;
+    if (modelsResult.success && modelsResult.models && photo.subjectName) {
+        modelInfo = modelsResult.models.find(m => m.displayName === photo.subjectName) || null;
     }
 
     // ✅ Debug: Check coordinates on server
@@ -264,10 +272,17 @@ export default async function PhotoPage({ params }: Props) {
                                     <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold">
                                         {(photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') ? 'Cosplayer' : 'Model'}
                                     </span>
-                                    <span className={clsx(
-                                        "text-base tracking-wide font-bold",
-                                        (photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && "text-purple-600"
-                                    )}>{photo.subjectName}</span>
+                                    <div className="flex flex-wrap items-baseline gap-2">
+                                        <span className={clsx(
+                                            "text-base tracking-wide font-bold",
+                                            (photo.categoryId?.toLowerCase() === 'cosplay' || photo.category?.toLowerCase() === 'cosplay') && "text-purple-600"
+                                        )}>{photo.subjectName}</span>
+                                        {modelInfo && modelInfo.deceasedDate && (
+                                            <span className="text-xs text-neutral-400 font-serif italic tracking-wider">
+                                                ({modelInfo.birthday ? modelInfo.birthday.replace(/-/g, '.') : '????.??.??'} - {modelInfo.deceasedDate.replace(/-/g, '.')})
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
