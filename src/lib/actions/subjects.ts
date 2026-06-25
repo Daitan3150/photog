@@ -14,6 +14,7 @@ export interface Subject {
     birthDay?: string;
     approximateAge?: string;
     showBirthYear?: boolean;
+    showAge?: boolean;
     deceasedDate?: string;
     deceasedYear?: string;
     deceasedMonth?: string;
@@ -32,6 +33,7 @@ export interface SubjectFormData {
     birthDay?: string;
     approximateAge?: string;
     showBirthYear?: boolean;
+    showAge?: boolean;
     deceasedDate?: string;
     deceasedYear?: string;
     deceasedMonth?: string;

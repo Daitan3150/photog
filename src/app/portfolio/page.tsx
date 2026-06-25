@@ -43,6 +43,7 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
         birthDay?: string;
         approximateAge?: string;
         showBirthYear?: boolean;
+        showAge?: boolean;
         deceasedDate?: string; 
         deceasedYear?: string;
         deceasedMonth?: string;
@@ -58,6 +59,7 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
                 birthDay: m.birthDay,
                 approximateAge: m.approximateAge,
                 showBirthYear: m.showBirthYear,
+                showAge: m.showAge,
                 deceasedDate: m.deceasedDate,
                 deceasedYear: m.deceasedYear,
                 deceasedMonth: m.deceasedMonth,
@@ -111,6 +113,7 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
                                                 birthDay={modelInfo?.birthDay}
                                                 approximateAge={modelInfo?.approximateAge}
                                                 showBirthYear={modelInfo?.showBirthYear}
+                                                showAge={modelInfo?.showAge}
                                                 deceasedDate={modelInfo?.deceasedDate}
                                                 deceasedYear={modelInfo?.deceasedYear}
                                                 deceasedMonth={modelInfo?.deceasedMonth}
@@ -136,6 +139,7 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
                                                 birthDay={modelInfo?.birthDay}
                                                 approximateAge={modelInfo?.approximateAge}
                                                 showBirthYear={modelInfo?.showBirthYear}
+                                                showAge={modelInfo?.showAge}
                                                 deceasedDate={modelInfo?.deceasedDate}
                                                 deceasedYear={modelInfo?.deceasedYear}
                                                 deceasedMonth={modelInfo?.deceasedMonth}

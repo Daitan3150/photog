@@ -44,6 +44,7 @@ interface CosplayScrollSectionProps {
     birthDay?: string;
     approximateAge?: string;
     showBirthYear?: boolean;
+    showAge?: boolean;
     deceasedDate?: string;
     deceasedYear?: string;
     deceasedMonth?: string;
@@ -53,7 +54,7 @@ interface CosplayScrollSectionProps {
 
 export default function CosplayScrollSection({ 
     modelName, photos, 
-    birthday, birthYear, birthMonth, birthDay, approximateAge, showBirthYear,
+    birthday, birthYear, birthMonth, birthDay, approximateAge, showBirthYear, showAge,
     deceasedDate, deceasedYear, deceasedMonth, deceasedDay, realName
 }: CosplayScrollSectionProps) {
     const searchParams = useSearchParams();
@@ -180,6 +181,10 @@ export default function CosplayScrollSection({
                             const ageLabel = (() => {
                                 if (calcAge === null) return null;
                                 if (hasDeceased) return `享年 ${calcAge} 歳`;
+                                
+                                // 年非公開、かつ年齢非公開ならバッジを出さない
+                                if (!showYear && showAge === false) return null;
+
                                 if (calcAge >= 20) return `${calcAge}↗︎`;
                                 return `${calcAge}`;
                             })();

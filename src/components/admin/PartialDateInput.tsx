@@ -18,6 +18,9 @@ interface PartialDateInputProps {
     // 年を公開するかどうか
     showBirthYear?: boolean;
     onShowBirthYearChange?: (val: boolean) => void;
+    // 年齢を公開するかどうか
+    showAge?: boolean;
+    onShowAgeChange?: (val: boolean) => void;
 }
 
 export default function PartialDateInput({
@@ -28,6 +31,7 @@ export default function PartialDateInput({
     label, labelColor = 'text-gray-400',
     useCheckbox = false, checkboxChecked = false, onCheckboxChange,
     showBirthYear, onShowBirthYearChange,
+    showAge, onShowAgeChange,
 }: PartialDateInputProps) {
     const years = useMemo(() => {
         const currentYear = new Date().getFullYear();
@@ -161,19 +165,43 @@ export default function PartialDateInput({
                         </label>
                     )}
 
-                    {showApproximateAge && !year && onApproximateAgeChange && (
-                        <div className="pt-2">
-                            <label className={`text-xs block mb-1 ${labelColor}`}>大体の年齢（年が不明な場合）</label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="number"
-                                    value={approximateAge}
-                                    onChange={e => onApproximateAgeChange(e.target.value)}
-                                    placeholder="例: 20"
-                                    className="w-24 px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-400 focus:bg-white transition-all"
-                                />
-                                <span className="text-sm text-gray-500 font-bold">歳</span>
-                            </div>
+                    {/* 年齢公開設定（年が非表示、または未設定の場合） */}
+                    {showApproximateAge && (!year || !showBirthYear) && onShowAgeChange && (
+                        <div className="mt-3 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                            <label className="flex items-center gap-2 cursor-pointer group select-none mb-3">
+                                <div className="relative flex-shrink-0">
+                                    <input
+                                        type="checkbox"
+                                        checked={showAge === true}
+                                        onChange={e => onShowAgeChange(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-10 h-5 bg-gray-200 peer-checked:bg-indigo-500 rounded-full transition-colors duration-200" />
+                                    <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 peer-checked:translate-x-5" />
+                                </div>
+                                <span className="text-[11px] font-semibold text-gray-500 group-hover:text-gray-700 transition-colors">
+                                    年齢を公開する
+                                </span>
+                            </label>
+
+                            {showAge && onApproximateAgeChange && (
+                                <div className="ml-2 pl-4 border-l-2 border-indigo-100">
+                                    <label className={`text-xs block mb-1 font-medium ${labelColor}`}>
+                                        公開する年齢 <span className="text-gray-400 font-normal">（空欄の場合は自動計算）</span>
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            value={approximateAge}
+                                            onChange={e => onApproximateAgeChange(e.target.value)}
+                                            placeholder="例: 20"
+                                            className="w-24 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
+                                        />
+                                        <span className="text-sm text-gray-500 font-bold">歳</span>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-1">※ 20と入力すると「20↗︎」と表示されます</p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </>

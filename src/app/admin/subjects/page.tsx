@@ -68,6 +68,7 @@ function SubjectEditModal({
         notes: subject.notes || '',
     });
     const [showBirthYear, setShowBirthYear] = useState<boolean>(subject.showBirthYear === true);
+    const [showAge, setShowAge] = useState<boolean>(subject.showAge !== false);
     const [deceasedChecked, setDeceasedChecked] = useState(
         !!(subject.deceasedDate || subject.deceasedYear || subject.deceasedMonth)
     );
@@ -101,6 +102,7 @@ function SubjectEditModal({
                 deceasedMonth: deceasedChecked ? form.deceasedMonth : '',
                 deceasedDay: deceasedChecked ? form.deceasedDay : '',
                 showBirthYear,
+                showAge,
             };
 
             const result = isNew
@@ -183,6 +185,8 @@ function SubjectEditModal({
                             labelColor="text-gray-400"
                             showBirthYear={showBirthYear}
                             onShowBirthYearChange={setShowBirthYear}
+                            showAge={showAge}
+                            onShowAgeChange={setShowAge}
                         />
                         <PartialDateInput
                             year={form.deceasedYear}

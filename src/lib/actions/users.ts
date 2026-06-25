@@ -238,6 +238,7 @@ export async function adminUpdateUserProfile(
         birthDay?: string;
         approximateAge?: string;
         showBirthYear?: boolean;
+        showAge?: boolean;
         deceasedDate?: string;
         deceasedYear?: string;
         deceasedMonth?: string;
@@ -258,6 +259,7 @@ export async function adminUpdateUserProfile(
         if (data.birthDay !== undefined) updateData.birthDay = data.birthDay;
         if (data.approximateAge !== undefined) updateData.approximateAge = data.approximateAge;
         if (data.showBirthYear !== undefined) updateData.showBirthYear = data.showBirthYear;
+        if (data.showAge !== undefined) updateData.showAge = data.showAge;
         if (data.deceasedDate !== undefined) updateData.deceasedDate = data.deceasedDate;
         if (data.deceasedYear !== undefined) updateData.deceasedYear = data.deceasedYear;
         if (data.deceasedMonth !== undefined) updateData.deceasedMonth = data.deceasedMonth;
@@ -298,6 +300,7 @@ export async function getPublicModels(): Promise<{
         birthDay?: string;
         approximateAge?: string;
         showBirthYear?: boolean;
+        showAge?: boolean;
         deceasedDate?: string; 
         deceasedYear?: string;
         deceasedMonth?: string;

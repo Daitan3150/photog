@@ -35,6 +35,7 @@ export default function EditUserModel({ user }: EditUserModelProps) {
     const [birthDay, setBirthDay] = useState(user.birthDay || (user.birthday ? user.birthday.split('-')[2] : ''));
     const [approximateAge, setApproximateAge] = useState(user.approximateAge || '');
     const [showBirthYear, setShowBirthYear] = useState<boolean>(user.showBirthYear === true);
+    const [showAge, setShowAge] = useState<boolean>(user.showAge !== false);
     const [deceasedYear, setDeceasedYear] = useState(user.deceasedYear || (user.deceasedDate ? user.deceasedDate.split('-')[0] : ''));
     const [deceasedMonth, setDeceasedMonth] = useState(user.deceasedMonth || (user.deceasedDate ? user.deceasedDate.split('-')[1] : ''));
     const [deceasedDay, setDeceasedDay] = useState(user.deceasedDay || (user.deceasedDate ? user.deceasedDate.split('-')[2] : ''));
@@ -62,6 +63,7 @@ export default function EditUserModel({ user }: EditUserModelProps) {
                 birthDay,
                 approximateAge,
                 showBirthYear,
+                showAge,
                 deceasedDate: deceasedDateStr,
                 deceasedYear: deceasedChecked ? deceasedYear : '',
                 deceasedMonth: deceasedChecked ? deceasedMonth : '',
@@ -152,6 +154,8 @@ export default function EditUserModel({ user }: EditUserModelProps) {
                                     labelColor="text-gray-700"
                                     showBirthYear={showBirthYear}
                                     onShowBirthYearChange={setShowBirthYear}
+                                    showAge={showAge}
+                                    onShowAgeChange={setShowAge}
                                 />
 
                                 <PartialDateInput
