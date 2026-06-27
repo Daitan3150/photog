@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { adminUpdateUserProfile } from '@/lib/actions/users';
 import { useRouter } from 'next/navigation';
-import { Edit2, X } from 'lucide-react';
+import { Edit2, Eye, EyeOff, X } from 'lucide-react';
 import PartialDateInput from '@/components/admin/PartialDateInput';
 
 interface EditUserModelProps {
@@ -11,6 +11,7 @@ interface EditUserModelProps {
         uid: string;
         displayName: string;
         realName?: string;
+        showRealName?: boolean;
         birthday?: string;
         birthYear?: string;
         birthMonth?: string;
@@ -31,6 +32,7 @@ export default function EditUserModel({ user }: EditUserModelProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [displayName, setDisplayName] = useState(user.displayName);
     const [realName, setRealName] = useState(user.realName || '');
+    const [showRealName, setShowRealName] = useState(user.showRealName === true);
     const [birthYear, setBirthYear] = useState(user.birthYear || (user.birthday ? user.birthday.split('-')[0] : ''));
     const [birthMonth, setBirthMonth] = useState(user.birthMonth || (user.birthday ? user.birthday.split('-')[1] : ''));
     const [birthDay, setBirthDay] = useState(user.birthDay || (user.birthday ? user.birthday.split('-')[2] : ''));
@@ -58,6 +60,7 @@ export default function EditUserModel({ user }: EditUserModelProps) {
             const result = await adminUpdateUserProfile(user.uid, {
                 displayName,
                 realName: realName.trim() || '',
+                showRealName: realName.trim() ? showRealName : false,
                 birthday: birthdayStr,
                 birthYear,
                 birthMonth,
@@ -138,6 +141,24 @@ export default function EditUserModel({ user }: EditUserModelProps) {
                                     placeholder="本名を入力"
                                     className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowRealName(v => !v)}
+                                    disabled={!realName.trim()}
+                                    className={`w-full mt-2 flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg border text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                                        realName.trim() && showRealName
+                                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                            : 'bg-gray-50 border-gray-200 text-gray-500'
+                                    }`}
+                                >
+                                    <span className="flex items-center gap-2 text-xs font-bold">
+                                        {realName.trim() && showRealName ? <Eye size={14} /> : <EyeOff size={14} />}
+                                        ポートフォリオに本名を表示
+                                    </span>
+                                    <span className="text-[11px] font-bold">
+                                        {realName.trim() && showRealName ? '表示する' : '表示しない'}
+                                    </span>
+                                </button>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4">

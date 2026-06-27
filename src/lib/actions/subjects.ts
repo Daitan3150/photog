@@ -8,6 +8,7 @@ export interface Subject {
     snsUrl?: string;
     notes?: string;
     realName?: string;
+    showRealName?: boolean;
     birthday?: string;
     birthYear?: string;
     birthMonth?: string;
@@ -27,6 +28,7 @@ export interface SubjectFormData {
     snsUrl?: string;
     notes?: string;
     realName?: string;
+    showRealName?: boolean;
     birthday?: string;
     birthYear?: string;
     birthMonth?: string;
@@ -58,6 +60,7 @@ export async function getSubjects() {
                     snsUrl: d.snsUrl || '',
                     notes: d.notes || '',
                     realName: d.realName || '',
+                    showRealName: d.showRealName === true,
                     birthday: d.birthday || '',
                     birthYear: d.birthYear || '',
                     birthMonth: d.birthMonth || '',

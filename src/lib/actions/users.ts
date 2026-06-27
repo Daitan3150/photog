@@ -20,11 +20,14 @@ export type UserData = {
     createdAt: string;
     lastLoginAt?: string;
     realName?: string;
+    showRealName?: boolean;
     birthday?: string;
     birthYear?: string;
     birthMonth?: string;
     birthDay?: string;
     approximateAge?: string;
+    showBirthYear?: boolean;
+    showAge?: boolean;
     deceasedDate?: string;
     deceasedYear?: string;
     deceasedMonth?: string;
@@ -83,6 +86,7 @@ export async function getUsers(): Promise<{ success: boolean; users?: UserData[]
                 createdAt: user.metadata.creationTime,
                 lastLoginAt: user.metadata.lastSignInTime,
                 realName: firestoreData.realName || '',
+                showRealName: firestoreData.showRealName === true,
                 birthday: firestoreData.birthday || '',
                 birthYear: firestoreData.birthYear || '',
                 birthMonth: firestoreData.birthMonth || '',
@@ -234,6 +238,7 @@ export async function adminUpdateUserProfile(
     data: {
         displayName?: string;
         realName?: string;
+        showRealName?: boolean;
         birthday?: string;
         birthYear?: string;
         birthMonth?: string;
@@ -255,6 +260,7 @@ export async function adminUpdateUserProfile(
         const updateData: any = {};
         if (data.displayName !== undefined) updateData.displayName = data.displayName;
         if (data.realName !== undefined) updateData.realName = data.realName;
+        if (data.showRealName !== undefined) updateData.showRealName = data.showRealName;
         if (data.birthday !== undefined) updateData.birthday = data.birthday;
         if (data.birthYear !== undefined) updateData.birthYear = data.birthYear;
         if (data.birthMonth !== undefined) updateData.birthMonth = data.birthMonth;
@@ -296,6 +302,7 @@ export async function getPublicModels(): Promise<{
     models?: { 
         displayName: string; 
         name?: string;
+        showRealName?: boolean;
         birthday?: string; 
         birthYear?: string;
         birthMonth?: string;
@@ -323,7 +330,8 @@ export async function getPublicModels(): Promise<{
             const data = doc.data();
             return {
                 displayName: data.displayName || 'No Name',
-                name: data.name || '',
+                name: data.showRealName === true ? (data.realName || '') : '',
+                showRealName: data.showRealName === true,
                 birthday: data.birthday || '',
                 birthYear: data.birthYear || '',
                 birthMonth: data.birthMonth || '',
@@ -342,7 +350,8 @@ export async function getPublicModels(): Promise<{
             const data = doc.data();
             return {
                 displayName: data.name || 'No Name',
-                name: data.realName || '',
+                name: data.showRealName === true ? (data.realName || '') : '',
+                showRealName: data.showRealName === true,
                 birthday: data.birthday || '',
                 birthYear: data.birthYear || '',
                 birthMonth: data.birthMonth || '',

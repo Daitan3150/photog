@@ -3,26 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { getSubjects, saveSubject, updateSubject, deleteSubject, Subject } from '@/lib/actions/subjects';
-import { adminUpdateUserProfile, getUsers } from '@/lib/actions/users';
-import { Plus, X, Heart, Users, Star, ChevronRight } from 'lucide-react';
+import { Plus, X, Heart, Star, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import PartialDateInput from '@/components/admin/PartialDateInput';
-
-interface UserModel {
-    uid: string;
-    displayName: string;
-    email: string;
-    realName?: string;
-    birthday?: string;
-    birthYear?: string;
-    birthMonth?: string;
-    birthDay?: string;
-    approximateAge?: string;
-    deceasedDate?: string;
-    deceasedYear?: string;
-    deceasedMonth?: string;
-    deceasedDay?: string;
-    photoCount?: number;
-}
 
 const calculateAge = (birth: string, death?: string): number | null => {
     if (!birth) return null;
@@ -67,6 +49,7 @@ function SubjectEditModal({
         snsUrl: subject.snsUrl || '',
         notes: subject.notes || '',
     });
+    const [showRealName, setShowRealName] = useState<boolean>(subject.showRealName === true);
     const [showBirthYear, setShowBirthYear] = useState<boolean>(subject.showBirthYear === true);
     const [showAge, setShowAge] = useState<boolean>(subject.showAge !== false);
     const [deceasedChecked, setDeceasedChecked] = useState(
@@ -101,6 +84,7 @@ function SubjectEditModal({
                 deceasedYear: deceasedChecked ? form.deceasedYear : '',
                 deceasedMonth: deceasedChecked ? form.deceasedMonth : '',
                 deceasedDay: deceasedChecked ? form.deceasedDay : '',
+                showRealName: form.realName.trim() ? showRealName : false,
                 showBirthYear,
                 showAge,
             };
@@ -162,12 +146,30 @@ function SubjectEditModal({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-xs uppercase tracking-widest font-bold text-gray-400 block">本名 <span className="normal-case font-normal text-gray-300">（管理画面のみ・非公開）</span></label>
+                        <label className="text-xs uppercase tracking-widest font-bold text-gray-400 block">本名 <span className="normal-case font-normal text-gray-300">（公開切替できます）</span></label>
                         <input
                             type="text" value={form.realName} onChange={e => set('realName', e.target.value)}
                             placeholder="本名を入力"
                             className="w-full px-4 py-3 bg-amber-50/60 border border-amber-100 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-amber-300 focus:bg-white transition-all"
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowRealName(v => !v)}
+                            disabled={!form.realName.trim()}
+                            className={`w-full mt-2 flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                                form.realName.trim() && showRealName
+                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                    : 'bg-gray-50 border-gray-100 text-gray-500'
+                            }`}
+                        >
+                            <span className="flex items-center gap-2 text-xs font-bold">
+                                {form.realName.trim() && showRealName ? <Eye size={15} /> : <EyeOff size={15} />}
+                                ポートフォリオに本名を表示
+                            </span>
+                            <span className="text-[11px] font-bold">
+                                {form.realName.trim() && showRealName ? '表示する' : '表示しない'}
+                            </span>
+                        </button>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4">
@@ -255,14 +257,26 @@ export default function SubjectsPage() {
 
     const [editingSubject, setEditingSubject] = useState<Subject | null | 'new'>(null);
 
-    useEffect(() => {
-        fetchSubjects().finally(() => setLoading(false));
-    }, []);
-
     const fetchSubjects = async () => {
         const result = await getSubjects();
         if (result.success) setSubjects(result.data);
     };
+
+    useEffect(() => {
+        let ignore = false;
+
+        getSubjects()
+            .then(result => {
+                if (!ignore && result.success) setSubjects(result.data);
+            })
+            .finally(() => {
+                if (!ignore) setLoading(false);
+            });
+
+        return () => {
+            ignore = true;
+        };
+    }, []);
 
     if (!user) return null;
 
@@ -323,7 +337,11 @@ export default function SubjectsPage() {
                                             <div className="flex-1 min-w-0">
                                                 <div className="font-bold text-gray-900 text-sm">{s.name}</div>
                                                 <div className="text-xs text-gray-400 mt-0.5 space-x-2">
-                                                    {s.realName && <span className="text-amber-600">{s.realName}</span>}
+                                                    {s.realName && (
+                                                        <span className={s.showRealName ? 'text-emerald-600' : 'text-amber-600'}>
+                                                            {s.realName}{s.showRealName ? '（公開）' : ''}
+                                                        </span>
+                                                    )}
                                                     {s.birthday && !s.deceasedDate && (
                                                         <span>
                                                             {formatDate(s.birthday)} 生
