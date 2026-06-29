@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Menu, Camera, Home, User, Mail, AlertTriangle, Globe, LogOut, FileText, Settings, Users, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert, Star } from 'lucide-react';
+import { Brain, ChevronLeft, ChevronRight, Menu, Home, Globe, LogOut, Settings, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert, Star } from 'lucide-react';
 import { useAuth } from '@/components/admin/AuthProvider';
 
 
@@ -24,8 +24,6 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
     };
 
     const isAdmin = role === 'admin';
-    const isModel = role === 'model';
-
     // Theme based on role
     const sidebarBg = isAdmin ? 'bg-slate-900' : 'bg-[#0f0c29]'; // Midnight Blue/Purple for model
     const accentColor = isAdmin ? 'bg-blue-600' : 'bg-fuchsia-600'; // Fuchsia for model
@@ -45,6 +43,7 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                 <div className={`mb-10 pt-2 flex items-center justify-between relative shrink-0`}>
                     {!isCollapsed && (
                         <div className="relative w-32 h-32 mx-auto transition-opacity duration-300">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src="/logo.png"
                                 alt="DAITAN Logo"
@@ -155,17 +154,6 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                             </Link>
 
                             <Link
-                                href="/admin/users"
-                                className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/users')
-                                    ? `${accentColor} text-white ${glowClass}`
-                                    : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
-                                    } ${isCollapsed ? 'justify-center' : ''}`}
-                            >
-                                <Users size={20} className={pathname.startsWith('/admin/users') ? '' : 'text-slate-400 group-hover:text-white'} />
-                                {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">ユーザー管理</span>}
-                            </Link>
-
-                            <Link
                                 href="/admin/requests"
                                 className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/requests')
                                     ? `${accentColor} text-white ${glowClass}`
@@ -174,6 +162,17 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                             >
                                 <ShieldAlert size={20} className={pathname.startsWith('/admin/requests') ? '' : 'text-slate-400 group-hover:text-white'} />
                                 {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">削除依頼</span>}
+                            </Link>
+
+                            <Link
+                                href="/admin/ai-lab"
+                                className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/ai-lab')
+                                    ? `${accentColor} text-white ${glowClass}`
+                                    : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
+                                    } ${isCollapsed ? 'justify-center' : ''}`}
+                            >
+                                <Brain size={20} className={pathname.startsWith('/admin/ai-lab') ? '' : 'text-slate-400 group-hover:text-white'} />
+                                {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">AI Lab</span>}
                             </Link>
 
                             <Link

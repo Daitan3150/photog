@@ -3,7 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { getSubjects, saveSubject, updateSubject, deleteSubject, Subject } from '@/lib/actions/subjects';
-import { Plus, X, Heart, Star, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { getUsers, UserData } from '@/lib/actions/users';
+import EditUserModel from '@/app/admin/users/EditUserModel';
+import ResetPasswordForm from '@/app/admin/users/ResetPasswordForm';
+import DeleteUserButton from '@/app/admin/users/DeleteUserButton';
+import { Plus, X, Heart, Star, ChevronRight, Eye, EyeOff, Users, Mail, Hash, Images } from 'lucide-react';
 import PartialDateInput from '@/components/admin/PartialDateInput';
 
 const calculateAge = (birth: string, death?: string): number | null => {
@@ -96,8 +100,8 @@ function SubjectEditModal({
                 await onSaved();
                 onClose();
             } else setError(result.error || '保存に失敗しました。');
-        } catch (err: any) {
-            setError(err.message || 'エラーが発生しました。');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'エラーが発生しました。');
         } finally {
             setSaving(false);
         }
@@ -253,6 +257,7 @@ export default function SubjectsPage() {
     const { user } = useAuth();
 
     const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [userModels, setUserModels] = useState<UserData[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [editingSubject, setEditingSubject] = useState<Subject | null | 'new'>(null);
@@ -262,12 +267,19 @@ export default function SubjectsPage() {
         if (result.success) setSubjects(result.data);
     };
 
+    const fetchUsers = async () => {
+        const result = await getUsers();
+        if (result.success && result.users) setUserModels(result.users);
+    };
+
     useEffect(() => {
         let ignore = false;
 
-        getSubjects()
-            .then(result => {
-                if (!ignore && result.success) setSubjects(result.data);
+        Promise.all([getSubjects(), getUsers()])
+            .then(([subjectsResult, usersResult]) => {
+                if (ignore) return;
+                if (subjectsResult.success) setSubjects(subjectsResult.data);
+                if (usersResult.success && usersResult.users) setUserModels(usersResult.users);
             })
             .finally(() => {
                 if (!ignore) setLoading(false);
@@ -281,11 +293,23 @@ export default function SubjectsPage() {
     if (!user) return null;
 
     return (
-        <div className="max-w-2xl mx-auto py-10 px-4 md:px-6 space-y-10">
+        <div className="max-w-5xl mx-auto py-10 px-4 md:px-6 space-y-10">
 
-            <header>
-                <h1 className="text-2xl font-bold text-gray-900">モデル管理</h1>
-                <p className="text-sm text-gray-400 mt-1">名前をタップすると編集できます</p>
+            <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">モデル管理</h1>
+                    <p className="text-sm text-gray-400 mt-1">被写体情報とアカウント連携モデルをまとめて管理します</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 md:min-w-72">
+                    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+                        <div className="text-2xl font-black text-gray-900">{subjects.length}</div>
+                        <div className="text-xs font-bold text-gray-400 mt-1">手入力モデル</div>
+                    </div>
+                    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+                        <div className="text-2xl font-black text-gray-900">{userModels.length}</div>
+                        <div className="text-xs font-bold text-gray-400 mt-1">アカウント連携</div>
+                    </div>
+                </div>
             </header>
 
             {loading ? (
@@ -368,6 +392,105 @@ export default function SubjectsPage() {
 
                                             <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-400 transition-colors shrink-0" />
                                         </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </section>
+
+                    <section>
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <Users size={15} className="text-indigo-400" />
+                                <span className="text-sm font-bold text-gray-700">アカウント連携モデル ({userModels.length})</span>
+                            </div>
+                            <a
+                                href="/admin/invite"
+                                className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl transition-all active:scale-95"
+                            >
+                                <Plus size={14} />
+                                招待コード発行
+                            </a>
+                        </div>
+
+                        {userModels.length === 0 ? (
+                            <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100">
+                                <p className="text-gray-400 text-sm">登録ユーザーがいません</p>
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
+                                {userModels.map(model => {
+                                    const age = model.birthday ? calculateAge(model.birthday, model.deceasedDate) : null;
+                                    const initial = (model.displayName || model.email || '?').charAt(0).toUpperCase();
+
+                                    return (
+                                        <div
+                                            key={model.uid}
+                                            className={`flex flex-col lg:flex-row lg:items-center gap-4 px-5 py-4 ${model.deceasedDate ? 'bg-rose-50/20' : ''}`}
+                                        >
+                                            <div className="flex items-start gap-4 flex-1 min-w-0">
+                                                <div className={`w-11 h-11 rounded-full flex items-center justify-center text-base font-bold shrink-0 overflow-hidden ${model.deceasedDate ? 'bg-rose-100 text-rose-400' : 'bg-indigo-100 text-indigo-500'}`}>
+                                                    {model.photoURL ? (
+                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                        <img src={model.photoURL} alt={model.displayName} className="w-full h-full object-cover" />
+                                                    ) : model.deceasedDate ? (
+                                                        <Heart size={16} fill="currentColor" />
+                                                    ) : (
+                                                        initial
+                                                    )}
+                                                </div>
+
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                        <div className="font-bold text-gray-900 text-sm">{model.displayName}</div>
+                                                        {model.modelId && (
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-mono font-bold text-gray-500">
+                                                                <Hash size={10} />
+                                                                {model.modelId}
+                                                            </span>
+                                                        )}
+                                                        {model.photoCount > 0 && (
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                                                                <Images size={10} />
+                                                                {model.photoCount}枚
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400 mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <Mail size={11} />
+                                                            {model.email || '-'}
+                                                        </span>
+                                                        {model.realName && (
+                                                            <span className={model.showRealName ? 'text-emerald-600' : 'text-amber-600'}>
+                                                                {model.realName}{model.showRealName ? '（公開）' : ''}
+                                                            </span>
+                                                        )}
+                                                        {model.birthday && !model.deceasedDate && (
+                                                            <span>
+                                                                {formatDate(model.birthday)} 生
+                                                                {age !== null && `（${age}歳）`}
+                                                            </span>
+                                                        )}
+                                                        {model.birthday && model.deceasedDate && (
+                                                            <span className="text-rose-500">
+                                                                {formatDate(model.birthday)} - {formatDate(model.deceasedDate)}
+                                                                {age !== null && `（享年 ${age}歳）`}
+                                                            </span>
+                                                        )}
+                                                        {!model.realName && !model.birthday && !model.deceasedDate && (
+                                                            <span className="italic">プロフィール詳細未登録</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                                                <EditUserModel user={model} onSaved={fetchUsers} />
+                                                <ResetPasswordForm userId={model.uid} userEmail={model.email || ''} />
+                                                <DeleteUserButton userId={model.uid} userEmail={model.email || ''} onDeleted={fetchUsers} />
+                                            </div>
+                                        </div>
                                     );
                                 })}
                             </div>

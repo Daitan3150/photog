@@ -25,9 +25,10 @@ interface EditUserModelProps {
         deceasedDay?: string;
         email: string;
     };
+    onSaved?: () => void | Promise<void>;
 }
 
-export default function EditUserModel({ user }: EditUserModelProps) {
+export default function EditUserModel({ user, onSaved }: EditUserModelProps) {
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [displayName, setDisplayName] = useState(user.displayName);
@@ -76,6 +77,7 @@ export default function EditUserModel({ user }: EditUserModelProps) {
 
             if (result.success) {
                 setMessage('プロフィールを正常に更新しました。');
+                await onSaved?.();
                 router.refresh();
                 setTimeout(() => {
                     setIsOpen(false);
@@ -84,8 +86,8 @@ export default function EditUserModel({ user }: EditUserModelProps) {
             } else {
                 setError(result.error || 'プロフィールの更新に失敗しました。');
             }
-        } catch (err: any) {
-            setError(err.message || '予期せぬエラーが発生しました。');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : '予期せぬエラーが発生しました。');
         } finally {
             setLoading(false);
         }

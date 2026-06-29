@@ -1,25 +1,53 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type PanInfo } from "framer-motion";
 import Image from "next/image";
 import cloudinaryLoader from "@/lib/cloudinary-loader";
-import { X, ChevronLeft, ChevronRight, MapPin, User, Instagram, Twitter, Globe, ExternalLink, Share2, Copy, Check, Facebook } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { getPhotoStats, incrementPhotoStats, PhotoStats } from "@/lib/worker-stats";
-import { Heart, Sparkles, Calendar } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, MapPin, User, Instagram, Twitter, Globe, ExternalLink, Share2, Copy, Check } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Sparkles, Calendar } from "lucide-react";
 import { clsx } from "clsx";
 import LeafletMap from "@/components/common/LeafletMap";
+import PhotoStatsActions from "./PhotoStatsActions";
 
 interface LightboxProps {
-    photo: any;
+    photo: LightboxPhoto;
     onClose: () => void;
     onNext?: () => void;
     onPrev?: () => void;
     hasMore?: boolean;
 }
 
-const getSnsInfo = (url: string) => {
+interface LightboxPhoto {
+    id?: string;
+    url: string;
+    title?: string;
+    category?: string;
+    categoryId?: string;
+    subjectName?: string;
+    snsUrl?: string;
+    characterName?: string;
+    seriesName?: string;
+    event?: string;
+    displayMode?: 'title' | 'character';
+    location?: string;
+    address?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    nextPhotoUrl?: string | null;
+    prevPhotoUrl?: string | null;
+    exif?: {
+        Make?: string;
+        Model?: string;
+        LensModel?: string;
+        FNumber?: number;
+        ExposureTime?: number | string;
+        ISO?: number;
+        FocalLength?: number;
+    };
+}
+
+const getSnsInfo = (url?: string) => {
     if (!url) return { icon: null, label: 'SNS' };
     const lower = url.toLowerCase();
     if (lower.includes('instagram.com')) {
@@ -38,25 +66,35 @@ import { formatShutterSpeed } from "@/lib/utils/exif";
 
 export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxProps) {
     const { icon: snsIcon, label: snsLabel } = getSnsInfo(photo.snsUrl);
+    const coordinates = typeof photo.latitude === 'number' && typeof photo.longitude === 'number'
+        ? { lat: photo.latitude, lng: photo.longitude }
+        : null;
     const [copied, setCopied] = useState(false);
     const [shareConfirmType, setShareConfirmType] = useState<null | 'Twitter' | 'Instagram'>(null);
     const [focalPoint, setFocalPoint] = useState<{ x: number, y: number }>({ x: 50, y: 50 });
-    const [stats, setStats] = useState<PhotoStats | null>(null);
-    const [isLiked, setIsLiked] = useState(false);
+    const sparkleItems = useMemo(() => {
+        const seedText = String(photo.id || photo.url || 'photo');
+        const seed = Array.from(seedText).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+        const pseudo = (index: number) => {
+            const value = Math.sin(seed + index * 999) * 10000;
+            return value - Math.floor(value);
+        };
+
+        return Array.from({ length: 6 }, (_, index) => ({
+            left: pseudo(index * 7) * 100,
+            top: pseudo(index * 7 + 1) * 100,
+            xFrom: pseudo(index * 7 + 2) * 100 - 50,
+            xTo: pseudo(index * 7 + 3) * 100 - 50,
+            yFrom: pseudo(index * 7 + 4) * 100 - 50,
+            yTo: pseudo(index * 7 + 5) * 100 - 50,
+            duration: 2 + pseudo(index * 7 + 6) * 2,
+            delay: pseudo(index * 7 + 7) * 2,
+        }));
+    }, [photo.id, photo.url]);
 
     // Lock body scroll when open
     useEffect(() => {
         document.body.style.overflow = 'hidden';
-
-        // --- 🧠 知識 (Knowledge): Stats 取得 & View インクリメント ---
-        if (photo.id) {
-            getPhotoStats(photo.id).then(setStats);
-            incrementPhotoStats(photo.id, 'view').then(success => {
-                if (success) {
-                    setStats(prev => prev ? { ...prev, views: prev.views + 1 } : { views: 1, likes: 0 });
-                }
-            });
-        }
 
         return () => {
             document.body.style.overflow = 'unset';
@@ -111,7 +149,7 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                         drag="x"
                         dragConstraints={{ left: 0, right: 0 }}
                         dragElastic={0.2}
-                        onDragEnd={(_: any, info: any) => {
+                        onDragEnd={(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
                             const threshold = 50;
                             if (info.offset.x < -threshold && onNext) {
                                 onNext();
@@ -142,25 +180,25 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                             {/* Cosplay Sparkle Layer */}
                             {(photo.category?.toLowerCase() === 'cosplay' || photo.categoryId?.toLowerCase() === 'cosplay') && (
                                 <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl">
-                                    {[...Array(6)].map((_, i) => (
+                                    {sparkleItems.map((sparkle, i) => (
                                         <motion.div
                                             key={i}
                                             initial={{ opacity: 0, scale: 0 }}
                                             animate={{
                                                 opacity: [0, 1, 0],
                                                 scale: [0, 1, 0],
-                                                x: [Math.random() * 100 - 50, Math.random() * 100 - 50],
-                                                y: [Math.random() * 100 - 50, Math.random() * 100 - 50]
+                                                x: [sparkle.xFrom, sparkle.xTo],
+                                                y: [sparkle.yFrom, sparkle.yTo]
                                             }}
                                             transition={{
-                                                duration: 2 + Math.random() * 2,
+                                                duration: sparkle.duration,
                                                 repeat: Infinity,
-                                                delay: Math.random() * 2
+                                                delay: sparkle.delay
                                             }}
                                             className="absolute"
                                             style={{
-                                                left: `${Math.random() * 100}%`,
-                                                top: `${Math.random() * 100}%`
+                                                left: `${sparkle.left}%`,
+                                                top: `${sparkle.top}%`
                                             }}
                                         >
                                             <Sparkles className="w-6 h-6 text-white/40 drop-shadow-glow" />
@@ -211,28 +249,11 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                 </div>
                             )}
 
-                            {/* --- 🧠 知識 (Knowledge): Stats Display --- */}
-                            <div className="flex items-center gap-4 pt-2">
-                                <div className="flex items-center gap-1.5 text-gray-400">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest">Views</span>
-                                    <span className="text-sm font-medium font-sans text-gray-600">{stats?.views || 0}</span>
+                            {photo.id && (
+                                <div className="pt-2" onClick={(e) => e.stopPropagation()}>
+                                    <PhotoStatsActions photoId={photo.id} trackView={true} variant="light" />
                                 </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (!isLiked && photo.id) {
-                                            incrementPhotoStats(photo.id, 'like');
-                                            setStats(prev => prev ? { ...prev, likes: prev.likes + 1 } : { views: 0, likes: 1 });
-                                            setIsLiked(true);
-                                        }
-                                    }}
-                                    disabled={isLiked}
-                                    className={`flex items-center gap-1.5 transition-colors ${isLiked ? 'text-rose-500' : 'text-gray-400 hover:text-rose-500'}`}
-                                >
-                                    <Heart size={14} fill={isLiked ? "currentColor" : "none"} />
-                                    <span className="text-sm font-medium font-sans">{stats?.likes || 0}</span>
-                                </button>
-                            </div>
+                            )}
                         </div>
 
                         <div className="pt-6 border-t border-gray-100 space-y-4">
@@ -301,16 +322,16 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                         )}
 
                                         {/* ✅ ライトボックス内マッププレビュー (Leaflet) */}
-                                        {photo.latitude !== null && photo.longitude !== null && (
+                                        {coordinates && (
                                             <div className="w-full h-32 mt-2 group/map relative">
                                                 <LeafletMap
-                                                    lat={photo.latitude}
-                                                    lng={photo.longitude}
+                                                    lat={coordinates.lat}
+                                                    lng={coordinates.lng}
                                                     height="128px"
                                                     className="rounded-xl overflow-hidden shadow-sm border border-gray-100"
                                                 />
                                                 <a
-                                                    href={`https://www.google.com/maps/search/?api=1&query=${photo.latitude},${photo.longitude}`}
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${coordinates.lat},${coordinates.lng}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="absolute top-2 right-2 z-[1000] bg-white/95 backdrop-blur-md p-1.5 rounded-lg text-blue-600 shadow-sm border border-blue-100 hover:bg-blue-50 transition-all transform scale-75 lg:scale-90"

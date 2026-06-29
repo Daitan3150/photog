@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/components/admin/AuthProvider';
 import BackupEmailButton from '@/components/admin/BackupEmailButton';
-import { Images, UserPlus, Users, UserCircle, ArrowRight, Sparkles, Home } from 'lucide-react';
+import { Brain, Images, UserPlus, UserCircle, ArrowRight, Sparkles, Home, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSiteSettings, SiteSettings } from '@/lib/actions/settings';
@@ -112,12 +112,23 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="p-6 rounded-xl bg-white border border-gray-100 hover:border-indigo-400 hover:shadow-lg shadow-gray-200 transition-all group">
                                     <div className="w-12 h-12 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-                                        <Users size={24} />
+                                        <Star size={24} />
                                     </div>
-                                    <h3 className="text-xl font-bold mb-2">ユーザー管理</h3>
-                                    <p className="text-gray-500 mb-6 text-sm">登録ユーザーのリストと統計。</p>
-                                    <Link href="/admin/users" className="flex items-center justify-between p-3 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 transition-all">
-                                        <span>ユーザー一覧を見る</span>
+                                    <h3 className="text-xl font-bold mb-2">モデル管理</h3>
+                                    <p className="text-gray-500 mb-6 text-sm">被写体とアカウント連携モデルをまとめて管理。</p>
+                                    <Link href="/admin/subjects" className="flex items-center justify-between p-3 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 transition-all">
+                                        <span>モデルを管理</span>
+                                        <ArrowRight size={16} />
+                                    </Link>
+                                </div>
+                                <div className="p-6 rounded-xl bg-white border border-gray-100 hover:border-violet-400 hover:shadow-lg shadow-gray-200 transition-all group">
+                                    <div className="w-12 h-12 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
+                                        <Brain size={24} />
+                                    </div>
+                                    <h3 className="text-xl font-bold mb-2">AI Lab</h3>
+                                    <p className="text-gray-500 mb-6 text-sm">外部AIなしで、サイトの好みや作業ルールを記憶。</p>
+                                    <Link href="/admin/ai-lab" className="flex items-center justify-between p-3 bg-violet-600 text-white rounded-lg font-bold text-sm hover:bg-violet-700 transition-all">
+                                        <span>AI Labを開く</span>
                                         <ArrowRight size={16} />
                                     </Link>
                                 </div>
