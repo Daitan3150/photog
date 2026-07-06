@@ -102,6 +102,49 @@ export async function deleteStudio(id: string, idToken: string): Promise<{ succe
 }
 
 /**
+ * スタジオが未登録なら自動で作成する
+ */
+export async function ensureStudioExists(studioName: string, data: Partial<StudioFormData> = {}) {
+    try {
+        const trimmedName = studioName?.trim();
+        if (!trimmedName) {
+            return { success: true, exists: true };
+        }
+
+        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const db = getAdminFirestore();
+
+        const normalizedName = trimmedName.toLowerCase();
+        const snapshot = await db.collection('studios').get();
+        const existingDoc = snapshot.docs.find(doc => String(doc.data().name || '').trim().toLowerCase() === normalizedName);
+
+        if (existingDoc) {
+            return { success: true, exists: true, id: existingDoc.id };
+        }
+
+        const newStudio = {
+            name: trimmedName,
+            url: data.url || '',
+            addressZip: data.addressZip || '',
+            addressPref: data.addressPref || '',
+            addressCity: data.addressCity || '',
+            address: data.address || '',
+            latitude: data.latitude ?? null,
+            longitude: data.longitude ?? null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+
+        const ref = await db.collection('studios').add(newStudio);
+        revalidatePath('/admin/studios');
+        return { success: true, exists: false, id: ref.id };
+    } catch (error: any) {
+        console.error('Error ensuring studio exists:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
  * 郵便番号から住所を取得する (Server Action to avoid CORS)
  */
 export async function getZipAddressAction(zipCode: string) {

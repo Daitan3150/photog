@@ -258,6 +258,17 @@ export default function NewPhotoPage() {
     const [showNewLocationForm, setShowNewLocationForm] = useState(false);
     const [newLocation, setNewLocation] = useState<Partial<Location>>({ name: '', type: 'outdoor' });
 
+    const filteredSavedLocations = allLocations.filter(loc => {
+        const query = locationSearch.trim().toLowerCase();
+        if (!query) return true;
+        return (
+            loc.name.toLowerCase().includes(query) ||
+            loc.type.toLowerCase().includes(query) ||
+            (loc.address || '').toLowerCase().includes(query) ||
+            (loc.note || '').toLowerCase().includes(query)
+        );
+    });
+
     // ✅ 新機能: 項目表示制御
     const [activeFields, setActiveFields] = useState({
         event: true,
@@ -1309,19 +1320,12 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                     </button>
                                 </div>
                                 <datalist id="lens-candidates">
-                                    {/* ✅ EXIF履歴 + localStorage履歴をマージ。大文字小文字を無視して重複を完全に排除 */}
                                     {(() => {
-                                        const combined = [...exifSuggestions.lensModels, ...lensHistory];
-                                        const unique = [];
-                                        const seenLower = new Set();
-                                        for (const l of combined) {
-                                            const lower = l.toLowerCase();
-                                            if (!seenLower.has(lower)) {
-                                                unique.push(l);
-                                                seenLower.add(lower);
-                                            }
-                                        }
-                                        return unique;
+                                        const combined = [...(exifSuggestions.lensModels || []), ...lensHistory];
+                                        return combined.filter((value, index, self) => {
+                                            const normalized = value.toLowerCase();
+                                            return self.findIndex(item => item.toLowerCase() === normalized) === index;
+                                        });
                                     })().map((l, i) => <option key={i} value={l} />)}
                                 </datalist>
                                 <div className="flex justify-between items-center mt-1">
@@ -1830,7 +1834,7 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                     <Trees className="w-8 h-8" />
                                                 </div>
                                                 <div className="text-center">
-                                                    <span className="block font-bold text-gray-900">屋外・その他</span>
+                                                    <span className="block font-bold text-gray-900">屋外・室内・その他</span>
                                                     <span className="text-[10px] text-gray-500">外ロケ・イベント会場など</span>
                                                 </div>
                                             </button>
@@ -2013,7 +2017,7 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                             {!showNewLocationForm ? (
                                                 <>
                                                     <div className="space-y-2">
-                                                        <p className="text-sm font-bold text-gray-700">保存済みの屋外・その他ロケーション</p>
+                                                        <p className="text-sm font-bold text-gray-700">保存済みの屋外・室内・その他ロケーション</p>
                                                         <p className="text-[10px] text-gray-400">事前登録した場所を選択できます。</p>
                                                     </div>
 
@@ -2029,7 +2033,7 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                     </div>
 
                                                     <div className="max-h-64 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                                                        {allLocations.filter(loc => (loc.type === 'outdoor' || loc.type === 'other') && loc.name.toLowerCase().includes(locationSearch.toLowerCase())).map(loc => (
+                                                        {filteredSavedLocations.map(loc => (
                                                             <button
                                                                 key={loc.id}
                                                                 type="button"
@@ -2051,13 +2055,13 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                                 <div className="flex items-center justify-between gap-3">
                                                                     <div>
                                                                         <p className="font-bold text-gray-800">{loc.name}</p>
-                                                                        <p className="text-[10px] text-gray-500">{loc.type === 'outdoor' ? '屋外' : 'その他'}{loc.address ? ` · ${loc.address}` : ''}</p>
+                                                                        <p className="text-[10px] text-gray-500">{loc.type === 'outdoor' ? '屋外' : loc.type === 'indoor' ? '室内' : 'その他'}{loc.address ? ` · ${loc.address}` : ''}</p>
                                                                     </div>
                                                                     <ChevronRight className="w-4 h-4 text-gray-300" />
                                                                 </div>
                                                             </button>
                                                         ))}
-                                                        {allLocations.filter(loc => (loc.type === 'outdoor' || loc.type === 'other') && loc.name.toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
+                                                        {filteredSavedLocations.length === 0 && (
                                                             <div className="py-8 text-center text-gray-400 italic text-xs">
                                                                 保存済みロケーションが見つかりません。
                                                             </div>
@@ -2076,10 +2080,11 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                     <div className="grid grid-cols-2 gap-3">
                                                         <select
                                                             value={newLocation.type || 'outdoor'}
-                                                            onChange={e => setNewLocation({ ...newLocation, type: e.target.value as 'outdoor' | 'other' })}
+                                                            onChange={e => setNewLocation({ ...newLocation, type: e.target.value as 'outdoor' | 'indoor' | 'other' })}
                                                             className="w-full p-3 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500"
                                                         >
                                                             <option value="outdoor">屋外</option>
+                                                            <option value="indoor">室内</option>
                                                             <option value="other">その他</option>
                                                         </select>
                                                         <input

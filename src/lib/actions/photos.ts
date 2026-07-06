@@ -19,6 +19,7 @@ import { getCachedData, setCachedData, clearCachedData } from '../worker-cache';
 import { syncPhotoToAlgolia } from '../algolia';
 import { appendToMetadataRegistry } from './metadata';
 import { ensureLocationExists } from './locations';
+import { ensureStudioExists } from './studios';
 import { revalidatePath } from 'next/cache';
 
 const CATEGORIES = ['all', 'portrait', 'snapshot', 'cosplay', 'landscape', 'animal', 'other', 'archived'];
@@ -150,6 +151,44 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             }
         }
 
+        const locationNameToRegister = data.location?.toString().trim();
+        let shootLocationId: string | null | undefined = data.shootLocationId ?? null;
+        const shootLocationType = data.shootLocationType || 'location';
+
+        if (locationNameToRegister && !shootLocationId) {
+            if (shootLocationType === 'studio') {
+                const studioResult = await ensureStudioExists(locationNameToRegister, {
+                    url: data.snsUrl || '',
+                    address: (data as any).address || '',
+                    addressZip: data.addressZip || '',
+                    addressPref: data.addressPref || '',
+                    addressCity: data.addressCity || '',
+                    latitude: data.latitude ?? null,
+                    longitude: data.longitude ?? null,
+                });
+                if (studioResult.success) {
+                    shootLocationId = studioResult.id || null;
+                } else {
+                    console.error('Failed to auto-register studio during photo save:', studioResult.error);
+                }
+            } else {
+                const locationResult = await ensureLocationExists(locationNameToRegister, {
+                    address: (data as any).address || '',
+                    addressZip: data.addressZip || '',
+                    addressPref: data.addressPref || '',
+                    addressCity: data.addressCity || '',
+                    latitude: data.latitude ?? null,
+                    longitude: data.longitude ?? null,
+                    type: data.shootLocationType === 'other' ? 'other' : 'outdoor',
+                });
+                if (locationResult.success) {
+                    shootLocationId = locationResult.id || null;
+                } else {
+                    console.error('Failed to auto-register location during photo save:', locationResult.error);
+                }
+            }
+        }
+
         const photoRef = db.collection('photos').doc();
         const photoId = photoRef.id;
         const photoDataToSave = {
@@ -180,6 +219,8 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             focalPoint: data.focalPoint || null,
             exif: serializeData(data.exif),
             tags: data.tags || [],
+            shootLocationType: data.shootLocationType || 'location',
+            shootLocationId,
             createdAt: new Date(),
             updatedAt: new Date(),
         };
@@ -271,6 +312,44 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 }
             }
 
+            const locationNameToRegister = data.location?.toString().trim();
+            let shootLocationId: string | null | undefined = data.shootLocationId ?? null;
+            const shootLocationType = data.shootLocationType || 'location';
+
+            if (locationNameToRegister && !shootLocationId) {
+                if (shootLocationType === 'studio') {
+                    const studioResult = await ensureStudioExists(locationNameToRegister, {
+                        url: data.snsUrl || '',
+                        address: (data as any).address || '',
+                        addressZip: data.addressZip || '',
+                        addressPref: data.addressPref || '',
+                        addressCity: data.addressCity || '',
+                        latitude: data.latitude ?? null,
+                        longitude: data.longitude ?? null,
+                    });
+                    if (studioResult.success) {
+                        shootLocationId = studioResult.id || null;
+                    } else {
+                        console.error('Failed to auto-register studio during bulk save:', studioResult.error);
+                    }
+                } else {
+                    const locationResult = await ensureLocationExists(locationNameToRegister, {
+                        address: (data as any).address || '',
+                        addressZip: data.addressZip || '',
+                        addressPref: data.addressPref || '',
+                        addressCity: data.addressCity || '',
+                        latitude: data.latitude ?? null,
+                        longitude: data.longitude ?? null,
+                        type: data.shootLocationType === 'other' ? 'other' : 'outdoor',
+                    });
+                    if (locationResult.success) {
+                        shootLocationId = locationResult.id || null;
+                    } else {
+                        console.error('Failed to auto-register location during bulk save:', locationResult.error);
+                    }
+                }
+            }
+
             const photoRef = db.collection('photos').doc();
             photoIds.push(photoRef.id);
             const shotAtDate = (data.shotAt && !isNaN(new Date(String(data.shotAt).replace(/:/g, '-')).getTime()))
@@ -301,6 +380,8 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 focalPoint: data.focalPoint || null,
                 exif: serializeData(data.exif),
                 tags: data.tags || [],
+                shootLocationType,
+                shootLocationId,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
@@ -1157,19 +1238,41 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         }
 
         const locationNameToRegister = (data.location !== undefined ? data.location : photoData?.location)?.toString().trim();
-        if (locationNameToRegister) {
-            const locationResult = await ensureLocationExists(locationNameToRegister, {
-                address: (data.address ?? photoData?.address ?? '').toString(),
-                addressZip: (data as any).addressZip ?? (photoData as any)?.addressZip ?? '',
-                addressPref: (data as any).addressPref ?? (photoData as any)?.addressPref ?? '',
-                addressCity: (data as any).addressCity ?? (photoData as any)?.addressCity ?? '',
-                latitude: data.latitude ?? photoData?.latitude ?? null,
-                longitude: data.longitude ?? photoData?.longitude ?? null,
-                type: (data.latitude !== undefined || data.longitude !== undefined || photoData?.latitude || photoData?.longitude) ? 'outdoor' : 'other',
-            });
+        const shootLocationType = data.shootLocationType ?? photoData?.shootLocationType ?? 'location';
+        let resolvedShootLocationId: string | null | undefined = data.shootLocationId ?? photoData?.shootLocationId ?? null;
 
-            if (!locationResult.success) {
-                console.error('Failed to auto-register location during photo update:', locationResult.error);
+        if (locationNameToRegister) {
+            if (shootLocationType === 'studio') {
+                const studioResult = await ensureStudioExists(locationNameToRegister, {
+                    url: data.snsUrl || (photoData?.snsUrl || ''),
+                    address: (data.address ?? photoData?.address ?? '').toString(),
+                    addressZip: (data as any).addressZip ?? (photoData as any)?.addressZip ?? '',
+                    addressPref: (data as any).addressPref ?? (photoData as any)?.addressPref ?? '',
+                    addressCity: (data as any).addressCity ?? (photoData as any)?.addressCity ?? '',
+                    latitude: data.latitude ?? photoData?.latitude ?? null,
+                    longitude: data.longitude ?? photoData?.longitude ?? null,
+                });
+                if (studioResult.success) {
+                    resolvedShootLocationId = studioResult.id || null;
+                } else {
+                    console.error('Failed to auto-register studio during photo update:', studioResult.error);
+                }
+            } else {
+                const locationResult = await ensureLocationExists(locationNameToRegister, {
+                    address: (data.address ?? photoData?.address ?? '').toString(),
+                    addressZip: (data as any).addressZip ?? (photoData as any)?.addressZip ?? '',
+                    addressPref: (data as any).addressPref ?? (photoData as any)?.addressPref ?? '',
+                    addressCity: (data as any).addressCity ?? (photoData as any)?.addressCity ?? '',
+                    latitude: data.latitude ?? photoData?.latitude ?? null,
+                    longitude: data.longitude ?? photoData?.longitude ?? null,
+                    type: (data.latitude !== undefined || data.longitude !== undefined || photoData?.latitude || photoData?.longitude) ? 'outdoor' : 'other',
+                });
+
+                if (locationResult.success) {
+                    resolvedShootLocationId = locationResult.id || null;
+                } else {
+                    console.error('Failed to auto-register location during photo update:', locationResult.error);
+                }
             }
         }
 
@@ -1206,6 +1309,10 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
 
         if (data.latitude !== undefined) updates.latitude = data.latitude;
         if (data.longitude !== undefined) updates.longitude = data.longitude;
+        if (data.shootLocationType !== undefined) updates.shootLocationType = data.shootLocationType;
+        if (data.shootLocationId !== undefined) updates.shootLocationId = data.shootLocationId;
+        if (resolvedShootLocationId !== undefined && resolvedShootLocationId !== null) updates.shootLocationId = resolvedShootLocationId;
+        if (shootLocationType !== undefined) updates.shootLocationType = shootLocationType;
 
         // [GEOCODING] re-fetch if location changed AND manual coordinates not provided
         if (data.location !== undefined && data.location !== photoData?.location &&

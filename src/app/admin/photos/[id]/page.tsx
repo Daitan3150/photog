@@ -96,7 +96,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         addressZip: '',
         addressPref: '',
         addressCity: '',
-        coordsInput: ''
+        coordsInput: '',
+        shootLocationType: 'location' as 'studio' | 'location' | 'other',
+        shootLocationId: null as string | null,
     });
     const [categories, setCategories] = useState<Category[]>([]);
     const [originalPhoto, setOriginalPhoto] = useState<any>(null);
@@ -195,11 +197,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 coordsInput: (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : '',
                 addressZip: (data as any).addressZip || '',
                 addressPref: (data as any).addressPref || '',
-                addressCity: (data as any).addressCity || ''
-            });
-
-            // ✅ 初期表示時の項目表示判定
-            setActiveFields({
+        addressCity: (data as any).addressCity || '',
+        shootLocationType: data.shootLocationType || 'location',
+        shootLocationId: data.shootLocationId || null,
                 event: !!data.event,
                 subject: !!data.subjectName,
                 series: !!data.seriesName,
@@ -735,7 +735,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                     addressCity: '',
                                                     latitude: null,
                                                     longitude: null,
-                                                    coordsInput: ''
+                                                    coordsInput: '',
+                                                    shootLocationType: 'location',
+                                                    shootLocationId: null
                                                 }));
                                             }}
                                             className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -1062,7 +1064,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                             placeholder="例: FE 35mm F1.4 GM"
                                         />
                                         <datalist id="lens-candidates">
-                                            {exifSuggestions.lensModels.map((l, i) => <option key={i} value={l} />)}
+                                            {(exifSuggestions.lensModels || []).map((l, i) => <option key={i} value={l} />)}
                                         </datalist>
                                     </div>
                                     <div>
@@ -1401,7 +1403,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                 address: studio.address || '',
                                                                 latitude: studio.latitude || null,
                                                                 longitude: studio.longitude || null,
-                                                                coordsInput: (studio.latitude && studio.longitude) ? `${studio.latitude}, ${studio.longitude}` : prev.coordsInput
+                                                                coordsInput: (studio.latitude && studio.longitude) ? `${studio.latitude}, ${studio.longitude}` : prev.coordsInput,
+                                                                shootLocationType: 'studio',
+                                                                shootLocationId: studio.id
                                                             }));
                                                             setShowLocationDialog(false);
 
@@ -1600,7 +1604,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                             location: newStudio.name,
                                                                             latitude: newStudio.latitude || prev.latitude,
                                                                             longitude: newStudio.longitude || prev.longitude,
-                                                                            coordsInput: (newStudio.latitude && newStudio.longitude) ? `${newStudio.latitude}, ${newStudio.longitude}` : prev.coordsInput
+                                                                            coordsInput: (newStudio.latitude && newStudio.longitude) ? `${newStudio.latitude}, ${newStudio.longitude}` : prev.coordsInput,
+                                                                            shootLocationType: 'studio',
+                                                                            shootLocationId: res.id || null
                                                                         }));
                                                                         setShowLocationDialog(false);
                                                                         setShowNewStudioForm(false);
@@ -1641,7 +1647,12 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                     type="text"
                                                     placeholder="例: 代々木公園, 幕張メッセ"
                                                     value={formData.location}
-                                                    onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                                    onChange={e => setFormData({
+                                                        ...formData,
+                                                        location: e.target.value,
+                                                        shootLocationType: 'location',
+                                                        shootLocationId: null
+                                                    })}
                                                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-bold"
                                                 />
                                             </div>

@@ -23,6 +23,8 @@ export interface Photo {
     exifRequest?: boolean; // [NEW] Request from model to admin
     tags?: string[]; // [NEW] AI generated tags
     focalPoint?: { x: number; y: number }; // [NEW] For OGP crop
+    shootLocationType?: 'studio' | 'location' | 'other';
+    shootLocationId?: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -39,4 +41,6 @@ export type PhotoFormData = Omit<Photo, 'id' | 'uploaderId' | 'createdAt' | 'upd
     displayMode: 'title' | 'character';
     exif?: any;
     tags?: string[];
+    shootLocationType?: 'studio' | 'location' | 'other';
+    shootLocationId?: string | null;
 };
