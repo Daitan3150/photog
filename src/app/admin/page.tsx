@@ -81,34 +81,6 @@ export default function AdminDashboard() {
                             </Link>
                         </div>
 
-                        {/* Studio Management Card (Admin Only) */}
-                        {isAdmin && (
-                            <>
-                                <div className="p-6 rounded-xl bg-white border border-gray-100 hover:border-emerald-400 hover:shadow-lg shadow-gray-200 transition-all duration-300 group">
-                                    <div className="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-                                        <Home size={24} />
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-2">スタジオ管理</h3>
-                                    <p className="text-gray-500 mb-6 text-sm">撮影スタジオの登録と住所情報の管理。</p>
-                                    <Link href="/admin/studios" className="flex items-center justify-between p-3 bg-emerald-600 text-white rounded-lg font-bold text-sm hover:bg-emerald-700 transition-all">
-                                        <span>スタジオを管理</span>
-                                        <ArrowRight size={16} />
-                                    </Link>
-                                </div>
-                                <div className="p-6 rounded-xl bg-white border border-gray-100 hover:border-sky-400 hover:shadow-lg shadow-gray-200 transition-all duration-300 group">
-                                    <div className="w-12 h-12 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
-                                        <Globe size={24} />
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-2">ロケーション管理</h3>
-                                    <p className="text-gray-500 mb-6 text-sm">屋外・その他の撮影場所を登録し、撮影時に選択できるようにします。</p>
-                                    <Link href="/admin/locations" className="flex items-center justify-between p-3 bg-sky-600 text-white rounded-lg font-bold text-sm hover:bg-sky-700 transition-all">
-                                        <span>ロケーションを管理</span>
-                                        <ArrowRight size={16} />
-                                    </Link>
-                                </div>
-                            </>
-                        )}
-
                         {/* Exclusive Admin or Invite/Profile Section */}
                         {isAdmin ? (
                             <>
