@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { getStudios, saveStudio, updateStudio, deleteStudio, getZipAddressAction } from '@/lib/actions/studios';
+import { getLocations, saveLocation, updateLocation, deleteLocation } from '@/lib/actions/locations';
 import { Studio, StudioFormData } from '@/types/studio';
+import { Location, LocationFormData } from '@/types/location';
 import { Plus, Edit2, Trash2, X, ExternalLink, Home, MapPin, Search } from 'lucide-react';
 import LeafletMap from '@/components/common/LeafletMap';
 
@@ -11,6 +13,7 @@ export default function StudiosPage() {
     const { user } = useAuth();
     const [studios, setStudios] = useState<Studio[]>([]);
     const [loading, setLoading] = useState(true);
+    const [locationLoading, setLocationLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingStudio, setEditingStudio] = useState<Studio | null>(null);
     const [formData, setFormData] = useState<StudioFormData & { coordsInput?: string }>({
@@ -29,8 +32,28 @@ export default function StudiosPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [isLookingUpZip, setIsLookingUpZip] = useState(false);
 
+    const [activeTab, setActiveTab] = useState<'studios' | 'locations'>('studios');
+    const [locations, setLocations] = useState<Location[]>([]);
+    const [locationSearchQuery, setLocationSearchQuery] = useState('');
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+    const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+    const [locationFormData, setLocationFormData] = useState<LocationFormData>({
+        name: '',
+        type: 'outdoor',
+        note: '',
+        address: '',
+        addressZip: '',
+        addressPref: '',
+        addressCity: '',
+        latitude: null,
+        longitude: null,
+    });
+    const [locationError, setLocationError] = useState('');
+    const [locationSaving, setLocationSaving] = useState(false);
+
     useEffect(() => {
         fetchStudios();
+        fetchLocations();
     }, []);
 
     const fetchStudios = async () => {
@@ -42,6 +65,17 @@ export default function StudiosPage() {
             console.error('Failed to fetch studios:', err);
         }
         setLoading(false);
+    };
+
+    const fetchLocations = async () => {
+        setLocationLoading(true);
+        try {
+            const result = await getLocations();
+            setLocations(result);
+        } catch (err) {
+            console.error('Failed to fetch locations:', err);
+        }
+        setLocationLoading(false);
     };
 
     const handleOpenModal = (studio: Studio | null = null) => {
@@ -79,6 +113,99 @@ export default function StudiosPage() {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingStudio(null);
+    };
+
+    const handleOpenLocationModal = (location: Location | null = null) => {
+        if (location) {
+            setEditingLocation(location);
+            setLocationFormData({
+                name: location.name,
+                type: location.type,
+                note: location.note || '',
+                address: location.address || '',
+                addressZip: location.addressZip || '',
+                addressPref: location.addressPref || '',
+                addressCity: location.addressCity || '',
+                latitude: location.latitude ?? null,
+                longitude: location.longitude ?? null,
+            });
+        } else {
+            setEditingLocation(null);
+            setLocationFormData({
+                name: '',
+                type: 'outdoor',
+                note: '',
+                address: '',
+                addressZip: '',
+                addressPref: '',
+                addressCity: '',
+                latitude: null,
+                longitude: null,
+            });
+        }
+        setLocationError('');
+        setIsLocationModalOpen(true);
+    };
+
+    const handleCloseLocationModal = () => {
+        setIsLocationModalOpen(false);
+        setEditingLocation(null);
+    };
+
+    const handleLocationSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!locationFormData.name) {
+            setLocationError('ロケーション名は必須です。');
+            return;
+        }
+
+        setLocationSaving(true);
+        setLocationError('');
+
+        try {
+            const token = await user?.getIdToken();
+            if (!token) {
+                setLocationError('認証エラー: 再ログインしてください。');
+                setLocationSaving(false);
+                return;
+            }
+
+            const result = editingLocation?.id
+                ? await updateLocation(editingLocation.id, locationFormData, token)
+                : await saveLocation(locationFormData, token);
+
+            if (result.success) {
+                await fetchLocations();
+                handleCloseLocationModal();
+            } else {
+                setLocationError(result.error || '保存中にエラーが発生しました。');
+            }
+        } catch (err: any) {
+            setLocationError(err.message || 'エラーが発生しました。');
+        } finally {
+            setLocationSaving(false);
+        }
+    };
+
+    const handleDeleteLocation = async (location: Location) => {
+        if (!confirm(`「${location.name}」を削除してもよろしいですか？\nこの操作は取り消せません。`)) return;
+
+        try {
+            const token = await user?.getIdToken();
+            if (!token) {
+                alert('認証エラー: 再ログインしてください。');
+                return;
+            }
+
+            const result = await deleteLocation(location.id as string, token);
+            if (result.success) {
+                await fetchLocations();
+            } else {
+                alert(result.error || '削除中にエラーが発生しました。');
+            }
+        } catch (err) {
+            alert('削除中にエラーが発生しました。');
+        }
     };
 
     // 郵便番号から住所を自動取得
@@ -257,6 +384,17 @@ export default function StudiosPage() {
         );
     });
 
+    const filteredLocations = locations.filter((location) => {
+        if (!locationSearchQuery) return true;
+        const q = locationSearchQuery.toLowerCase();
+        return (
+            location.name.toLowerCase().includes(q) ||
+            location.type.toLowerCase().includes(q) ||
+            (location.address || '').toLowerCase().includes(q) ||
+            (location.note || '').toLowerCase().includes(q)
+        );
+    });
+
     if (!user) return null;
 
     return (
@@ -264,140 +402,244 @@ export default function StudiosPage() {
             {/* Header */}
             <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">スタジオ管理</h1>
-                    <p className="text-sm text-gray-500 mt-1">撮影スタジオの登録と住所情報を管理します。</p>
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+                        {activeTab === 'locations' ? 'ロケーション管理' : 'スタジオ管理'}
+                    </h1>
+                    <p className="text-sm text-gray-500 mt-1">
+                        {activeTab === 'locations'
+                            ? '屋外・その他の撮影場所を登録し、アップロード時に選択できるようにします。'
+                            : '撮影スタジオの登録と住所情報を管理します。'}
+                    </p>
                 </div>
                 <button
-                    onClick={() => handleOpenModal()}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-all font-bold shadow-lg shadow-blue-100 active:scale-95"
+                    onClick={() => activeTab === 'locations' ? handleOpenLocationModal() : handleOpenModal()}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all font-bold shadow-lg active:scale-95 ${activeTab === 'locations' ? 'bg-sky-600 text-white hover:bg-sky-700 shadow-sky-100' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100'}`}
                 >
                     <Plus size={20} />
-                    新規スタジオ登録
+                    {activeTab === 'locations' ? '新しいロケーションを追加' : '新規スタジオ登録'}
                 </button>
             </header>
 
-            {/* Search */}
-            {studios.length > 0 && (
-                <div className="relative mb-6">
-                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="スタジオ名や住所で検索..."
-                        className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-sm font-medium"
-                    />
-                </div>
-            )}
-
-            {/* Content */}
-            {loading ? (
-                <div className="flex justify-center py-20">
-                    <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
-                </div>
-            ) : studios.length === 0 ? (
-                <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                    <Home className="mx-auto text-gray-300 mb-4" size={48} />
-                    <p className="text-gray-500 font-medium">登録されているスタジオはありません。</p>
+            {/* Tabs */}
+            <div className="mb-6">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                     <button
-                        onClick={() => handleOpenModal()}
-                        className="mt-4 text-blue-600 font-bold hover:underline"
+                        type="button"
+                        onClick={() => setActiveTab('studios')}
+                        className={`rounded-3xl px-5 py-3 text-sm font-bold transition ${activeTab === 'studios' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
                     >
-                        最初のスタジオを登録する
+                        スタジオ管理
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('locations')}
+                        className={`rounded-3xl px-5 py-3 text-sm font-bold transition ${activeTab === 'locations' ? 'bg-sky-600 text-white shadow-lg shadow-sky-100' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+                    >
+                        ロケーション管理
                     </button>
                 </div>
-            ) : filteredStudios.length === 0 ? (
-                <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                    <Search className="mx-auto text-gray-300 mb-4" size={48} />
-                    <p className="text-gray-500 font-medium">「{searchQuery}」に一致するスタジオはありません。</p>
-                </div>
-            ) : (
-                <>
-                    {/* Stats */}
-                    <div className="flex items-center gap-3 mb-4">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                            {filteredStudios.length} 件のスタジオ
-                        </span>
-                    </div>
+            </div>
 
-                    {/* Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredStudios.map((studio) => (
-                            <div
-                                key={studio.id}
-                                onClick={() => handleOpenModal(studio)}
-                                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-300 overflow-hidden group cursor-pointer"
+            {activeTab === 'studios' ? (
+                <>
+                    {/* Search */}
+                    {studios.length > 0 && (
+                        <div className="relative mb-6">
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="スタジオ名や住所で検索..."
+                                className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-sm font-medium"
+                            />
+                        </div>
+                    )}
+
+                    {/* Content */}
+                    {loading ? (
+                        <div className="flex justify-center py-20">
+                            <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+                        </div>
+                    ) : studios.length === 0 ? (
+                        <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                            <Home className="mx-auto text-gray-300 mb-4" size={48} />
+                            <p className="text-gray-500 font-medium">登録されているスタジオはありません。</p>
+                            <button
+                                onClick={() => handleOpenModal()}
+                                className="mt-4 text-blue-600 font-bold hover:underline"
                             >
-                                {/* Card Header */}
-                                <div className="px-6 pt-6 pb-4">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
-                                                <Home size={18} />
+                                最初のスタジオを登録する
+                            </button>
+                        </div>
+                    ) : filteredStudios.length === 0 ? (
+                        <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                            <Search className="mx-auto text-gray-300 mb-4" size={48} />
+                            <p className="text-gray-500 font-medium">「{searchQuery}」に一致するスタジオはありません。</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Stats */}
+                            <div className="flex items-center gap-3 mb-4">
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    {filteredStudios.length} 件のスタジオ
+                                </span>
+                            </div>
+
+                            {/* Cards Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {filteredStudios.map((studio) => (
+                                    <div
+                                        key={studio.id}
+                                        onClick={() => handleOpenModal(studio)}
+                                        className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-300 overflow-hidden group cursor-pointer"
+                                    >
+                                        {/* Card Header */}
+                                        <div className="px-6 pt-6 pb-4">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
+                                                        <Home size={18} />
+                                                    </div>
+                                                    <h3 className="text-sm font-bold text-gray-900 truncate">{studio.name}</h3>
+                                                </div>
+                                                <div className="flex gap-1 flex-shrink-0">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleOpenModal(studio); }}
+                                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                        title="編集"
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); studio.id && handleDelete(studio.id, studio.name); }}
+                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all tracking-tight"
+                                                        title="削除"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <h3 className="text-sm font-bold text-gray-900 truncate">{studio.name}</h3>
                                         </div>
-                                        <div className="flex gap-1 flex-shrink-0">
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleOpenModal(studio); }}
-                                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                title="編集"
-                                            >
-                                                <Edit2 size={14} />
-                                            </button>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); studio.id && handleDelete(studio.id, studio.name); }}
-                                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all tracking-tight"
-                                                title="削除"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
+
+                                        {/* Card Body */}
+                                        <div className="px-6 pb-5 space-y-3">
+                                            {/* Address */}
+                                            {(studio.addressZip || studio.addressPref || studio.addressCity) && (
+                                                <div className="flex items-start gap-2 text-xs text-gray-500">
+                                                    <MapPin size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                                                    <div>
+                                                        {studio.addressZip && (
+                                                            <span className="text-gray-400">〒{studio.addressZip} </span>
+                                                        )}
+                                                        <span>
+                                                            {studio.addressPref}{studio.addressCity}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* URL */}
+                                            {studio.url && (
+                                                <a
+                                                    href={studio.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium truncate max-w-full transition-colors"
+                                                >
+                                                    <ExternalLink size={12} className="flex-shrink-0" />
+                                                    <span className="truncate">{studio.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                                                </a>
+                                            )}
+                                        </div>
+
+                                        {/* Card Footer */}
+                                        <div className="px-6 py-3 bg-gray-50/50 border-t border-gray-50">
+                                            <span className="text-[10px] text-gray-400 font-medium">
+                                                {studio.createdAt
+                                                    ? `登録: ${new Date(studio.createdAt).toLocaleDateString('ja-JP')}`
+                                                    : ''}
+                                            </span>
                                         </div>
                                     </div>
-                                </div>
-
-                                {/* Card Body */}
-                                <div className="px-6 pb-5 space-y-3">
-                                    {/* Address */}
-                                    {(studio.addressZip || studio.addressPref || studio.addressCity) && (
-                                        <div className="flex items-start gap-2 text-xs text-gray-500">
-                                            <MapPin size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                                            <div>
-                                                {studio.addressZip && (
-                                                    <span className="text-gray-400">〒{studio.addressZip} </span>
-                                                )}
-                                                <span>
-                                                    {studio.addressPref}{studio.addressCity}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* URL */}
-                                    {studio.url && (
-                                        <a
-                                            href={studio.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium truncate max-w-full transition-colors"
-                                        >
-                                            <ExternalLink size={12} className="flex-shrink-0" />
-                                            <span className="truncate">{studio.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
-                                        </a>
-                                    )}
-                                </div>
-
-                                {/* Card Footer */}
-                                <div className="px-6 py-3 bg-gray-50/50 border-t border-gray-50">
-                                    <span className="text-[10px] text-gray-400 font-medium">
-                                        {studio.createdAt
-                                            ? `登録: ${new Date(studio.createdAt).toLocaleDateString('ja-JP')}`
-                                            : ''}
-                                    </span>
-                                </div>
+                                ))}
                             </div>
-                        ))}
+                        </>
+                    )}
+                </>
+            ) : (
+                <>
+                    <div className="relative mb-6">
+                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            value={locationSearchQuery}
+                            onChange={(e) => setLocationSearchQuery(e.target.value)}
+                            placeholder="名前、住所、タイプで検索..."
+                            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all text-sm font-medium"
+                        />
                     </div>
+
+                    {locationLoading ? (
+                        <div className="flex justify-center py-20">
+                            <div className="w-8 h-8 border-2 border-gray-200 border-t-sky-600 rounded-full animate-spin" />
+                        </div>
+                    ) : locations.length === 0 ? (
+                        <div className="text-center py-20 bg-sky-50 rounded-2xl border-2 border-dashed border-sky-200">
+                            <MapPin className="mx-auto text-sky-300 mb-4" size={48} />
+                            <p className="text-sky-500 font-medium">登録されているロケーションはありません。</p>
+                            <button
+                                onClick={() => handleOpenLocationModal()}
+                                className="mt-4 text-sky-600 font-bold hover:underline"
+                            >
+                                最初のロケーションを追加する
+                            </button>
+                        </div>
+                    ) : filteredLocations.length === 0 ? (
+                        <div className="text-center py-20 bg-sky-50 rounded-2xl border-2 border-dashed border-sky-200">
+                            <Search className="mx-auto text-sky-300 mb-4" size={48} />
+                            <p className="text-sky-500 font-medium">「{locationSearchQuery}」に一致するロケーションはありません。</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-4">
+                            {filteredLocations.map((location) => (
+                                <div key={location.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 p-5 bg-white rounded-3xl border border-gray-200 shadow-sm">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold uppercase tracking-widest">{location.type === 'outdoor' ? '屋外' : 'その他'}</span>
+                                            {location.address && <span className="text-[10px] text-gray-400">{location.address}</span>}
+                                        </div>
+                                        <h2 className="text-lg font-bold text-gray-900">{location.name}</h2>
+                                        {location.note && <p className="text-sm text-gray-500 mt-1">{location.note}</p>}
+                                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
+                                            {location.addressPref && <span>{location.addressPref}</span>}
+                                            {location.addressCity && <span>{location.addressCity}</span>}
+                                            {location.addressZip && <span>{location.addressZip}</span>}
+                                            {location.latitude !== undefined && location.latitude !== null && location.longitude !== undefined && location.longitude !== null && (
+                                                <span>{location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-start md:justify-end gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenLocationModal(location)}
+                                            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-sky-200 text-sky-700 hover:bg-sky-50 transition-all"
+                                        >
+                                            <Edit2 size={16} /> 編集
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteLocation(location)}
+                                            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-rose-200 text-rose-700 hover:bg-rose-50 transition-all"
+                                        >
+                                            <Trash2 size={16} /> 削除
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </>
             )}
 
@@ -595,6 +837,141 @@ export default function StudiosPage() {
                                         <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
                                     ) : (
                                         editingStudio ? '変更を保存する' : '新しく登録する'
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isLocationModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+                        <header className="px-8 py-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">
+                                    {editingLocation ? 'ロケーションを編集' : '新しいロケーションを追加'}
+                                </h2>
+                                <p className="text-sm text-gray-500 mt-1">屋外・その他の撮影場所を事前登録し、アップロード時に選択できます。</p>
+                            </div>
+                            <button onClick={handleCloseLocationModal} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </header>
+
+                        <form onSubmit={handleLocationSubmit} className="px-8 py-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+                            {locationError && (
+                                <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold border border-red-100">
+                                    {locationError}
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">ロケーション名 (必須)</label>
+                                        <input
+                                            type="text"
+                                            value={locationFormData.name}
+                                            onChange={(e) => setLocationFormData(prev => ({ ...prev, name: e.target.value }))}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            placeholder="代々木公園"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">タイプ</label>
+                                        <select
+                                            value={locationFormData.type}
+                                            onChange={(e) => setLocationFormData(prev => ({ ...prev, type: e.target.value as 'outdoor' | 'other' }))}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                        >
+                                            <option value="outdoor">屋外</option>
+                                            <option value="other">その他</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">メモ</label>
+                                        <textarea
+                                            value={locationFormData.note || ''}
+                                            onChange={(e) => setLocationFormData(prev => ({ ...prev, note: e.target.value }))}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium h-28 resize-none"
+                                            placeholder="例えば、最寄り駅や特徴を入力してください。"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">住所</label>
+                                        <input
+                                            type="text"
+                                            value={locationFormData.address || ''}
+                                            onChange={(e) => setLocationFormData(prev => ({ ...prev, address: e.target.value }))}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            placeholder="東京都千代田区..."
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">郵便番号</label>
+                                            <input
+                                                type="text"
+                                                value={locationFormData.addressZip || ''}
+                                                onChange={(e) => setLocationFormData(prev => ({ ...prev, addressZip: e.target.value }))}
+                                                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                                placeholder="123-4567"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">都道府県</label>
+                                            <input
+                                                type="text"
+                                                value={locationFormData.addressPref || ''}
+                                                onChange={(e) => setLocationFormData(prev => ({ ...prev, addressPref: e.target.value }))}
+                                                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                                placeholder="東京都"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">市区町村・番地</label>
+                                        <input
+                                            type="text"
+                                            value={locationFormData.addressCity || ''}
+                                            onChange={(e) => setLocationFormData(prev => ({ ...prev, addressCity: e.target.value }))}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            placeholder="千代田区丸の内..."
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                                {editingLocation && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDeleteLocation(editingLocation)}
+                                        className="flex-[1] flex items-center justify-center gap-2 py-4 rounded-2xl text-red-500 font-bold border-2 border-red-50 hover:bg-red-50 transition-all active:scale-95 text-xs"
+                                    >
+                                        <Trash2 size={16} />
+                                        ロケーションを削除
+                                    </button>
+                                )}
+                                <button
+                                    type="submit"
+                                    disabled={locationSaving}
+                                    className="flex-[2] bg-sky-600 text-white py-4 rounded-2xl hover:bg-sky-700 transition-all font-bold shadow-xl shadow-sky-100 active:scale-95 disabled:opacity-50 h-14"
+                                >
+                                    {locationSaving ? (
+                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                                    ) : (
+                                        editingLocation ? '変更を保存する' : 'ロケーションを追加'
                                     )}
                                 </button>
                             </div>

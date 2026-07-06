@@ -11,6 +11,7 @@ import {
     saveAiMemory,
     updateAiMemory,
 } from '@/lib/actions/aiLab';
+import { inferAiMemoryCategory } from '@/lib/aiLab/inferMemoryCategory';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { Brain, CheckCircle2, Lightbulb, Pencil, Plus, Save, Send, Trash2, X } from 'lucide-react';
 
@@ -46,6 +47,18 @@ export default function AiLabPage() {
     const [thinking, setThinking] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [categoryLocked, setCategoryLocked] = useState(false);
+
+    const categoryInference = useMemo(
+        () => inferAiMemoryCategory(form.title, form.content),
+        [form.title, form.content],
+    );
+
+    useEffect(() => {
+        if (categoryLocked || editingId) return;
+        if (!form.title.trim() && !form.content.trim()) return;
+        setForm(prev => (prev.category === categoryInference.category ? prev : { ...prev, category: categoryInference.category }));
+    }, [categoryInference.category, categoryLocked, editingId, form.title, form.content]);
 
     const usedMemorySet = useMemo(() => new Set(suggestion?.usedMemories || []), [suggestion]);
 
@@ -96,6 +109,7 @@ export default function AiLabPage() {
     const resetForm = () => {
         setForm(emptyForm);
         setEditingId(null);
+        setCategoryLocked(false);
     };
 
     const handleSaveMemory = async (event: React.FormEvent) => {
@@ -121,6 +135,7 @@ export default function AiLabPage() {
 
     const handleEdit = (memory: AiMemory) => {
         setEditingId(memory.id);
+        setCategoryLocked(true);
         setForm({
             title: memory.title,
             content: memory.content,
@@ -274,13 +289,23 @@ export default function AiLabPage() {
                                 <label className="block text-xs font-black text-slate-500 mb-1.5">カテゴリ</label>
                                 <select
                                     value={form.category}
-                                    onChange={event => setForm({ ...form, category: event.target.value as AiMemoryCategory })}
+                                    onChange={event => {
+                                        setCategoryLocked(true);
+                                        setForm({ ...form, category: event.target.value as AiMemoryCategory });
+                                    }}
                                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-50"
                                 >
                                     {categoryOptions.map(option => (
                                         <option key={option.value} value={option.value}>{option.label}</option>
                                     ))}
                                 </select>
+                                {(form.title.trim() || form.content.trim()) && (
+                                    <p className="text-[11px] text-indigo-600 font-bold mt-1.5">
+                                        {categoryLocked
+                                            ? '手動で選択中'
+                                            : `自動判定: ${categoryInference.label}${categoryInference.confidence === 'high' ? '' : '（要確認）'}`}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-xs font-black text-slate-500 mb-1.5">重要度</label>

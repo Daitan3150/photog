@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { inferAiMemoryCategory } from '@/lib/aiLab/inferMemoryCategory';
 
 const COLLECTION_NAME = 'ai_memories';
 
@@ -39,29 +40,85 @@ const categoryLabels: Record<AiMemoryCategory, string> = {
     note: 'メモ',
 };
 
-function normalizeMemory(data: Partial<AiMemoryFormData>) {
+function normalizeMemory(data: Partial<AiMemoryFormData>, autoCategory = false) {
+    const title = (data.title || '').trim();
+    const content = (data.content || '').trim();
+    const inferred = title && content ? inferAiMemoryCategory(title, content).category : null;
+
+    let category = data.category || 'note';
+    if (autoCategory && inferred && category === 'preference') {
+        category = inferred;
+    }
+
     return {
-        title: (data.title || '').trim(),
-        content: (data.content || '').trim(),
-        category: data.category || 'note',
+        title,
+        content,
+        category,
         priority: Number.isFinite(data.priority) ? Number(data.priority) : 3,
     };
 }
 
+const keywordHints: Record<string, string[]> = {
+    写真: ['photo', 'photos', 'cloudinary', 'gallery', '撮影', 'アップロード', 'カテゴリー'],
+    モデル: ['subject', 'subjects', '被写体', 'コスプレ', 'invite', '招待'],
+    管理: ['admin', 'dashboard', '設定', '権限', 'ロール'],
+    削除: ['request', 'requests', '依頼', 'remove'],
+    文章: ['writing', 'seo', 'タイトル', 'description', 'キャプション', '説明'],
+    機能: ['feature', '追加', '実装', '改善', '開発'],
+    公開: ['portfolio', '公開', 'ogp', 'cache', 'algolia', '検索'],
+    スタジオ: ['studio', 'studios', 'ロケ', 'location'],
+};
+
 function tokenize(text: string) {
-    return Array.from(new Set(
-        text
-            .toLowerCase()
-            .replace(/[。、,.!?！？()[\]{}「」『』]/g, ' ')
-            .split(/\s+/)
-            .flatMap(part => part.length > 12 ? [part, part.slice(0, 12)] : [part])
-            .filter(part => part.length >= 2)
-    ));
+    const normalized = text
+        .toLowerCase()
+        .replace(/[。、,.!?！？()[\]{}「」『』・]/g, ' ');
+
+    const tokens = new Set<string>();
+
+    for (const part of normalized.split(/\s+/)) {
+        if (part.length >= 2) tokens.add(part);
+        if (part.length > 12) tokens.add(part.slice(0, 12));
+    }
+
+    // 日本語は空白がないため、2〜4文字の n-gram でもトークン化
+    const japaneseRuns = normalized.match(/[\u3040-\u30ff\u4e00-\u9faf]+/g) || [];
+    for (const run of japaneseRuns) {
+        if (run.length <= 4) {
+            tokens.add(run);
+            continue;
+        }
+        for (let size = 2; size <= 4; size++) {
+            for (let i = 0; i <= run.length - size; i++) {
+                tokens.add(run.slice(i, i + size));
+            }
+        }
+    }
+
+    for (const [hint, aliases] of Object.entries(keywordHints)) {
+        if (normalized.includes(hint) || aliases.some(alias => normalized.includes(alias))) {
+            tokens.add(hint);
+            aliases.forEach(alias => tokens.add(alias));
+        }
+    }
+
+    return Array.from(tokens).filter(part => part.length >= 2);
 }
 
 function scoreMemory(memory: AiMemory, promptTokens: string[]) {
     const haystack = `${memory.title} ${memory.content} ${categoryLabels[memory.category]}`.toLowerCase();
-    const matchScore = promptTokens.reduce((score, token) => score + (haystack.includes(token) ? 1 : 0), 0);
+    let matchScore = 0;
+
+    for (const token of promptTokens) {
+        if (haystack.includes(token)) {
+            matchScore += token.length >= 4 ? 2 : 1;
+        }
+    }
+
+    if (memory.title && promptTokens.some(token => memory.title.toLowerCase().includes(token))) {
+        matchScore += 2;
+    }
+
     return matchScore * 3 + memory.priority;
 }
 
@@ -91,20 +148,32 @@ function buildLocalSuggestion(prompt: string, memories: AiMemory[]): AiSuggestio
         ? ranked.map(memory => `・${categoryLabels[memory.category]}: ${memory.title}`).join('\n')
         : '・まだ関連する記憶は少なめです。使うほど判断材料が増えます。';
 
+    const memoryDetails = ranked.length
+        ? ranked.slice(0, 3).map(memory => {
+            const excerpt = memory.content.length > 120 ? `${memory.content.slice(0, 120)}…` : memory.content;
+            return `【${memory.title}】\n${excerpt}`;
+        }).join('\n\n')
+        : '';
+
+    const contextualAdvice = wantsFeature
+        ? 'まずは小さく追加できる形に分けるのが安全です。管理画面だけで完結する変更、公開ページに影響する変更、データ構造が変わる変更に分けて考えると失敗しにくくなります。'
+        : wantsWriting
+            ? '保存済みの好みや文体に寄せて、短く使いやすい文章から作るのが向いています。写真・モデル・SEOのどれに使う文章かを決めると精度が上がります。'
+            : wantsRemember
+                ? 'この内容は学習メモとして保存できます。あとから編集や削除もできるので、まずは短いルールとして残すのが良いです。'
+                : ranked.length
+                    ? '保存済みの記憶をもとに、次に取るべき判断を整理しました。'
+                    : '今の情報だけで無理に自動実行せず、記憶を使って次の作業候補を整理します。';
+
     const body = [
         `依頼内容: ${prompt}`,
         '',
         '参照した記憶:',
         memorySummary,
+        memoryDetails ? `\n関連する記憶の要点:\n${memoryDetails}` : '',
         '',
-        wantsFeature
-            ? 'まずは小さく追加できる形に分けるのが安全です。管理画面だけで完結する変更、公開ページに影響する変更、データ構造が変わる変更に分けて考えると失敗しにくくなります。'
-            : wantsWriting
-                ? '保存済みの好みや文体に寄せて、短く使いやすい文章から作るのが向いています。写真・モデル・SEOのどれに使う文章かを決めると精度が上がります。'
-                : wantsRemember
-                    ? 'この内容は学習メモとして保存できます。あとから編集や削除もできるので、まずは短いルールとして残すのが良いです。'
-                    : '今の情報だけで無理に自動実行せず、記憶を使って次の作業候補を整理します。',
-    ].join('\n');
+        contextualAdvice,
+    ].filter(Boolean).join('\n');
 
     const nextSteps = wantsFeature
         ? ['影響範囲を「管理画面のみ」か「公開ページにも反映」か決める', '必要な入力項目と保存先を決める', '実装前にAI Labのメモへルールを追加する']
@@ -152,9 +221,13 @@ export async function getAiMemories(): Promise<{ success: boolean; data: AiMemor
     }
 }
 
+export async function suggestAiMemoryCategory(title: string, content: string) {
+    return inferAiMemoryCategory(title, content);
+}
+
 export async function saveAiMemory(data: AiMemoryFormData): Promise<{ success: boolean; id?: string; error?: string }> {
     try {
-        const normalized = normalizeMemory(data);
+        const normalized = normalizeMemory(data, true);
         if (!normalized.title || !normalized.content) {
             return { success: false, error: 'タイトルと内容は必須です。' };
         }

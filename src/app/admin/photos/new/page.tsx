@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { savePhotosBulk, getExifSuggestions } from '@/lib/actions/photos';
 import { getCategories, Category } from '@/lib/actions/categories';
 import { getSubjects, Subject } from '@/lib/actions/subjects';
+import { inferPhotoCategory } from '@/lib/photos/inferPhotoCategory';
 import CloudinaryScript from '@/components/admin/CloudinaryScript';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -16,7 +17,9 @@ import LeafletMap from '@/components/common/LeafletMap';
 import { Calendar, User, MapPin, Tag, Link2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { STUDIOS as STATIC_STUDIOS, StudioInfo } from '@/lib/constants/studios';
+import { getLocations, saveLocation } from '@/lib/actions/locations';
 import { getStudios, saveStudio } from '@/lib/actions/studios';
+import { Location } from '@/types/location';
 import { Studio } from '@/types/studio';
 import { X, Plus, Home, Trees, Search, ChevronRight } from 'lucide-react';
 import SubjectSelect from '@/components/admin/SubjectSelect';
@@ -203,6 +206,8 @@ export default function NewPhotoPage() {
     const [shotAtEnabled, setShotAtEnabled] = useState(true);
     const [snsUrl, setSnsUrl] = useState('');
     const [categoryId, setCategoryId] = useState('');
+    const [categoryLocked, setCategoryLocked] = useState(false);
+    const [categoryInferenceHint, setCategoryInferenceHint] = useState('');
     const [event, setEvent] = useState('');
     const [displayMode, setDisplayMode] = useState<'title' | 'character'>('title');
     const [isDragging, setIsDragging] = useState(false);
@@ -244,11 +249,14 @@ export default function NewPhotoPage() {
 
     // ✅ スタジオ・撮影地選択機能
     const [allStudios, setAllStudios] = useState<Studio[]>([]);
+    const [allLocations, setAllLocations] = useState<Location[]>([]);
     const [showLocationDialog, setShowLocationDialog] = useState(false);
     const [locationSearch, setLocationSearch] = useState('');
     const [isStudioMode, setIsStudioMode] = useState<boolean | null>(null);
     const [showNewStudioForm, setShowNewStudioForm] = useState(false);
     const [newStudio, setNewStudio] = useState<Partial<Studio>>({ name: '', url: '' });
+    const [showNewLocationForm, setShowNewLocationForm] = useState(false);
+    const [newLocation, setNewLocation] = useState<Partial<Location>>({ name: '', type: 'outdoor' });
 
     // ✅ 新機能: 項目表示制御
     const [activeFields, setActiveFields] = useState({
@@ -259,6 +267,37 @@ export default function NewPhotoPage() {
     });
     const [showFieldWizard, setShowFieldWizard] = useState(false);
     const [wizardStep, setWizardStep] = useState<'ask' | 'select'>('ask');
+
+    const mergedUploadTags = useMemo(
+        () => uploadedFiles.flatMap(file => file.tags || []),
+        [uploadedFiles],
+    );
+
+    const photoCategoryInference = useMemo(
+        () => inferPhotoCategory({
+            title,
+            subjectName,
+            characterName,
+            seriesName,
+            event,
+            tags: [...mergedUploadTags, ...batchTags.split(/[,、\s]+/).filter(Boolean)],
+            displayMode,
+        }),
+        [title, subjectName, characterName, seriesName, event, mergedUploadTags, batchTags, displayMode],
+    );
+
+    useEffect(() => {
+        if (categoryLocked) return;
+        if (!photoCategoryInference.categoryId) {
+            setCategoryInferenceHint('');
+            return;
+        }
+        setCategoryId(photoCategoryInference.categoryId);
+        setCategoryInferenceHint(photoCategoryInference.reason);
+        if (photoCategoryInference.categoryId === 'cosplay' && displayMode === 'title' && (characterName || seriesName)) {
+            setDisplayMode('character');
+        }
+    }, [photoCategoryInference, categoryLocked, characterName, seriesName, displayMode]);
 
     // ✅ 署名取得
     const fetchSignature = async (paramsToSign: Record<string, any>) => {
@@ -330,14 +369,16 @@ export default function NewPhotoPage() {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                const [catResult, subResult, studiosData] = await Promise.all([
-                    getCategories(),
-                    getSubjects(),
-                    getStudios()
-                ]);
-                if (catResult.success) setCategories(catResult.data);
-                if (subResult.success) setSubjects(subResult.data);
-                setAllStudios(studiosData);
+const [catResult, subResult, studiosData, locationsData] = await Promise.all([
+                getCategories(),
+                getSubjects(),
+                getStudios(),
+                getLocations()
+            ]);
+            if (catResult.success) setCategories(catResult.data);
+            if (subResult.success) setSubjects(subResult.data);
+            setAllStudios(studiosData);
+            setAllLocations(locationsData || []);
 
                 if (user) {
                     const idToken = await user.getIdToken();
@@ -713,6 +754,7 @@ export default function NewPhotoPage() {
                 // ✅ 住所の結合
                 const fullAddress = address || [addressZip, addressPref, addressCity, addressDetail].filter(Boolean).join(' ');
 
+                
                 return {
                     url: file.url,
                     publicId: file.publicId,
@@ -738,6 +780,16 @@ export default function NewPhotoPage() {
                         ...(aperture ? { FNumber: aperture } : {}),
                         ...(iso ? { ISOSpeedRatings: iso } : {}),
                     },
+ 
+                  shootLocationType: isStudioMode ? 'studio' : 'location',
+                  shootLocationId: (() => {
+                      if (isStudioMode) {
+                          const studio = allStudios.find(s => s.name === location);
+                          return studio?.id || null;
+                      }
+                      return null;
+                  })(),
+
                     tags: [...(file.tags || []), ...extraTags].filter((v, i, a) => a.indexOf(v) === i),
                 };
             });
@@ -1061,6 +1113,8 @@ export default function NewPhotoPage() {
                             <select
                                 value={categoryId}
                                 onChange={(e) => {
+                                    setCategoryLocked(true);
+                                    setCategoryInferenceHint('');
                                     setCategoryId(e.target.value);
                                     if (e.target.value) {
                                         setShowFieldWizard(true);
@@ -1074,6 +1128,15 @@ export default function NewPhotoPage() {
                                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
+                            {categoryInferenceHint && !categoryLocked && (
+                                <p className="text-[11px] font-bold text-indigo-600">
+                                    自動判定: {categories.find(cat => cat.id === categoryId)?.name || categoryId}
+                                    {photoCategoryInference.confidence !== 'high' ? '（要確認）' : ''} — {categoryInferenceHint}
+                                </p>
+                            )}
+                            {categoryLocked && categoryId && (
+                                <p className="text-[11px] text-gray-400">手動でカテゴリーを選択中</p>
+                            )}
                         </div>
 
                         {/* ✅ 項目表示ウィザード */}
@@ -1938,36 +2001,185 @@ export default function NewPhotoPage() {
                                     ) : (
                                         // 屋外・その他入力画面
                                         <div className="space-y-4">
-                                            <div className="flex gap-2 mb-4">
+                                            <div className="flex items-center justify-between gap-4 mb-4">
                                                 <button type="button" onClick={() => setIsStudioMode(null)} className="text-xs text-blue-600 font-bold hover:underline py-1">
                                                     ← 戻る
                                                 </button>
+                                                <button type="button" onClick={() => setShowNewLocationForm(prev => !prev)} className="text-xs text-green-600 font-bold hover:underline py-1">
+                                                    {showNewLocationForm ? '保存済み一覧に戻る' : '新規ロケーション登録'}
+                                                </button>
                                             </div>
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-bold text-gray-500">撮影地名</label>
-                                                <input
-                                                    autoFocus
-                                                    type="text"
-                                                    value={locationSearch}
-                                                    onChange={e => setLocationSearch(e.target.value)}
-                                                    placeholder="例: 東京都 ◯◯公園"
-                                                    className="w-full p-3 bg-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-green-500 outline-none font-bold"
-                                                />
-                                            </div>
-                                            <p className="text-[10px] text-gray-400">
-                                                屋外の場合は具体的な公園名やイベント会場名を記入してください。
-                                            </p>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setLocation(locationSearch);
-                                                    setShowLocationDialog(false);
-                                                }}
-                                                disabled={!locationSearch}
-                                                className="w-full py-3 bg-green-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-green-200 disabled:opacity-50 transition-all active:scale-[0.98]"
-                                            >
-                                                決定
-                                            </button>
+
+                                            {!showNewLocationForm ? (
+                                                <>
+                                                    <div className="space-y-2">
+                                                        <p className="text-sm font-bold text-gray-700">保存済みの屋外・その他ロケーション</p>
+                                                        <p className="text-[10px] text-gray-400">事前登録した場所を選択できます。</p>
+                                                    </div>
+
+                                                    <div className="relative">
+                                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                        <input
+                                                            type="text"
+                                                            value={locationSearch}
+                                                            onChange={e => setLocationSearch(e.target.value)}
+                                                            placeholder="登録済みロケーションを検索..."
+                                                            className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                                                        />
+                                                    </div>
+
+                                                    <div className="max-h-64 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                                                        {allLocations.filter(loc => (loc.type === 'outdoor' || loc.type === 'other') && loc.name.toLowerCase().includes(locationSearch.toLowerCase())).map(loc => (
+                                                            <button
+                                                                key={loc.id}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setLocation(loc.name);
+                                                                    if (loc.addressZip) setAddressZip(loc.addressZip);
+                                                                    if (loc.addressPref) setAddressPref(loc.addressPref);
+                                                                    if (loc.addressCity) setAddressCity(loc.addressCity);
+                                                                    if (loc.address) setAddress(loc.address);
+                                                                    setShowLocationDialog(false);
+                                                                    if (loc.latitude !== undefined && loc.longitude !== undefined && loc.latitude !== null && loc.longitude !== null) {
+                                                                        setLatitude(loc.latitude);
+                                                                        setLongitude(loc.longitude);
+                                                                        setCoordsInput(`${loc.latitude}, ${loc.longitude}`);
+                                                                    }
+                                                                }}
+                                                                className="w-full p-3 rounded-2xl border border-gray-200 text-left hover:bg-green-50 transition-colors"
+                                                            >
+                                                                <div className="flex items-center justify-between gap-3">
+                                                                    <div>
+                                                                        <p className="font-bold text-gray-800">{loc.name}</p>
+                                                                        <p className="text-[10px] text-gray-500">{loc.type === 'outdoor' ? '屋外' : 'その他'}{loc.address ? ` · ${loc.address}` : ''}</p>
+                                                                    </div>
+                                                                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                        {allLocations.filter(loc => (loc.type === 'outdoor' || loc.type === 'other') && loc.name.toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
+                                                            <div className="py-8 text-center text-gray-400 italic text-xs">
+                                                                保存済みロケーションが見つかりません。
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="space-y-4 p-4 bg-gray-50 rounded-3xl border border-gray-200">
+                                                    <input
+                                                        type="text"
+                                                        value={newLocation.name || ''}
+                                                        onChange={e => setNewLocation({ ...newLocation, name: e.target.value })}
+                                                        placeholder="ロケーション名 (例: 代々木公園)"
+                                                        className="w-full p-3 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500"
+                                                    />
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <select
+                                                            value={newLocation.type || 'outdoor'}
+                                                            onChange={e => setNewLocation({ ...newLocation, type: e.target.value as 'outdoor' | 'other' })}
+                                                            className="w-full p-3 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500"
+                                                        >
+                                                            <option value="outdoor">屋外</option>
+                                                            <option value="other">その他</option>
+                                                        </select>
+                                                        <input
+                                                            type="text"
+                                                            value={newLocation.address || ''}
+                                                            onChange={e => setNewLocation({ ...newLocation, address: e.target.value })}
+                                                            placeholder="住所 (任意)"
+                                                            className="w-full p-3 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-3 gap-3">
+                                                        <input
+                                                            type="text"
+                                                            value={newLocation.addressZip || ''}
+                                                            onChange={e => setNewLocation({ ...newLocation, addressZip: e.target.value })}
+                                                            placeholder="郵便番号"
+                                                            className="w-full p-3 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={newLocation.addressPref || ''}
+                                                            onChange={e => setNewLocation({ ...newLocation, addressPref: e.target.value })}
+                                                            placeholder="都道府県"
+                                                            className="w-full p-3 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={newLocation.addressCity || ''}
+                                                            onChange={e => setNewLocation({ ...newLocation, addressCity: e.target.value })}
+                                                            placeholder="市区町村・番地"
+                                                            className="w-full p-3 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <input
+                                                            type="text"
+                                                            value={newLocation.latitude ?? ''}
+                                                            onChange={e => setNewLocation({ ...newLocation, latitude: e.target.value ? parseFloat(e.target.value) : null })}
+                                                            placeholder="緯度"
+                                                            className="w-full p-3 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={newLocation.longitude ?? ''}
+                                                            onChange={e => setNewLocation({ ...newLocation, longitude: e.target.value ? parseFloat(e.target.value) : null })}
+                                                            placeholder="経度"
+                                                            className="w-full p-3 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500"
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowNewLocationForm(false)}
+                                                            className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100"
+                                                        >
+                                                            キャンセル
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={!newLocation.name}
+                                                            onClick={async () => {
+                                                                if (!newLocation.name || !user) return;
+                                                                const token = await user.getIdToken();
+                                                                const result = await saveLocation({
+                                                                    name: newLocation.name,
+                                                                    type: newLocation.type || 'outdoor',
+                                                                    address: newLocation.address || '',
+                                                                    addressZip: newLocation.addressZip || '',
+                                                                    addressPref: newLocation.addressPref || '',
+                                                                    addressCity: newLocation.addressCity || '',
+                                                                    latitude: newLocation.latitude ?? null,
+                                                                    longitude: newLocation.longitude ?? null,
+                                                                }, token);
+                                                                if (result.success) {
+                                                                    const locations = await getLocations();
+                                                                    setAllLocations(locations);
+                                                                    setLocation(newLocation.name);
+                                                                    if (newLocation.addressZip) setAddressZip(newLocation.addressZip);
+                                                                    if (newLocation.addressPref) setAddressPref(newLocation.addressPref);
+                                                                    if (newLocation.addressCity) setAddressCity(newLocation.addressCity);
+                                                                    if (newLocation.address) setAddress(newLocation.address);
+                                                                    if (newLocation.latitude !== undefined && newLocation.longitude !== undefined && newLocation.latitude !== null && newLocation.longitude !== null) {
+                                                                        setLatitude(newLocation.latitude);
+                                                                        setLongitude(newLocation.longitude);
+                                                                        setCoordsInput(`${newLocation.latitude}, ${newLocation.longitude}`);
+                                                                    }
+                                                                    setShowLocationDialog(false);
+                                                                    setShowNewLocationForm(false);
+                                                                    setNewLocation({ name: '', type: 'outdoor' });
+                                                                } else {
+                                                                    alert('ロケーションの保存に失敗しました: ' + result.error);
+                                                                }
+                                                            }}
+                                                            className="flex-1 py-3 rounded-xl bg-green-600 text-white text-sm font-bold disabled:opacity-50"
+                                                        >
+                                                            保存して選択
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
