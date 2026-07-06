@@ -13,6 +13,7 @@ export async function searchCoordinatesAction(locationName: string) {
 // Removed top-level admin/firebaseAdmin imports to prevent client-side leak
 import { PhotoFormData, Photo as PhotoType } from '@/types/photo';
 import { serializeData } from '../utils/serialization';
+import { buildLensDatalistOptions } from '../utils/lensSuggestions';
 import { getCoordinates } from '../utils/location';
 import { getCachedData, setCachedData, clearCachedData } from '../worker-cache';
 import { syncPhotoToAlgolia } from '../algolia';
@@ -557,6 +558,14 @@ export async function bulkUpdatePhotos(
         longitude?: number | null;
         zipCode?: string;
         prefecture?: string;
+        exif?: {
+            Model?: string;
+            LensModel?: string;
+            FNumber?: number | null;
+            ExposureTime?: string | null;
+            ISO?: number | null;
+            FocalLength?: number | null;
+        };
     },
     idToken: string
 ): Promise<{ success: boolean; count?: number; error?: string }> {
@@ -611,6 +620,14 @@ export async function bulkUpdatePhotos(
         if (data.longitude !== undefined) updateData.longitude = data.longitude;
         if (data.zipCode !== undefined) updateData.zipCode = data.zipCode;
         if (data.prefecture !== undefined) updateData.prefecture = data.prefecture;
+        if (data.exif) {
+            if (data.exif.Model !== undefined) updateData['exif.Model'] = data.exif.Model;
+            if (data.exif.LensModel !== undefined) updateData['exif.LensModel'] = data.exif.LensModel;
+            if (data.exif.FNumber !== undefined) updateData['exif.FNumber'] = data.exif.FNumber;
+            if (data.exif.ExposureTime !== undefined) updateData['exif.ExposureTime'] = data.exif.ExposureTime;
+            if (data.exif.ISO !== undefined) updateData['exif.ISO'] = data.exif.ISO;
+            if (data.exif.FocalLength !== undefined) updateData['exif.FocalLength'] = data.exif.FocalLength;
+        }
 
         for (const photoId of photoIds) {
             const ref = db.collection('photos').doc(photoId);
@@ -1454,15 +1471,13 @@ export async function getExifSuggestions() {
         // 1. プロフィールから「正解リスト」を取得
         const profileDoc = await db.collection('settings').doc('profile').get();
         const profileData = profileDoc.data();
-        const masterLenses = new Set<string>();
+        const masterLenses: string[] = [];
 
         if (profileData?.lenses && Array.isArray(profileData.lenses)) {
             profileData.lenses.forEach((line: string) => {
-                // バレットポイント（•）や空白を除去して純粋なレンズ名を取得
                 const clean = line.replace(/^[•\-\*\s]+/, '').trim();
-                // 空行や見出し（---）などは除外
                 if (clean && !clean.startsWith('---') && !clean.includes('Lenses')) {
-                    masterLenses.add(clean);
+                    masterLenses.push(clean);
                 }
             });
         }
@@ -1470,7 +1485,7 @@ export async function getExifSuggestions() {
         // 2. 既存の写真から実績リストを取得
         const snapshot = await db.collection('photos').select('exif').get();
         const models = new Set<string>();
-        const lensModels = new Set<string>(masterLenses); // マスターを初期値にする
+        const additionalLenses: string[] = [];
 
         const TARGET_LENS_PATTERN = /voigtlander|nokton|40mm/i;
         const CORRECT_LENS_NAME = 'voigtlander NOKTON classic 40mm F1.4 SC';
@@ -1486,36 +1501,18 @@ export async function getExifSuggestions() {
                     if (TARGET_LENS_PATTERN.test(lens) && lens.includes('40mm')) {
                         lens = CORRECT_LENS_NAME;
                     }
-
-                    // すでにマスターに似た名前（大文字小文字違いなど）があるかチェック
-                    const lowerLens = lens.toLowerCase();
-                    let existsInMaster = false;
-                    for (const m of masterLenses) {
-                        if (m.toLowerCase() === lowerLens) {
-                            existsInMaster = true;
-                            break;
-                        }
-                    }
-
-                    if (!existsInMaster) {
-                        lensModels.add(lens);
-                    }
+                    additionalLenses.push(lens);
                 }
             }
         });
+
+        const lensModels = buildLensDatalistOptions(masterLenses, additionalLenses);
 
         return {
             success: true,
             data: {
                 models: Array.from(models).sort(),
-                lensModels: Array.from(lensModels).sort((a: any, b: any) => {
-                    // マスターにあるものを優先的に上に持ってくる
-                    const aInMaster = masterLenses.has(a);
-                    const bInMaster = masterLenses.has(b);
-                    if (aInMaster && !bInMaster) return -1;
-                    if (!aInMaster && bInMaster) return 1;
-                    return a.localeCompare(b);
-                })
+                lensModels
             }
         };
     } catch (error: any) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { X, Check, Tag, MapPin, User, Calendar, Type, Sparkles } from 'lucide-react';
+import { X, Check, Tag, MapPin, User, Calendar, Type, Sparkles, Camera, Aperture } from 'lucide-react';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { bulkUpdatePhotos, searchCoordinatesAction } from '@/lib/actions/photos';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,6 +39,14 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
     const [isSearching, setIsSearching] = useState(false);
     const [showLocationConfirm, setShowLocationConfirm] = useState(false);
     const [isLocationConfirmed, setIsLocationConfirmed] = useState(false);
+
+    // EXIF / Equipment fields
+    const [cameraModel, setCameraModel] = useState('');
+    const [lensModel, setLensModel] = useState('');
+    const [aperture, setAperture] = useState('');
+    const [shutterSpeed, setShutterSpeed] = useState('');
+    const [iso, setIso] = useState('');
+    const [focalLength, setFocalLength] = useState('');
 
     if (!isOpen) return null;
 
@@ -79,6 +87,24 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
             if (longitude.trim()) data.longitude = parseFloat(longitude);
             if (zipCode.trim()) data.zipCode = zipCode.trim();
             if (prefecture.trim()) data.prefecture = prefecture.trim();
+
+            const exif: any = {};
+            if (cameraModel.trim()) exif.Model = cameraModel.trim();
+            if (lensModel.trim()) exif.LensModel = lensModel.trim();
+            if (aperture.trim()) {
+                const parsedAperture = parseFloat(aperture.replace(/[^\d.]/g, ''));
+                if (!isNaN(parsedAperture)) exif.FNumber = parsedAperture;
+            }
+            if (shutterSpeed.trim()) exif.ExposureTime = shutterSpeed.trim();
+            if (iso.trim()) {
+                const parsedIso = parseInt(iso.replace(/[^\d]/g, ''), 10);
+                if (!isNaN(parsedIso)) exif.ISO = parsedIso;
+            }
+            if (focalLength.trim()) {
+                const parsedFocal = parseFloat(focalLength.replace(/[^\d.]/g, ''));
+                if (!isNaN(parsedFocal)) exif.FocalLength = parsedFocal;
+            }
+            if (Object.keys(exif).length > 0) data.exif = exif;
 
             if (Object.keys(data).length === 0) {
                 alert('変更する項目を入力してください。');
@@ -407,6 +433,86 @@ export default function BulkEditModal({ isOpen, onClose, selectedIds, onUpdateCo
                     <p className="text-[9px] text-neutral-500 italic mt-2">※ 「座標取得」ボタンで住所・場所名からGPS座標を反映できます。座標の直接入力も可能です。</p>
 
                     {/* Tags */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                            <Camera className="w-4 h-4" /> カメラ (Camera)
+                        </label>
+                        <input
+                            type="text"
+                            value={cameraModel}
+                            onChange={(e) => setCameraModel(e.target.value)}
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                            placeholder="例: Canon EOS R6"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                            <Camera className="w-4 h-4" /> レンズ (Lens)
+                        </label>
+                        <input
+                            type="text"
+                            value={lensModel}
+                            onChange={(e) => setLensModel(e.target.value)}
+                            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                            placeholder="例: RF24-70mm F2.8"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                                <Aperture className="w-4 h-4" /> 絞り (Aperture)
+                            </label>
+                            <input
+                                type="text"
+                                value={aperture}
+                                onChange={(e) => setAperture(e.target.value)}
+                                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                                placeholder="例: 1.4"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                                <Aperture className="w-4 h-4" /> シャッター (Shutter)
+                            </label>
+                            <input
+                                type="text"
+                                value={shutterSpeed}
+                                onChange={(e) => setShutterSpeed(e.target.value)}
+                                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                                placeholder="例: 1/125"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                                <Camera className="w-4 h-4" /> ISO
+                            </label>
+                            <input
+                                type="text"
+                                value={iso}
+                                onChange={(e) => setIso(e.target.value)}
+                                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                                placeholder="例: 800"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
+                                <Camera className="w-4 h-4" /> 焦点距離 (Focal Length)
+                            </label>
+                            <input
+                                type="text"
+                                value={focalLength}
+                                onChange={(e) => setFocalLength(e.target.value)}
+                                className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-neutral-600 placeholder:italic"
+                                placeholder="例: 50"
+                            />
+                        </div>
+                    </div>
+
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-neutral-500 uppercase flex items-center gap-2">
                             <Tag className="w-4 h-4" /> タグ (Tags)
