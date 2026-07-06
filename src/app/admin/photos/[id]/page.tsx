@@ -200,9 +200,6 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 addressCity: (data as any).addressCity || '',
                 shootLocationType: data.shootLocationType || 'location',
                 shootLocationId: data.shootLocationId || null,
-                subject: !!data.subjectName,
-                series: !!data.seriesName,
-                character: !!data.characterName
             });
         }
         setLoading(false);
