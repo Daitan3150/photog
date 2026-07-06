@@ -2055,7 +2055,10 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                                 <div className="flex items-center justify-between gap-3">
                                                                     <div>
                                                                         <p className="font-bold text-gray-800">{loc.name}</p>
-                                                                        <p className="text-[10px] text-gray-500">{loc.type === 'outdoor' ? '屋外' : loc.type === 'indoor' ? '室内' : 'その他'}{loc.address ? ` · ${loc.address}` : ''}</p>
+                                                                        {(() => {
+                                                                            const locationTypeLabel = loc.type === 'outdoor' ? '屋外' : loc.type === 'indoor' ? '室内' : 'その他';
+                                                                            return <p className="text-[10px] text-gray-500">{locationTypeLabel}{loc.address ? ` · ${loc.address}` : ''}</p>;
+                                                                        })()}
                                                                     </div>
                                                                     <ChevronRight className="w-4 h-4 text-gray-300" />
                                                                 </div>
