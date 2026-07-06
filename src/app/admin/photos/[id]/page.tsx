@@ -1401,7 +1401,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                 longitude: studio.longitude || null,
                                                                 coordsInput: (studio.latitude && studio.longitude) ? `${studio.latitude}, ${studio.longitude}` : prev.coordsInput,
                                                                 shootLocationType: 'studio',
-                                                                shootLocationId: studio.id
+                                                                shootLocationId: studio.id || null
                                                             }));
                                                             setShowLocationDialog(false);
 
