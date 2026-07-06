@@ -792,7 +792,7 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                         ...(iso ? { ISOSpeedRatings: iso } : {}),
                     },
  
-                  shootLocationType: isStudioMode ? 'studio' : 'location',
+                  shootLocationType: (isStudioMode ? 'studio' : 'location') as 'studio' | 'location',
                   shootLocationId: (() => {
                       if (isStudioMode) {
                           const studio = allStudios.find(s => s.name === location);
