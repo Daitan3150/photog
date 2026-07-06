@@ -2056,7 +2056,15 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                                     <div>
                                                                         <p className="font-bold text-gray-800">{loc.name}</p>
                                                                         {(() => {
-                                                                            const locationTypeLabel = loc.type === 'outdoor' ? '屋外' : loc.type === 'indoor' ? '室内' : 'その他';
+                                                                            let locationTypeLabel = 'その他';
+                                                                            switch (loc.type) {
+                                                                                case 'outdoor':
+                                                                                    locationTypeLabel = '屋外';
+                                                                                    break;
+                                                                                case 'indoor':
+                                                                                    locationTypeLabel = '室内';
+                                                                                    break;
+                                                                            }
                                                                             return <p className="text-[10px] text-gray-500">{locationTypeLabel}{loc.address ? ` · ${loc.address}` : ''}</p>;
                                                                         })()}
                                                                     </div>
