@@ -17,6 +17,7 @@ import { getCoordinates } from '../utils/location';
 import { getCachedData, setCachedData, clearCachedData } from '../worker-cache';
 import { syncPhotoToAlgolia } from '../algolia';
 import { appendToMetadataRegistry } from './metadata';
+import { ensureLocationExists } from './locations';
 import { revalidatePath } from 'next/cache';
 
 const CATEGORIES = ['all', 'portrait', 'snapshot', 'cosplay', 'landscape', 'animal', 'other', 'archived'];
@@ -1136,6 +1137,23 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         const photoData = photoDoc.data();
         if (!isAdmin && photoData?.uploaderId !== uid) {
             return { success: false, error: 'Unauthorized to update this photo' };
+        }
+
+        const locationNameToRegister = (data.location !== undefined ? data.location : photoData?.location)?.toString().trim();
+        if (locationNameToRegister) {
+            const locationResult = await ensureLocationExists(locationNameToRegister, {
+                address: (data.address ?? photoData?.address ?? '').toString(),
+                addressZip: (data as any).addressZip ?? (photoData as any)?.addressZip ?? '',
+                addressPref: (data as any).addressPref ?? (photoData as any)?.addressPref ?? '',
+                addressCity: (data as any).addressCity ?? (photoData as any)?.addressCity ?? '',
+                latitude: data.latitude ?? photoData?.latitude ?? null,
+                longitude: data.longitude ?? photoData?.longitude ?? null,
+                type: (data.latitude !== undefined || data.longitude !== undefined || photoData?.latitude || photoData?.longitude) ? 'outdoor' : 'other',
+            });
+
+            if (!locationResult.success) {
+                console.error('Failed to auto-register location during photo update:', locationResult.error);
+            }
         }
 
         // Prepare updates
