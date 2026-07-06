@@ -2056,15 +2056,11 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                                     <div>
                                                                         <p className="font-bold text-gray-800">{loc.name}</p>
                                                                         {(() => {
-                                                                            let locationTypeLabel = 'その他';
-                                                                            switch (loc.type) {
-                                                                                case 'outdoor':
-                                                                                    locationTypeLabel = '屋外';
-                                                                                    break;
-                                                                                case 'indoor':
-                                                                                    locationTypeLabel = '室内';
-                                                                                    break;
-                                                                            }
+                                                                            const locationTypeLabel = ({
+                                                                                outdoor: '屋外',
+                                                                                indoor: '室内',
+                                                                                other: 'その他',
+                                                                            } as const)[loc.type as string] ?? 'その他';
                                                                             return <p className="text-[10px] text-gray-500">{locationTypeLabel}{loc.address ? ` · ${loc.address}` : ''}</p>;
                                                                         })()}
                                                                     </div>
