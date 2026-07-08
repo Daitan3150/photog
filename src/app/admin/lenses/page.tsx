@@ -5,8 +5,14 @@ import { CldUploadWidget } from 'next-cloudinary';
 import { useAuth } from '@/components/admin/AuthProvider';
 import CloudinaryScript from '@/components/admin/CloudinaryScript';
 import { getProfileServer, updateProfile } from '@/lib/actions/profile';
-import { LensDetail } from '@/lib/firebase/profile';
-import { Plus, Trash2, Image as ImageIcon, Aperture } from 'lucide-react';
+import { LensDetail, Profile } from '@/lib/firebase/profile';
+import { Plus, Image as ImageIcon, Aperture } from 'lucide-react';
+
+type CloudinaryUploadSuccess = {
+  info?: {
+    secure_url?: string;
+  } | string;
+};
 
 const emptyLens = (): LensDetail => ({
   name: '',
@@ -30,6 +36,7 @@ export default function AdminLensesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [lenses, setLenses] = useState<LensDetail[]>([]);
   const [draft, setDraft] = useState<LensDetail>(emptyLens());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -37,6 +44,7 @@ export default function AdminLensesPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [mediaMenuOpen, setMediaMenuOpen] = useState(false);
   const [portfolioLensNames, setPortfolioLensNames] = useState<string[]>([]);
+  const [isPortfolioLensSelectorOpen, setIsPortfolioLensSelectorOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -44,7 +52,10 @@ export default function AdminLensesPage() {
       if (!user) return;
       try {
         const result = await getProfileServer();
-        const existing = Array.isArray((result as any)?.data?.lensDetails) ? (result as any).data.lensDetails : [];
+        const payload = result as { data?: Profile | null } | null;
+        const existingProfile = payload?.data ?? null;
+        setProfile(existingProfile);
+        const existing = Array.isArray(existingProfile?.lensDetails) ? existingProfile.lensDetails : [];
         setLenses(existing);
         if (existing.length > 0) {
           const first = existing[0];
@@ -131,19 +142,27 @@ export default function AdminLensesPage() {
     setMessage('');
 
     try {
-      const payload = {
+      const payload: Profile = {
+        ...(profile ?? {
+          name: '',
+          role: '',
+          location: '',
+          bio: '',
+          gear: [],
+        }),
         lensDetails: updatedLenses,
       };
       const idToken = await user.getIdToken();
-      const result = await updateProfile(payload as any, idToken);
+      const result = await updateProfile(payload, idToken);
+      setProfile(payload);
       if (result.success) {
         setMessage('✅ 保存してポートフォリオに反映しました');
         startNew();
       } else {
         setMessage(`❌ 保存に失敗しました: ${result.error || 'Unknown error'}`);
       }
-    } catch (error: any) {
-      setMessage(`❌ エラー: ${error.message}`);
+    } catch (error: unknown) {
+      setMessage(`❌ エラー: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -169,14 +188,14 @@ export default function AdminLensesPage() {
         method: 'POST',
         body: formData,
       });
-      const result = await response.json() as any;
+      const result = await response.json() as { secure_url?: string };
       if (result?.secure_url) {
         setDraft((prev) => ({ ...prev, imageUrl: result.secure_url }));
       } else {
         setMessage('❌ 画像アップロードに失敗しました');
         console.error('Cloudinary upload failed', result);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error', error);
       setMessage('❌ 画像アップロード中にエラーが発生しました');
     } finally {
@@ -199,18 +218,18 @@ export default function AdminLensesPage() {
   if (loading) return <div className="p-8">読み込み中...</div>;
 
   return (
-    <div className="mx-auto max-w-7xl p-8">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
       <CloudinaryScript onLoad={() => setWidgetLoaded(true)} />
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black text-slate-800">レンズ管理</h1>
+          <h1 className="text-2xl font-black text-slate-800 sm:text-3xl">レンズ管理</h1>
           <p className="mt-2 text-sm text-slate-500">レンズを複数登録して、ポートフォリオに表示できます。</p>
         </div>
         <button
           type="button"
           onClick={startNew}
-          className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
         >
           <Plus size={16} /> 新規追加
         </button>
@@ -218,9 +237,9 @@ export default function AdminLensesPage() {
 
       {message && <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">{message}</div>}
 
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
         <div className="space-y-4">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <div className="mb-4 flex items-center gap-2">
               <Aperture size={18} className="text-amber-500" />
               <h2 className="text-lg font-bold text-slate-800">登録済みレンズ</h2>
@@ -228,7 +247,7 @@ export default function AdminLensesPage() {
             <div className="space-y-3">
               {lenses.length === 0 && <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">まだ登録されていません。</div>}
               {lenses.map((lens) => (
-                <div key={lens.id || lens.name} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div key={lens.id || lens.name} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     {lens.imageUrl ? (
                       <img src={lens.imageUrl} alt={lens.name} className="h-12 w-12 rounded-xl object-cover" />
@@ -242,7 +261,7 @@ export default function AdminLensesPage() {
                       <div className="text-xs text-slate-500">{lens.specs?.slice(0, 2).join(' / ')}</div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 sm:flex-nowrap">
                     <button type="button" onClick={() => startEdit(lens)} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">編集</button>
                     <button type="button" onClick={() => removeLens(lens.id || lens.name || '')} className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600">削除</button>
                   </div>
@@ -252,7 +271,7 @@ export default function AdminLensesPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <h2 className="text-lg font-bold text-slate-800">{editingId ? '編集' : '新規追加'}</h2>
           <div className="mt-6 space-y-4">
             <div className="space-y-2">
@@ -266,7 +285,12 @@ export default function AdminLensesPage() {
                 <div className="flex flex-col gap-2">
                   <CldUploadWidget
                     uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'profile_preset'}
-                    onSuccess={(result: any) => setDraft((prev) => ({ ...prev, imageUrl: result.info.secure_url }))}
+                    onSuccess={(result: CloudinaryUploadSuccess) => {
+                      const secureUrl = typeof result.info === 'string'
+                        ? result.info
+                        : result.info?.secure_url || '';
+                      setDraft((prev) => ({ ...prev, imageUrl: secureUrl }));
+                    }}
                   >
                     {({ open }) => (
                       <div className="relative inline-flex flex-col gap-2">
@@ -292,16 +316,6 @@ export default function AdminLensesPage() {
                               }}
                               className="w-full px-4 py-3 text-left text-sm font-semibold text-slate-800 hover:bg-slate-50"
                             >
-                              スマホ / メディアから選択
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setMediaMenuOpen(false);
-                                fileInputRef.current?.click();
-                              }}
-                              className="w-full px-4 py-3 text-left text-sm font-semibold text-slate-800 hover:bg-slate-50"
-                            >
                               ファイルから選択
                             </button>
                           </div>
@@ -313,28 +327,39 @@ export default function AdminLensesPage() {
                 </div>
               </div>
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">レンズの特徴・コメント</label>
+              <textarea value={draft.comment || ''} onChange={(e) => setDraft({ ...draft, comment: e.target.value })} className="h-24 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" placeholder="特徴や補足コメントを入力" />
+            </div>
             {portfolioLensNames.length > 0 && (
               <div className="space-y-2 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-sm font-semibold text-slate-700">既存のポートフォリオレンズから選択</div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {portfolioLensNames.slice(0, 8).map((lens) => (
-                    <button
-                      key={lens}
-                      type="button"
-                      onClick={() => selectExistingLensName(lens)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-800 hover:border-slate-300 hover:bg-slate-100"
-                    >
-                      {lens}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[11px] text-slate-500">レンズ名を入力すると、既存のポートフォリオ名と一致する場合に同じページの情報を反映できます。</p>
+                <button
+                  type="button"
+                  onClick={() => setIsPortfolioLensSelectorOpen((prev) => !prev)}
+                  className="flex w-full items-center justify-between gap-2 text-left"
+                >
+                  <div className="text-sm font-semibold text-slate-700">既存のポートフォリオレンズから選択</div>
+                  <span className="text-xs font-semibold text-slate-500">{isPortfolioLensSelectorOpen ? '閉じる' : '開く'}</span>
+                </button>
+                {isPortfolioLensSelectorOpen && (
+                  <div className="space-y-2 pt-1">
+                    <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                      {portfolioLensNames.slice(0, 8).map((lens) => (
+                        <button
+                          key={lens}
+                          type="button"
+                          onClick={() => selectExistingLensName(lens)}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-800 hover:border-slate-300 hover:bg-slate-100"
+                        >
+                          {lens}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-slate-500">レンズ名を入力すると、既存のポートフォリオ名と一致する場合に同じページの情報を反映できます。</p>
+                  </div>
+                )}
               </div>
             )}
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700">説明</label>
-              <textarea value={draft.description || ''} onChange={(e) => setDraft({ ...draft, description: e.target.value })} className="h-20 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" placeholder="簡単な説明" />
-            </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">メーカー</label><input value={draft.manufacturer || ''} onChange={(e) => setDraft({ ...draft, manufacturer: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
               <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">焦点距離</label><input value={draft.focalLength || ''} onChange={(e) => setDraft({ ...draft, focalLength: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-200/50 px-3 py-2 text-sm" /></div>
@@ -345,10 +370,6 @@ export default function AdminLensesPage() {
               <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">最短撮影距離</label><input value={draft.minimumFocusDistance || ''} onChange={(e) => setDraft({ ...draft, minimumFocusDistance: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
               <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">フィルター径</label><input value={draft.filterDiameter || ''} onChange={(e) => setDraft({ ...draft, filterDiameter: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700">コメント</label>
-              <textarea value={draft.comment || ''} onChange={(e) => setDraft({ ...draft, comment: e.target.value })} className="h-24 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" placeholder="補足コメント" />
-            </div>
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={saveDraft} disabled={saving} className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">{saving ? '保存中...' : '保存'}</button>
               <button type="button" onClick={() => { startNew(); setMessage(''); }} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">キャンセル</button>
@@ -357,12 +378,12 @@ export default function AdminLensesPage() {
         </div>
       </div>
 
-      <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:mt-8 sm:p-6">
         <h3 className="text-lg font-bold text-slate-800">プレビュー</h3>
         <div className="mt-4 rounded-[28px] border border-slate-200 bg-slate-50 p-4">
-          <div className="grid gap-6 md:grid-cols-[180px_minmax(0,1fr)]">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-[180px_minmax(0,1fr)]">
             <div className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-4">
-              {preview.imageUrl ? <img src={preview.imageUrl} alt={preview.name} className="aspect-square w-full max-w-[160px] object-cover" /> : <div className="flex aspect-square w-full max-w-[160px] items-center justify-center rounded-2xl border border-dashed border-slate-200 text-slate-400">No Image</div>}
+              {preview.imageUrl ? <img src={preview.imageUrl} alt={preview.name} className="aspect-square w-full max-w-[140px] object-cover sm:max-w-[160px]" /> : <div className="flex aspect-square w-full max-w-[140px] items-center justify-center rounded-2xl border border-dashed border-slate-200 text-slate-400 sm:max-w-[160px]">No Image</div>}
             </div>
             <div className="flex min-w-0 flex-col justify-between gap-3">
               <div>
