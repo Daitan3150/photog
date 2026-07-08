@@ -42,7 +42,6 @@ export default function AdminLensesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [widgetLoaded, setWidgetLoaded] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [mediaMenuOpen, setMediaMenuOpen] = useState(false);
   const [portfolioLensNames, setPortfolioLensNames] = useState<string[]>([]);
   const [isPortfolioLensSelectorOpen, setIsPortfolioLensSelectorOpen] = useState(false);
   const [isRegisteredLensesOpen, setIsRegisteredLensesOpen] = useState(false);
@@ -211,6 +210,16 @@ export default function AdminLensesPage() {
     }
   };
 
+  const handleImageSelectClick = (open: () => void) => {
+    if (!widgetLoaded) {
+      setMessage('Cloudinary ウィジェットを読み込み中です。少し待ってから再度押してください。');
+      fileInputRef.current?.click();
+      return;
+    }
+
+    open();
+  };
+
   const preview = useMemo(() => {
     const current = lenses.find((lens) => (lens.id || lens.name) === editingId) || draft;
     return current;
@@ -303,34 +312,13 @@ export default function AdminLensesPage() {
                     }}
                   >
                     {({ open }) => (
-                      <div className="relative inline-flex flex-col gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setMediaMenuOpen((prev) => !prev)}
-                          className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm"
-                          aria-expanded={mediaMenuOpen}
-                        >
-                          画像を選択
-                        </button>
-                        {mediaMenuOpen && (
-                          <div className="absolute left-0 z-10 mt-2 w-[220px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setMediaMenuOpen(false);
-                                if (!widgetLoaded) {
-                                  setMessage('Cloudinary ウィジェットを読み込み中です。少し待ってから再度押してください。');
-                                  return;
-                                }
-                                open();
-                              }}
-                              className="w-full px-4 py-3 text-left text-sm font-semibold text-slate-800 hover:bg-slate-50"
-                            >
-                              ファイルから選択
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleImageSelectClick(open)}
+                        className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm"
+                      >
+                        画像を選択
+                      </button>
                     )}
                   </CldUploadWidget>
                   {uploadingImage && <p className="text-xs text-gray-500">アップロード中...</p>}
