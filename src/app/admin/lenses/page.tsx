@@ -45,6 +45,7 @@ export default function AdminLensesPage() {
   const [mediaMenuOpen, setMediaMenuOpen] = useState(false);
   const [portfolioLensNames, setPortfolioLensNames] = useState<string[]>([]);
   const [isPortfolioLensSelectorOpen, setIsPortfolioLensSelectorOpen] = useState(false);
+  const [isRegisteredLensesOpen, setIsRegisteredLensesOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -240,34 +241,43 @@ export default function AdminLensesPage() {
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
         <div className="space-y-4">
           <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <Aperture size={18} className="text-amber-500" />
-              <h2 className="text-lg font-bold text-slate-800">登録済みレンズ</h2>
-            </div>
-            <div className="space-y-3">
-              {lenses.length === 0 && <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">まだ登録されていません。</div>}
-              {lenses.map((lens) => (
-                <div key={lens.id || lens.name} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3">
-                    {lens.imageUrl ? (
-                      <img src={lens.imageUrl} alt={lens.name} className="h-12 w-12 rounded-xl object-cover" />
-                    ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white text-slate-400">
-                        <ImageIcon size={18} />
+            <button
+              type="button"
+              onClick={() => setIsRegisteredLensesOpen((prev) => !prev)}
+              className="mb-4 flex w-full items-center justify-between gap-2 text-left"
+            >
+              <div className="flex items-center gap-2">
+                <Aperture size={18} className="text-amber-500" />
+                <h2 className="text-lg font-bold text-slate-800">登録済みレンズ</h2>
+              </div>
+              <span className="text-xs font-semibold text-slate-500">{isRegisteredLensesOpen ? '閉じる' : '開く'}</span>
+            </button>
+            {isRegisteredLensesOpen && (
+              <div className="space-y-3">
+                {lenses.length === 0 && <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">まだ登録されていません。</div>}
+                {lenses.map((lens) => (
+                  <div key={lens.id || lens.name} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                      {lens.imageUrl ? (
+                        <img src={lens.imageUrl} alt={lens.name} className="h-12 w-12 rounded-xl object-cover" />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white text-slate-400">
+                          <ImageIcon size={18} />
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-semibold text-slate-800">{lens.name || '名称未設定'}</div>
+                        <div className="text-xs text-slate-500">{lens.specs?.slice(0, 2).join(' / ')}</div>
                       </div>
-                    )}
-                    <div>
-                      <div className="font-semibold text-slate-800">{lens.name || '名称未設定'}</div>
-                      <div className="text-xs text-slate-500">{lens.specs?.slice(0, 2).join(' / ')}</div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+                      <button type="button" onClick={() => startEdit(lens)} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">編集</button>
+                      <button type="button" onClick={() => removeLens(lens.id || lens.name || '')} className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600">削除</button>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 sm:flex-nowrap">
-                    <button type="button" onClick={() => startEdit(lens)} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">編集</button>
-                    <button type="button" onClick={() => removeLens(lens.id || lens.name || '')} className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600">削除</button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -327,10 +337,6 @@ export default function AdminLensesPage() {
                 </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700">レンズの特徴・コメント</label>
-              <textarea value={draft.comment || ''} onChange={(e) => setDraft({ ...draft, comment: e.target.value })} className="h-24 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" placeholder="特徴や補足コメントを入力" />
-            </div>
             {portfolioLensNames.length > 0 && (
               <div className="space-y-2 rounded-3xl border border-slate-200 bg-slate-50 p-4">
                 <button
@@ -369,6 +375,10 @@ export default function AdminLensesPage() {
               <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">レンズ構成</label><input value={draft.lensConstruction || ''} onChange={(e) => setDraft({ ...draft, lensConstruction: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
               <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">最短撮影距離</label><input value={draft.minimumFocusDistance || ''} onChange={(e) => setDraft({ ...draft, minimumFocusDistance: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
               <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">フィルター径</label><input value={draft.filterDiameter || ''} onChange={(e) => setDraft({ ...draft, filterDiameter: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">レンズの特徴・コメント</label>
+              <textarea value={draft.comment || ''} onChange={(e) => setDraft({ ...draft, comment: e.target.value })} className="h-24 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" placeholder="特徴や補足コメントを入力" />
             </div>
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={saveDraft} disabled={saving} className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">{saving ? '保存中...' : '保存'}</button>
