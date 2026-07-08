@@ -31,26 +31,26 @@ export default function LensFilter({ currentLens, lensOptions }: LensFilterProps
     };
 
     return (
-        <div className="mt-4 rounded-[32px] border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="mt-4 rounded-[24px] border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-gray-400">
                         レンズを選択
                     </p>
-                    <p className="mt-1 text-sm text-gray-600">レンズを選択すると、そのレンズの作例だけが表示されます。</p>
+                    <p className="mt-1 text-xs text-gray-600">レンズを選択すると、そのレンズの作例だけが表示されます。</p>
                 </div>
             </div>
 
-            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                 {lensOptions.map((lens) => (
                     <button
                         key={lens}
                         type="button"
                         onClick={() => selectLens(lens)}
-                        className={`rounded-2xl border px-4 py-3 text-left transition-all ${currentLens === lens ? 'border-black bg-black text-white shadow-sm' : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-white'}`}
+                        className={`rounded-2xl border px-3 py-2 text-left transition-all text-sm ${currentLens === lens ? 'border-black bg-black text-white shadow-sm' : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-white'}`}
                     >
-                        <div className="text-sm font-semibold">{lens}</div>
-                        <div className="mt-1 text-[11px] opacity-70">このレンズの作例を見る</div>
+                        <div className="font-semibold">{lens}</div>
+                        <div className="mt-1 text-[10px] opacity-70">このレンズの作例を見る</div>
                     </button>
                 ))}
             </div>

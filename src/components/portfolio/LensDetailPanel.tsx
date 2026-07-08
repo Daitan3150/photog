@@ -47,9 +47,9 @@ export default function LensDetailPanel({ lensName, metadata, photoCount, photos
 
   return (
     <section className="mt-8">
-      <div className="grid gap-5 md:grid-cols-[60%_40%] md:items-stretch md:gap-8">
-        <div className="flex h-full items-center justify-center p-4 md:p-0 md:min-h-[320px]">
-          <div className="overflow-hidden rounded-[24px] w-[210px] h-[210px] md:w-[420px] md:h-[420px]">
+      <div className="grid gap-5 grid-cols-[minmax(0,60%)_minmax(0,40%)] items-stretch gap-8">
+        <div className="flex h-full items-center justify-center p-4 md:p-0 min-h-[320px]">
+          <div className="overflow-hidden rounded-[24px] w-full max-w-full aspect-square md:max-w-[420px]">
             {metadata?.imageUrl ? (
               <img src={metadata?.imageUrl} alt={lensName} className="h-full w-full object-cover" />
             ) : (
@@ -60,7 +60,7 @@ export default function LensDetailPanel({ lensName, metadata, photoCount, photos
           </div>
         </div>
 
-        <div className="flex flex-col justify-center min-w-0 md:min-h-[320px]">
+        <div className="flex flex-col justify-center min-w-0 min-h-[320px]">
           <h3 className="text-lg font-black leading-tight text-slate-900 md:text-xl max-w-full whitespace-nowrap overflow-hidden">{metadata?.name || lensName}</h3>
           {metadata?.description && (
             <p className="mt-3 text-sm leading-6 text-slate-600 md:text-sm">{metadata.description}</p>

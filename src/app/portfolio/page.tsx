@@ -30,7 +30,6 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
     const params = await searchParams;
     let currentCategory = params.category || 'cosplay';
 
-    const currentLens = params.lens || '';
     const currentView = params.view === 'lens' ? 'lens' : 'category';
     const effectiveCategory = currentView === 'lens' ? undefined : currentCategory;
 
@@ -46,6 +45,10 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
     const availableLensModels = Array.from(new Set(
         filteredPhotos.flatMap((photo: any) => photo.exif?.LensModel ? [photo.exif.LensModel] : [])
     )).sort().filter(Boolean);
+    const currentLens = currentView === 'lens'
+        ? (params.lens || availableLensModels[0] || '')
+        : '';
+
     const lensFilteredPhotos = currentLens
         ? filteredPhotos.filter((photo: any) => photo.exif?.LensModel === currentLens)
         : filteredPhotos;
