@@ -254,7 +254,7 @@ export default function EditPhotoPage({ params }: { params: Promise<{ id: string
                                         className="w-full border-gray-200 border bg-white rounded-lg p-2 text-xs outline-none focus:ring-1 focus:ring-blue-300"
                                     />
                                     <datalist id="dashboard-lens-candidates">
-                                        {exifSuggestions.lensModels.map((l, i) => <option key={l} value={l} />)}
+                                        {(exifSuggestions.lensModels || []).map((l, i) => <option key={l} value={l} />)}
                                     </datalist>
                                 </div>
                             </div>

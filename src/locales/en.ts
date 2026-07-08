@@ -42,6 +42,13 @@ export const en = {
     portfolio: {
         title: 'WORKS',
         subtitle: 'Portfolio',
+        viewBy: 'View by',
+        viewMode: {
+            category: 'Category view',
+            lens: 'Lens view',
+        },
+        filterLens: 'Filter by lens',
+        lensAll: 'All lenses',
         categories: {
             cosplay: 'Cosplay',
             portrait: 'Portrait',

@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/components/admin/AuthProvider';
 import BackupEmailButton from '@/components/admin/BackupEmailButton';
-import { Brain, Images, UserPlus, UserCircle, ArrowRight, Sparkles, Home, Star, Globe } from 'lucide-react';
+import { Brain, Images, UserPlus, UserCircle, ArrowRight, Sparkles, Home, Star, Globe, Aperture } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSiteSettings, SiteSettings } from '@/lib/actions/settings';
@@ -84,6 +84,17 @@ export default function AdminDashboard() {
                         {/* Exclusive Admin or Invite/Profile Section */}
                         {isAdmin ? (
                             <>
+                                <div className="p-6 rounded-xl bg-white border border-gray-100 hover:border-amber-400 hover:shadow-lg shadow-gray-200 transition-all group">
+                                    <div className="w-12 h-12 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
+                                        <Aperture size={24} />
+                                    </div>
+                                    <h3 className="text-xl font-bold mb-2">レンズ管理</h3>
+                                    <p className="text-gray-500 mb-6 text-sm">レンズの詳細情報を複数登録して、ポートフォリオに表示できます。</p>
+                                    <Link href="/admin/lenses" className="flex items-center justify-between p-3 bg-amber-500 text-white rounded-lg font-bold text-sm hover:bg-amber-600 transition-all">
+                                        <span>レンズを管理</span>
+                                        <ArrowRight size={16} />
+                                    </Link>
+                                </div>
                                 <div className="p-6 rounded-xl bg-white border border-gray-100 hover:border-pink-400 hover:shadow-lg shadow-gray-200 transition-all group">
                                     <div className="w-12 h-12 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center mb-6 transition-transform group-hover:scale-110">
                                         <UserPlus size={24} />

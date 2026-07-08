@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 export interface Subject {
     id: string;
     name: string;
+    modelId?: string;
     snsUrl?: string;
     notes?: string;
     realName?: string;
@@ -16,6 +17,7 @@ export interface Subject {
     approximateAge?: string;
     showBirthYear?: boolean;
     showAge?: boolean;
+    ageDisplayMode?: 'blurred' | 'formal';
     deceasedDate?: string;
     deceasedYear?: string;
     deceasedMonth?: string;
@@ -25,6 +27,7 @@ export interface Subject {
 
 export interface SubjectFormData {
     name: string;
+    modelId?: string;
     snsUrl?: string;
     notes?: string;
     realName?: string;
@@ -36,6 +39,7 @@ export interface SubjectFormData {
     approximateAge?: string;
     showBirthYear?: boolean;
     showAge?: boolean;
+    ageDisplayMode?: 'blurred' | 'formal';
     deceasedDate?: string;
     deceasedYear?: string;
     deceasedMonth?: string;
@@ -65,9 +69,11 @@ export async function getSubjects() {
                     birthYear: d.birthYear || '',
                     birthMonth: d.birthMonth || '',
                     birthDay: d.birthDay || '',
+                    modelId: d.modelId || '',
                     approximateAge: d.approximateAge || '',
                     showBirthYear: d.showBirthYear === true,
                     showAge: d.showAge !== false,
+                    ageDisplayMode: d.ageDisplayMode || 'blurred',
                     deceasedDate: d.deceasedDate || '',
                     deceasedYear: d.deceasedYear || '',
                     deceasedMonth: d.deceasedMonth || '',
@@ -97,6 +103,7 @@ export async function saveSubject(data: SubjectFormData) {
 
         const docRef = await db.collection(COLLECTION_NAME).add({
             ...data,
+            modelId: data.modelId || null,
             createdAt: new Date(),
         });
 
@@ -115,6 +122,7 @@ export async function updateSubject(id: string, data: Partial<SubjectFormData>) 
 
         await db.collection(COLLECTION_NAME).doc(id).update({
             ...data,
+            ...(data.modelId !== undefined ? { modelId: data.modelId || null } : {}),
             updatedAt: new Date(),
         });
 

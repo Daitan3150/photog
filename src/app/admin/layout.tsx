@@ -3,16 +3,15 @@
 import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/components/admin/AuthProvider';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { Brain, ChevronLeft, ChevronRight, Menu, Home, Globe, LogOut, Settings, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert, Star } from 'lucide-react';
+import { Brain, ChevronLeft, ChevronRight, Menu, Home, Globe, LogOut, Settings, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert, Star, Aperture } from 'lucide-react';
 
 
 function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; toggleSidebar: () => void }) {
     const pathname = usePathname();
-    const searchParams = useSearchParams();
     const router = useRouter();
     const { role } = useAuth();
 
@@ -115,18 +114,16 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                         {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">写真管理</span>}
                     </Link>
 
-                    {/* Temporarily disabled Blog feature
                     <Link
-                        href="/admin/blog"
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/blog')
+                        href="/admin/lenses"
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/lenses')
                             ? `${accentColor} text-white ${glowClass}`
                             : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                             } ${isCollapsed ? 'justify-center' : ''}`}
                     >
-                        <FileText size={20} className={pathname.startsWith('/admin/blog') ? '' : 'text-slate-400 group-hover:text-white'} />
-                        {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">ブログ管理</span>}
+                        <Aperture size={20} className={pathname.startsWith('/admin/lenses') ? '' : 'text-slate-400 group-hover:text-white'} />
+                        {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">レンズ管理</span>}
                     </Link>
-                    */}
 
                     {/* Admin Only Menus */}
                     {isAdmin && (
@@ -231,6 +228,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const isPublicPage = ['/admin/login', '/admin/register', '/admin/reset-password'].some(path => pathname.startsWith(path));
     const [isCollapsed, setIsCollapsed] = useState(true);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            document.documentElement.classList.remove('overflow-hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+    }, [pathname]);
 
     const toggleSidebar = () => setIsCollapsed(!isCollapsed);
 

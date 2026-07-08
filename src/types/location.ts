@@ -1,7 +1,7 @@
 export interface Location {
     id?: string;
     name: string;
-    type: 'outdoor' | 'other';
+    type: 'outdoor' | 'indoor' | 'other';
     note?: string;
     address?: string;
     addressZip?: string;

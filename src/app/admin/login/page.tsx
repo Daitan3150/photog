@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { signInWithEmailAndPassword, signInWithCustomToken, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider, OAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUserRole } from '@/lib/firebase/user';
@@ -11,6 +11,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, AlertCircle, ShieldAlert } from 'lucide-react';
 
 export default function AdminLoginPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-100">Loading...</div>}>
+            <AdminLoginContent />
+        </Suspense>
+    );
+}
+
+function AdminLoginContent() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);

@@ -45,6 +45,7 @@ interface PortraitScrollSectionProps {
     approximateAge?: string;
     showBirthYear?: boolean;
     showAge?: boolean;
+    ageDisplayMode?: 'blurred' | 'formal';
     deceasedDate?: string;
     deceasedYear?: string;
     deceasedMonth?: string;
@@ -54,7 +55,7 @@ interface PortraitScrollSectionProps {
 
 export default function PortraitScrollSection({ 
     modelName, photos, 
-    birthday, birthYear, birthMonth, birthDay, approximateAge, showBirthYear, showAge,
+    birthday, birthYear, birthMonth, birthDay, approximateAge, showBirthYear, showAge, ageDisplayMode,
     deceasedDate, deceasedYear, deceasedMonth, deceasedDay, realName
 }: PortraitScrollSectionProps) {
     const searchParams = useSearchParams();
@@ -178,9 +179,17 @@ export default function PortraitScrollSection({
                                 // 年非公開、かつ年齢非公開ならバッジを出さない
                                 if (!showYear && showAge === false) return null;
 
+                                if (ageDisplayMode === 'formal') {
+                                    return `${calcAge}歳`;
+                                }
+
                                 if (calcAge >= 20) return `${calcAge}↗︎`;
                                 return `${calcAge}`;
                             })();
+
+                            const ageBadgeClass = ageDisplayMode === 'formal'
+                                ? 'text-amber-700 bg-amber-100/80 border border-amber-200'
+                                : 'text-neutral-600 bg-neutral-200/70 border border-neutral-300';
 
                             if (hasDeceased) {
                                 return (
@@ -215,7 +224,7 @@ export default function PortraitScrollSection({
                                                     {formatB()}
                                                 </p>
                                                 {ageLabel && (
-                                                    <span className="text-[13px] md:text-[15px] text-neutral-600 font-bold tracking-widest bg-neutral-200/60 px-3 py-1.5 rounded-full shadow-sm">
+                                                    <span className={`text-[13px] md:text-[15px] font-bold tracking-widest px-3 py-1.5 rounded-full shadow-sm ${ageBadgeClass}`}>
                                                         {ageLabel}
                                                     </span>
                                                 )}
@@ -227,7 +236,7 @@ export default function PortraitScrollSection({
                                 // 生年月日不明だが大体の年齢が入力されている場合
                                 return (
                                     <div className="mt-3 flex items-center gap-3">
-                                        <span className="text-[13px] md:text-[15px] text-neutral-600 font-bold tracking-widest bg-neutral-200/60 px-3 py-1.5 rounded-full shadow-sm">
+                                        <span className={`text-[13px] md:text-[15px] font-bold tracking-widest px-3 py-1.5 rounded-full shadow-sm ${ageBadgeClass}`}>
                                             {ageLabel}
                                         </span>
                                     </div>

@@ -13,6 +13,7 @@ export interface AiMemory {
     content: string;
     category: AiMemoryCategory;
     priority: number;
+    implemented?: boolean;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -29,6 +30,7 @@ export interface AiMemoryFormData {
     content: string;
     category: AiMemoryCategory;
     priority?: number;
+    implemented?: boolean;
 }
 
 const categoryLabels: Record<AiMemoryCategory, string> = {
@@ -50,12 +52,40 @@ function normalizeMemory(data: Partial<AiMemoryFormData>, autoCategory = false) 
         category = inferred;
     }
 
-    return {
+    const normalized: Partial<AiMemoryFormData> = {
         title,
         content,
         category,
         priority: Number.isFinite(data.priority) ? Number(data.priority) : 3,
     };
+
+    if (data.implemented !== undefined) {
+        normalized.implemented = data.implemented;
+    }
+
+    return normalized;
+}
+
+function prepareAiMemoryUpdate(data: Partial<AiMemoryFormData>): Partial<AiMemoryFormData> {
+    const update: Partial<AiMemoryFormData> = {};
+
+    if (typeof data.title === 'string' && data.title.trim()) {
+        update.title = data.title.trim();
+    }
+    if (typeof data.content === 'string' && data.content.trim()) {
+        update.content = data.content.trim();
+    }
+    if (data.category) {
+        update.category = data.category;
+    }
+    if (Number.isFinite(data.priority)) {
+        update.priority = Number(data.priority);
+    }
+    if (data.implemented !== undefined) {
+        update.implemented = data.implemented;
+    }
+
+    return update;
 }
 
 const keywordHints: Record<string, string[]> = {
@@ -207,6 +237,7 @@ export async function getAiMemories(): Promise<{ success: boolean; data: AiMemor
                     content: data.content || '',
                     category: data.category || 'note',
                     priority: typeof data.priority === 'number' ? data.priority : 3,
+                    implemented: data.implemented === true,
                     createdAt: data.createdAt?.toDate?.()?.toISOString() ?? data.createdAt ?? '',
                     updatedAt: data.updatedAt?.toDate?.()?.toISOString() ?? data.updatedAt ?? '',
                 };
@@ -231,6 +262,9 @@ export async function saveAiMemory(data: AiMemoryFormData): Promise<{ success: b
         if (!normalized.title || !normalized.content) {
             return { success: false, error: 'タイトルと内容は必須です。' };
         }
+        if (normalized.implemented === undefined) {
+            normalized.implemented = false;
+        }
 
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
@@ -252,9 +286,15 @@ export async function saveAiMemory(data: AiMemoryFormData): Promise<{ success: b
 export async function updateAiMemory(id: string, data: Partial<AiMemoryFormData>): Promise<{ success: boolean; error?: string }> {
     try {
         if (!id) return { success: false, error: 'IDがありません。' };
-        const normalized = normalizeMemory(data);
-        if (!normalized.title || !normalized.content) {
-            return { success: false, error: 'タイトルと内容は必須です。' };
+        const normalized = prepareAiMemoryUpdate(data);
+        if (!Object.keys(normalized).length) {
+            return { success: false, error: '更新するデータがありません。' };
+        }
+        if ('title' in normalized && !normalized.title) {
+            return { success: false, error: 'タイトルは必須です。' };
+        }
+        if ('content' in normalized && !normalized.content) {
+            return { success: false, error: '内容は必須です。' };
         }
 
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
@@ -266,6 +306,31 @@ export async function updateAiMemory(id: string, data: Partial<AiMemoryFormData>
 
         revalidatePath('/admin/ai-lab');
         return { success: true };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'AIメモリーの更新に失敗しました。';
+        return { success: false, error: message };
+    }
+}
+
+export async function markAiMemoriesImplemented(ids: string[]): Promise<{ success: boolean; updatedCount?: number; error?: string }> {
+    try {
+        if (!ids.length) {
+            return { success: true, updatedCount: 0 };
+        }
+
+        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const db = getAdminFirestore();
+        const batch = db.batch();
+        const now = new Date();
+
+        ids.forEach(id => {
+            const ref = db.collection(COLLECTION_NAME).doc(id);
+            batch.update(ref, { implemented: true, updatedAt: now });
+        });
+
+        await batch.commit();
+        revalidatePath('/admin/ai-lab');
+        return { success: true, updatedCount: ids.length };
     } catch (error) {
         const message = error instanceof Error ? error.message : 'AIメモリーの更新に失敗しました。';
         return { success: false, error: message };

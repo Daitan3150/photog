@@ -1,15 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SecurityProvider({ children }: { children: React.ReactNode }) {
+    const pathname = usePathname();
+    const isAdminPath = pathname?.startsWith('/admin');
     const [showAlert, setShowAlert] = useState(false);
     const [alertText, setAlertText] = useState('無断コピーは禁止されています 😈');
 
     useEffect(() => {
-        const isAdminPath = window.location.pathname.startsWith('/admin');
-
         const handleContextMenu = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             if (isAdminPath || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
@@ -82,7 +83,7 @@ export default function SecurityProvider({ children }: { children: React.ReactNo
             document.removeEventListener('copy', handleCopy);
             document.removeEventListener('selectstart', handleSelectStart);
         };
-    }, []);
+    }, [isAdminPath]);
 
     const triggerAlert = (text: string) => {
         setAlertText(text);
@@ -92,7 +93,7 @@ export default function SecurityProvider({ children }: { children: React.ReactNo
 
     return (
         <>
-            <div className="select-none">
+            <div className={isAdminPath ? undefined : 'select-none'}>
                 {children}
             </div>
 

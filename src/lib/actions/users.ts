@@ -28,6 +28,7 @@ export type UserData = {
     approximateAge?: string;
     showBirthYear?: boolean;
     showAge?: boolean;
+    ageDisplayMode?: 'blurred' | 'formal';
     deceasedDate?: string;
     deceasedYear?: string;
     deceasedMonth?: string;
@@ -94,6 +95,7 @@ export async function getUsers(): Promise<{ success: boolean; users?: UserData[]
                 approximateAge: firestoreData.approximateAge || '',
                 showBirthYear: firestoreData.showBirthYear === true,
                 showAge: firestoreData.showAge !== false,
+                ageDisplayMode: firestoreData.ageDisplayMode || 'blurred',
                 deceasedDate: firestoreData.deceasedDate || '',
                 deceasedYear: firestoreData.deceasedYear || '',
                 deceasedMonth: firestoreData.deceasedMonth || '',
@@ -237,6 +239,7 @@ export async function adminUpdateUserProfile(
     uid: string,
     data: {
         displayName?: string;
+        modelId?: string;
         realName?: string;
         showRealName?: boolean;
         birthday?: string;
@@ -246,6 +249,7 @@ export async function adminUpdateUserProfile(
         approximateAge?: string;
         showBirthYear?: boolean;
         showAge?: boolean;
+        ageDisplayMode?: 'blurred' | 'formal';
         deceasedDate?: string;
         deceasedYear?: string;
         deceasedMonth?: string;
@@ -260,6 +264,7 @@ export async function adminUpdateUserProfile(
         const updateData: any = {};
         if (data.displayName !== undefined) updateData.displayName = data.displayName;
         if (data.realName !== undefined) updateData.realName = data.realName;
+        if (data.modelId !== undefined) updateData.modelId = data.modelId || null;
         if (data.showRealName !== undefined) updateData.showRealName = data.showRealName;
         if (data.birthday !== undefined) updateData.birthday = data.birthday;
         if (data.birthYear !== undefined) updateData.birthYear = data.birthYear;
@@ -268,6 +273,7 @@ export async function adminUpdateUserProfile(
         if (data.approximateAge !== undefined) updateData.approximateAge = data.approximateAge;
         if (data.showBirthYear !== undefined) updateData.showBirthYear = data.showBirthYear;
         if (data.showAge !== undefined) updateData.showAge = data.showAge;
+        if (data.ageDisplayMode !== undefined) updateData.ageDisplayMode = data.ageDisplayMode;
         if (data.deceasedDate !== undefined) updateData.deceasedDate = data.deceasedDate;
         if (data.deceasedYear !== undefined) updateData.deceasedYear = data.deceasedYear;
         if (data.deceasedMonth !== undefined) updateData.deceasedMonth = data.deceasedMonth;
@@ -310,6 +316,7 @@ export async function getPublicModels(): Promise<{
         approximateAge?: string;
         showBirthYear?: boolean;
         showAge?: boolean;
+        ageDisplayMode?: 'blurred' | 'formal';
         deceasedDate?: string; 
         deceasedYear?: string;
         deceasedMonth?: string;
@@ -339,6 +346,7 @@ export async function getPublicModels(): Promise<{
                 approximateAge: data.approximateAge || '',
                 showBirthYear: data.showBirthYear === true,
                 showAge: data.showAge !== false,
+                ageDisplayMode: data.ageDisplayMode || 'blurred',
                 deceasedDate: data.deceasedDate || '',
                 deceasedYear: data.deceasedYear || '',
                 deceasedMonth: data.deceasedMonth || '',
@@ -359,6 +367,7 @@ export async function getPublicModels(): Promise<{
                 approximateAge: data.approximateAge || '',
                 showBirthYear: data.showBirthYear === true,
                 showAge: data.showAge !== false,
+                ageDisplayMode: data.ageDisplayMode || 'blurred',
                 deceasedDate: data.deceasedDate || '',
                 deceasedYear: data.deceasedYear || '',
                 deceasedMonth: data.deceasedMonth || '',

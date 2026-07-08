@@ -35,6 +35,7 @@ export async function updateProfile(data: Profile, idToken: string): Promise<Sav
         const { revalidatePath } = await import('next/cache');
         revalidatePath('/about');
         revalidatePath('/admin/profile');
+        revalidatePath('/portfolio');
 
         return { success: true };
     } catch (error: any) {

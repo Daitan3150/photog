@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import PhotoGrid from "@/components/gallery/PhotoGrid";
+import LensDetailPanel from '@/components/portfolio/LensDetailPanel';
 import { searchPhotos } from '@/lib/actions/photos';
 import { getPublicModels } from '@/lib/actions/users';
 import CategoryFilter from "@/components/portfolio/CategoryFilter";
@@ -10,6 +11,7 @@ import PortfolioViewModeToggle from "@/components/portfolio/PortfolioViewModeTog
 import PortraitScrollSection from "@/components/gallery/PortraitScrollSection";
 import CosplayScrollSection from "@/components/gallery/CosplayScrollSection";
 import { Metadata } from 'next';
+import { getProfileServer } from '@/lib/actions/profile';
 
 // Revalidate every 1 hour (ISR)
 export const revalidate = 3600;
@@ -52,6 +54,7 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
 
     // 公開用モデルデータ（生没年）の取得とマッピング
     const modelsResult = await getPublicModels();
+    const profileResult = await getProfileServer();
     const publicModelsMap = new Map<string, { 
         birthday?: string; 
         birthYear?: string;
@@ -86,6 +89,19 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
             });
         });
     }
+
+    const lensMetadataMap = new Map<string, { name?: string; imageUrl?: string; specs?: string[]; description?: string }>();
+    const lensMetadataList = Array.isArray((profileResult as any)?.data?.lensDetails) ? (profileResult as any).data.lensDetails : [];
+    lensMetadataList.forEach((entry: any) => {
+        if (entry?.name) {
+            lensMetadataMap.set(entry.name, {
+                name: entry.name,
+                imageUrl: entry.imageUrl || entry.image || '',
+                specs: Array.isArray(entry.specs) ? entry.specs.filter(Boolean) : [],
+                description: entry.description || '',
+            });
+        }
+    });
 
     // ポートレートまたはコスプレカテゴリーの場合、モデル名（subjectName）ごとにグループ化する
     const shouldGroup = isPortrait || isCosplay;
@@ -133,66 +149,60 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
                     )}
                 </div>
 
-                <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gray-200 border-t-black rounded-full animate-spin" /></div>}>
-                    <div className="mt-12">
-                        {displayPhotos.length > 0 ? (
-                            currentView === 'lens' ? (
-                                <PhotoGrid photos={displayPhotos} />
-                            ) : isPortrait ? (
-                                <div className="space-y-24">
-                                    {Object.entries(groupedPhotos).map(([modelName, photos]) => {
-                                        const modelInfo = publicModelsMap.get(modelName);
-                                        return (
-                                            <PortraitScrollSection
-                                                key={modelName}
-                                                modelName={modelName}
-                                                photos={photos}
-                                                birthday={modelInfo?.birthday}
-                                                birthYear={modelInfo?.birthYear}
-                                                birthMonth={modelInfo?.birthMonth}
-                                                birthDay={modelInfo?.birthDay}
-                                                approximateAge={modelInfo?.approximateAge}
-                                                showBirthYear={modelInfo?.showBirthYear}
-                                                showAge={modelInfo?.showAge}
-                                                ageDisplayMode={modelInfo?.ageDisplayMode}
-                                                deceasedDate={modelInfo?.deceasedDate}
-                                                deceasedYear={modelInfo?.deceasedYear}
-                                                deceasedMonth={modelInfo?.deceasedMonth}
-                                                deceasedDay={modelInfo?.deceasedDay}
-                                                realName={modelInfo?.realName}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            ) : isCosplay ? (
-                                <div className="space-y-20">
-                                    {Object.entries(groupedPhotos).map(([modelName, photos]) => {
-                                        const modelInfo = publicModelsMap.get(modelName);
-                                        return (
-                                            <CosplayScrollSection
-                                                key={modelName}
-                                                modelName={modelName}
-                                                photos={photos}
-                                                birthday={modelInfo?.birthday}
-                                                birthYear={modelInfo?.birthYear}
-                                                birthMonth={modelInfo?.birthMonth}
-                                                birthDay={modelInfo?.birthDay}
-                                                approximateAge={modelInfo?.approximateAge}
-                                                showBirthYear={modelInfo?.showBirthYear}
-                                                showAge={modelInfo?.showAge}
-                                                ageDisplayMode={modelInfo?.ageDisplayMode}
-                                                deceasedDate={modelInfo?.deceasedDate}
-                                                deceasedYear={modelInfo?.deceasedYear}
-                                                deceasedMonth={modelInfo?.deceasedMonth}
-                                                deceasedDay={modelInfo?.deceasedDay}
-                                                realName={modelInfo?.realName}
-                                            />
-                                        );
-                                    })}
+                {currentView === 'lens' && currentLens && (
+                    <LensDetailPanel
+                        lensName={currentLens}
+                        metadata={lensMetadataMap.get(currentLens)}
+                        photoCount={displayPhotos.length}
+                        photos={displayPhotos}
+                    />
+                )}
 
-                                    {singlePhotoGroups.length > 0 && (
+                <div className="mt-6">
+                </div>
+
+                {displayPhotos.length > 0 ? (
+                    <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gray-200 border-t-black rounded-full animate-spin" /></div>}>
+                        <div className="mt-12">
+                            {(() => {
+                                if (currentView === 'lens') {
+                                    return null;
+                                }
+
+                                if (isPortrait) {
+                                    return (
                                         <div className="space-y-24">
-                                            {singlePhotoGroups.map(({ modelName, photos }) => {
+                                            {Object.entries(groupedPhotos).map(([modelName, photos]) => {
+                                                const modelInfo = publicModelsMap.get(modelName);
+                                                return (
+                                                    <PortraitScrollSection
+                                                        key={modelName}
+                                                        modelName={modelName}
+                                                        photos={photos}
+                                                        birthday={modelInfo?.birthday}
+                                                        birthYear={modelInfo?.birthYear}
+                                                        birthMonth={modelInfo?.birthMonth}
+                                                        birthDay={modelInfo?.birthDay}
+                                                        approximateAge={modelInfo?.approximateAge}
+                                                        showBirthYear={modelInfo?.showBirthYear}
+                                                        showAge={modelInfo?.showAge}
+                                                        ageDisplayMode={modelInfo?.ageDisplayMode}
+                                                        deceasedDate={modelInfo?.deceasedDate}
+                                                        deceasedYear={modelInfo?.deceasedYear}
+                                                        deceasedMonth={modelInfo?.deceasedMonth}
+                                                        deceasedDay={modelInfo?.deceasedDay}
+                                                        realName={modelInfo?.realName}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                }
+
+                                if (isCosplay) {
+                                    return (
+                                        <div className="space-y-20">
+                                            {Object.entries(groupedPhotos).map(([modelName, photos]) => {
                                                 const modelInfo = publicModelsMap.get(modelName);
                                                 return (
                                                     <CosplayScrollSection
@@ -215,17 +225,45 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
                                                     />
                                                 );
                                             })}
+
+                                            {singlePhotoGroups.length > 0 && (
+                                                <div className="space-y-24">
+                                                    {singlePhotoGroups.map(({ modelName, photos }) => {
+                                                        const modelInfo = publicModelsMap.get(modelName);
+                                                        return (
+                                                            <CosplayScrollSection
+                                                                key={modelName}
+                                                                modelName={modelName}
+                                                                photos={photos}
+                                                                birthday={modelInfo?.birthday}
+                                                                birthYear={modelInfo?.birthYear}
+                                                                birthMonth={modelInfo?.birthMonth}
+                                                                birthDay={modelInfo?.birthDay}
+                                                                approximateAge={modelInfo?.approximateAge}
+                                                                showBirthYear={modelInfo?.showBirthYear}
+                                                                showAge={modelInfo?.showAge}
+                                                                ageDisplayMode={modelInfo?.ageDisplayMode}
+                                                                deceasedDate={modelInfo?.deceasedDate}
+                                                                deceasedYear={modelInfo?.deceasedYear}
+                                                                deceasedMonth={modelInfo?.deceasedMonth}
+                                                                deceasedDay={modelInfo?.deceasedDay}
+                                                                realName={modelInfo?.realName}
+                                                            />
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <PhotoGrid photos={displayPhotos} />
-                            )
-                        ) : (
-                            <EmptyPortfolio />
-                        )}
-                    </div>
-                </Suspense>
+                                    );
+                                }
+
+                                return <PhotoGrid photos={displayPhotos} />;
+                            })()}
+                        </div>
+                    </Suspense>
+                ) : (
+                    <EmptyPortfolio />
+                )}
             </div>
         </main>
     );

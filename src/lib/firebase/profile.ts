@@ -1,6 +1,23 @@
 import { db } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
+export interface LensDetail {
+    id?: string;
+    name?: string;
+    imageUrl?: string;
+    manufacturer?: string;
+    focalLength?: string;
+    aperture?: string;
+    mount?: string;
+    releaseYear?: string;
+    lensConstruction?: string;
+    minimumFocusDistance?: string;
+    filterDiameter?: string;
+    comment?: string;
+    description?: string;
+    specs?: string[];
+}
+
 export interface Profile {
     name: string;
     roleJa?: string;
@@ -22,6 +39,7 @@ export interface Profile {
     imageUrl?: string;
     xUrl?: string; // [NEW] Admin SNS
     instagramUrl?: string; // [NEW] Admin SNS
+    lensDetails?: LensDetail[];
 }
 
 const PROFILE_DOC_PATH = 'settings/profile';

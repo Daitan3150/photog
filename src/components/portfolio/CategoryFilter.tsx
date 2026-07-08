@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const CATEGORIES = [
@@ -14,10 +14,15 @@ const CATEGORIES = [
 
 export default function CategoryFilter({ currentCategory }: { currentCategory: string }) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { t } = useLanguage();
 
     const handleCategoryChange = (slug: string) => {
-        router.push(`/portfolio?category=${slug}`);
+        const nextParams = new URLSearchParams(searchParams.toString());
+        nextParams.set('category', slug);
+        nextParams.set('view', 'category');
+        nextParams.delete('lens');
+        router.push(`/portfolio?${nextParams.toString()}`);
     };
 
     return (

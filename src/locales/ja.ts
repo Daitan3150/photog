@@ -40,8 +40,15 @@ export const ja = {
         snapshotDesc: '日常の何気ない瞬間や、街の息遣いを切り取るスナップショット。小樽をはじめとした北海道の風景に溶け込む、ドラマチックな瞬間を追い求めています。',
     },
     portfolio: {
-        title: 'WORKS',
-        subtitle: 'Portfolio',
+        title: '作品集',
+        subtitle: 'ポートフォリオ',
+        viewBy: '表示方法',
+        viewMode: {
+            category: 'カテゴリーで見る',
+            lens: 'レンズで見る',
+        },
+        filterLens: 'レンズを選択',
+        lensAll: 'すべて表示',
         categories: {
             cosplay: 'コスプレ',
             portrait: 'ポートレート',

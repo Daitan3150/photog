@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -98,14 +99,37 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
         }
     };
 
+    // ギャラリーのページネーション（スクロールで自動読み込み）
+    const [visibleCount, setVisibleCount] = React.useState(() => Math.min(12, photos.length));
+    const sentinelRef = React.useRef<HTMLDivElement | null>(null);
+    React.useEffect(() => {
+        setVisibleCount(Math.min(12, photos.length));
+    }, [photos.length]);
+
+    React.useEffect(() => {
+        if (photos.length <= visibleCount) return;
+
+        const node = sentinelRef.current;
+        if (!node) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0]?.isIntersecting) {
+                setVisibleCount(prev => Math.min(photos.length, prev + 8));
+            }
+        }, { rootMargin: '240px 0px' });
+
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, [photos.length, visibleCount]);
+
     return (
         <div className="relative">
-            <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4 px-4 md:px-0">
-                {photos.map((photo, index) => (
-                    <div className="break-inside-avoid mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 px-4 md:px-0">
+                {photos.slice(0, visibleCount).map((photo, index) => (
+                    <div key={photo.id} className="relative">
                         <motion.div
                             className={clsx(
-                                "relative group rounded-lg overflow-hidden transition-all duration-300",
+                                "relative group rounded-xl overflow-hidden transition-all duration-300",
                                 photo.category?.toLowerCase() === 'cosplay' ? (
                                     "p-[2px] bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 shadow-lg shadow-purple-500/20"
                                 ) : (
@@ -113,21 +137,22 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                 )
                             )}
                         >
-                            <div className="relative overflow-hidden rounded-md bg-black">
+                            <div className="relative overflow-hidden bg-black" style={{ borderRadius: 12 }}>
                                 <Link
                                     href={photo.href || `/portfolio?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), img: photo.id }).toString()}`}
                                     className="block relative overflow-hidden"
                                 >
-                                    <Image
-                                        loader={cloudinaryLoader}
-                                        src={photo.url}
-                                        alt={photo.title || (photo.characterName ? `${photo.characterName} - Photo` : "Photo")}
-                                        width={800}
-                                        height={photo.aspectRatio === "portrait" ? 1200 : 600}
-                                        className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                        priority={index < 4}
-                                    />
+                                    <div className="w-full aspect-square relative">
+                                        <Image
+                                            loader={cloudinaryLoader}
+                                            src={photo.url}
+                                            alt={photo.title || (photo.characterName ? `${photo.characterName} - Photo` : "Photo")}
+                                            fill
+                                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+                                            priority={index < 4}
+                                        />
+                                    </div>
                                 </Link>
 
                                 {photo.category?.toLowerCase() === 'cosplay' && (
@@ -229,6 +254,8 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                     </div>
                 ))}
             </div>
+
+            <div ref={sentinelRef} className="h-4" />
 
             <AnimatePresence>
                 {selectedPhoto && (

@@ -56,6 +56,7 @@ function SubjectEditModal({
     const [showRealName, setShowRealName] = useState<boolean>(subject.showRealName === true);
     const [showBirthYear, setShowBirthYear] = useState<boolean>(subject.showBirthYear === true);
     const [showAge, setShowAge] = useState<boolean>(subject.showAge !== false);
+    const [ageDisplayMode, setAgeDisplayMode] = useState<'blurred' | 'formal'>(subject.ageDisplayMode === 'formal' ? 'formal' : 'blurred');
     const [deceasedChecked, setDeceasedChecked] = useState(
         !!(subject.deceasedDate || subject.deceasedYear || subject.deceasedMonth)
     );
@@ -91,6 +92,7 @@ function SubjectEditModal({
                 showRealName: form.realName.trim() ? showRealName : false,
                 showBirthYear,
                 showAge,
+                ageDisplayMode,
             };
 
             const result = isNew
@@ -194,6 +196,27 @@ function SubjectEditModal({
                             showAge={showAge}
                             onShowAgeChange={setShowAge}
                         />
+
+                        <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-3">
+                            <label className="text-[11px] font-bold text-gray-500 block">年齢表示の見せ方</label>
+                            <div className="mt-2 flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setAgeDisplayMode('blurred')}
+                                    className={`flex-1 rounded-xl px-3 py-2 text-xs font-bold transition-all ${ageDisplayMode === 'blurred' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200'}`}
+                                >
+                                    かすかに表示
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAgeDisplayMode('formal')}
+                                    className={`flex-1 rounded-xl px-3 py-2 text-xs font-bold transition-all ${ageDisplayMode === 'formal' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200'}`}
+                                >
+                                    正式な年齢で表示
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-2">※ 公式ページの年齢バッジの見え方を切り替えます。</p>
+                        </div>
                         <PartialDateInput
                             year={form.deceasedYear}
                             month={form.deceasedMonth}
