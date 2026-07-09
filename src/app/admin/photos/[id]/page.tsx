@@ -73,6 +73,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [shareOgImageUploading, setShareOgImageUploading] = useState(false);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [formData, setFormData] = useState({
         title: '',
@@ -353,6 +354,64 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         }
     };
 
+    const handleFocalPointSelect = (event: React.MouseEvent<HTMLDivElement>) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 100;
+        const y = ((event.clientY - rect.top) / rect.height) * 100;
+        setFormData(prev => ({
+            ...prev,
+            focalPoint: {
+                x: Math.max(0, Math.min(100, Number(x.toFixed(1)))),
+                y: Math.max(0, Math.min(100, Number(y.toFixed(1)))),
+            }
+        }));
+    };
+
+    const handleShareOgImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        setShareOgImageUploading(true);
+        try {
+            const token = await user.getIdToken();
+            const timestamp = Math.round(new Date().getTime() / 1000);
+            const uploadParams: Record<string, any> = {
+                timestamp,
+                folder: 'portfolio/share-ogp',
+                upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'next-portfolio',
+                public_id: `share-ogp-${Date.now()}`,
+            };
+
+            const { signature, apiKey } = await fetchSignature(uploadParams, token);
+            const formDataUpload = new FormData();
+            formDataUpload.append('file', file);
+            formDataUpload.append('signature', signature);
+            formDataUpload.append('api_key', apiKey);
+            formDataUpload.append('timestamp', String(timestamp));
+            Object.entries(uploadParams).forEach(([key, value]) => {
+                if (key !== 'timestamp') formDataUpload.append(key, String(value));
+            });
+
+            const result: any = await xhrUpload(
+                `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                formDataUpload,
+                () => undefined
+            );
+
+            if (result?.secure_url) {
+                setFormData(prev => ({ ...prev, shareOgImageUrl: result.secure_url }));
+            } else {
+                throw new Error('共有用OGP画像のアップロードに失敗しました');
+            }
+        } catch (error: any) {
+            console.error(error);
+            alert(error.message || '共有用OGP画像のアップロードに失敗しました');
+        } finally {
+            setShareOgImageUploading(false);
+            e.target.value = '';
+        }
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
@@ -506,6 +565,93 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                         <h1 className="text-2xl font-bold mb-6 text-gray-900">詳細設定の編集</h1>
 
                         <form onSubmit={handleSave} className="space-y-5">
+                            <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-center justify-between gap-3">
+                                    <label className="block text-sm font-bold text-blue-800">共有バナー切り抜き位置（OGP）</label>
+                                    <span className="text-[10px] text-blue-700">※ クリックで中心を指定できます</span>
+                                </div>
+                                <div
+                                    className="relative h-40 overflow-hidden rounded border border-blue-200 bg-gray-100 cursor-crosshair"
+                                    onClick={handleFocalPointSelect}
+                                >
+                                    {formData.url ? (
+                                        <img
+                                            src={formData.url}
+                                            alt="OGP preview"
+                                            className="h-full w-full object-cover"
+                                            style={{ objectPosition: `${formData.focalPoint?.x ?? 50}% ${formData.focalPoint?.y ?? 50}%` }}
+                                        />
+                                    ) : (
+                                        <div className="flex h-full items-center justify-center text-sm text-gray-500">写真が読み込まれるまでお待ちください</div>
+                                    )}
+                                    <div className="pointer-events-none absolute inset-0 border-2 border-white/80" />
+                                    <div
+                                        className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-blue-600 shadow"
+                                        style={{ left: `${formData.focalPoint?.x ?? 50}%`, top: `${formData.focalPoint?.y ?? 50}%` }}
+                                    />
+                                </div>
+                                <div className="flex gap-2">
+                                    <label className="flex-1 text-xs text-blue-700">
+                                        X
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={formData.focalPoint?.x ?? 50}
+                                            onChange={(e) => setFormData(prev => ({
+                                                ...prev,
+                                                focalPoint: {
+                                                    x: Math.max(0, Math.min(100, Number(e.target.value) || 0)),
+                                                    y: prev.focalPoint?.y ?? 50,
+                                                },
+                                            }))}
+                                            className="mt-1 w-full rounded border border-blue-200 p-2 text-sm"
+                                        />
+                                    </label>
+                                    <label className="flex-1 text-xs text-blue-700">
+                                        Y
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={formData.focalPoint?.y ?? 50}
+                                            onChange={(e) => setFormData(prev => ({
+                                                ...prev,
+                                                focalPoint: {
+                                                    x: prev.focalPoint?.x ?? 50,
+                                                    y: Math.max(0, Math.min(100, Number(e.target.value) || 0)),
+                                                },
+                                            }))}
+                                            className="mt-1 w-full rounded border border-blue-200 p-2 text-sm"
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div className="flex items-center justify-between gap-3">
+                                    <label className="block text-sm font-bold text-amber-800">共有用OGP画像（任意）</label>
+                                    <span className="text-[10px] text-amber-700">※ SNS共有時に優先して使われます</span>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={formData.shareOgImageUrl}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, shareOgImageUrl: e.target.value }))}
+                                    className="w-full border border-amber-200 p-2 rounded outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+                                    placeholder="https://.../share-ogp-image.jpg"
+                                />
+                                <label className="flex items-center gap-2 text-sm text-amber-700 cursor-pointer">
+                                    <input type="file" accept="image/*" onChange={handleShareOgImageUpload} className="hidden" />
+                                    <span className="px-3 py-2 rounded bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition-colors">
+                                        {shareOgImageUploading ? 'アップロード中...' : '共有用OGP画像をアップロード'}
+                                    </span>
+                                </label>
+                                {formData.shareOgImageUrl && (
+                                    <div className="rounded border border-amber-200 bg-white p-2">
+                                        <img src={formData.shareOgImageUrl} alt="Share OGP preview" className="w-full h-32 object-cover rounded" />
+                                    </div>
+                                )}
+                            </div>
                             <div>
                                 <label className="flex items-center text-sm font-bold text-gray-700 mb-1.5">
                                     <Tag className="w-4 h-4 mr-2 text-blue-500" />
