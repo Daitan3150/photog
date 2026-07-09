@@ -21,7 +21,7 @@ const getSnsIcon = (url: string) => {
     return <Globe className="w-5 h-5" strokeWidth={1.5} />;
 };
 
-interface Photo {
+export interface Photo {
     id: string;
     url: string;
     title: string;

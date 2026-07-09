@@ -63,9 +63,6 @@ export default function LensDetailPanel({ lensName, metadata, photos = [] }: Len
 
         <div className="flex min-w-0 flex-col justify-center md:min-h-[320px]">
           <h3 className="max-w-full overflow-hidden text-base font-black leading-tight text-slate-900 break-words sm:text-lg md:text-xl md:whitespace-nowrap">{metadata?.name || lensName}</h3>
-          {metadata?.description && (
-            <p className="mt-3 text-sm leading-6 text-slate-600 md:text-sm">{metadata.description}</p>
-          )}
 
           {displaySpecs.length > 0 && (
             <div className="mt-3 space-y-2 text-sm text-slate-700 md:mt-4 md:text-sm">

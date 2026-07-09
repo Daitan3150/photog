@@ -253,13 +253,21 @@ export default function NewPhotoPage() {
     const [showLocationDialog, setShowLocationDialog] = useState(false);
     const [locationSearch, setLocationSearch] = useState('');
     const [isStudioMode, setIsStudioMode] = useState<boolean | null>(null);
+    const [selectedLocationType, setSelectedLocationType] = useState<'outdoor' | 'indoor' | 'other' | null>(null);
     const [showNewStudioForm, setShowNewStudioForm] = useState(false);
     const [newStudio, setNewStudio] = useState<Partial<Studio>>({ name: '', url: '' });
     const [showNewLocationForm, setShowNewLocationForm] = useState(false);
     const [newLocation, setNewLocation] = useState<Partial<Location>>({ name: '', type: 'outdoor' });
 
+    const LOCATION_TYPE_LABELS = {
+        outdoor: '屋外',
+        indoor: '室内',
+        other: 'その他',
+    } as const;
+
     const filteredSavedLocations = allLocations.filter(loc => {
         const query = locationSearch.trim().toLowerCase();
+        if (selectedLocationType && loc.type !== selectedLocationType) return false;
         if (!query) return true;
         return (
             loc.name.toLowerCase().includes(query) ||
@@ -791,16 +799,15 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                         ...(aperture ? { FNumber: aperture } : {}),
                         ...(iso ? { ISOSpeedRatings: iso } : {}),
                     },
- 
-                  shootLocationType: (isStudioMode ? 'studio' : 'location') as 'studio' | 'location',
-                  shootLocationId: (() => {
-                      if (isStudioMode) {
-                          const studio = allStudios.find(s => s.name === location);
-                          return studio?.id || null;
-                      }
-                      return null;
-                  })(),
-
+                    shootLocationType: (isStudioMode ? 'studio' : 'location') as 'studio' | 'location',
+                    locationType: selectedLocationType || undefined,
+                    shootLocationId: (() => {
+                        if (isStudioMode) {
+                            const studio = allStudios.find(s => s.name === location);
+                            return studio?.id || null;
+                        }
+                        return null;
+                    })(),
                     tags: [...(file.tags || []), ...extraTags].filter((v, i, a) => a.indexOf(v) === i),
                 };
             });
@@ -1412,15 +1419,26 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                 </label>
 
                                 <div
-                                    onClick={() => setShowLocationDialog(true)}
+                                    onClick={() => {
+                                        setShowLocationDialog(true);
+                                        setIsStudioMode(null);
+                                        setSelectedLocationType(null);
+                                        setShowNewLocationForm(false);
+                                        setLocationSearch('');
+                                    }}
                                     className={`relative w-full p-4 rounded-xl border-2 border-dashed cursor-pointer transition-all hover:bg-gray-100 flex flex-col items-center justify-center gap-2 ${location ? 'border-blue-500 bg-blue-50/30' : 'border-gray-200 bg-white'}`}
                                 >
                                     {location ? (
                                         <>
                                             <div className="flex items-center gap-2 text-blue-600 font-bold">
                                                 {isStudioMode ? <Home className="w-4 h-4" /> : <Trees className="w-4 h-4" />}
-                                                {location}
+                                                <span>{location}</span>
                                             </div>
+                                            {isStudioMode ? (
+                                                <p className="text-[10px] text-blue-600">スタジオ</p>
+                                            ) : selectedLocationType ? (
+                                                <p className="text-[10px] text-green-600">{LOCATION_TYPE_LABELS[selectedLocationType]}</p>
+                                            ) : null}
                                             <p className="text-[10px] text-gray-400">クリックして変更</p>
                                         </>
                                     ) : (
@@ -1807,11 +1825,15 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
 
                                 <div className="p-6">
                                     {isStudioMode === null ? (
-                                        // 選択画面
                                         <div className="grid grid-cols-2 gap-4">
                                             <button
                                                 type="button"
-                                                onClick={() => setIsStudioMode(true)}
+                                                onClick={() => {
+                                                    setIsStudioMode(true);
+                                                    setSelectedLocationType(null);
+                                                    setShowNewLocationForm(false);
+                                                    setLocationSearch('');
+                                                }}
                                                 className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-gray-100 hover:border-blue-500 hover:bg-blue-50 transition-all group"
                                             >
                                                 <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
@@ -1826,6 +1848,8 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                 type="button"
                                                 onClick={() => {
                                                     setIsStudioMode(false);
+                                                    setSelectedLocationType('outdoor');
+                                                    setShowNewLocationForm(false);
                                                     setLocationSearch('');
                                                 }}
                                                 className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-gray-100 hover:border-green-500 hover:bg-green-50 transition-all group"
@@ -1834,8 +1858,44 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                     <Trees className="w-8 h-8" />
                                                 </div>
                                                 <div className="text-center">
-                                                    <span className="block font-bold text-gray-900">屋外・室内・その他</span>
-                                                    <span className="text-[10px] text-gray-500">外ロケ・イベント会場など</span>
+                                                    <span className="block font-bold text-gray-900">屋外</span>
+                                                    <span className="text-[10px] text-gray-500">自然・街中のロケ地</span>
+                                                </div>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsStudioMode(false);
+                                                    setSelectedLocationType('indoor');
+                                                    setShowNewLocationForm(false);
+                                                    setLocationSearch('');
+                                                }}
+                                                className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-gray-100 hover:border-purple-500 hover:bg-purple-50 transition-all group"
+                                            >
+                                                <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+                                                    <Home className="w-8 h-8" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <span className="block font-bold text-gray-900">室内</span>
+                                                    <span className="text-[10px] text-gray-500">屋内ロケーション</span>
+                                                </div>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsStudioMode(false);
+                                                    setSelectedLocationType('other');
+                                                    setShowNewLocationForm(false);
+                                                    setLocationSearch('');
+                                                }}
+                                                className="flex flex-col items-center gap-4 p-6 rounded-2xl border-2 border-gray-100 hover:border-yellow-500 hover:bg-yellow-50 transition-all group"
+                                            >
+                                                <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 group-hover:scale-110 transition-transform">
+                                                    <MapPin className="w-8 h-8" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <span className="block font-bold text-gray-900">その他</span>
+                                                    <span className="text-[10px] text-gray-500">会場・特殊場所など</span>
                                                 </div>
                                             </button>
                                         </div>
@@ -2039,6 +2099,8 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                                 type="button"
                                                                 onClick={() => {
                                                                     setLocation(loc.name);
+                                                                    setSelectedLocationType(loc.type as 'outdoor' | 'indoor' | 'other');
+                                                                    setIsStudioMode(false);
                                                                     if (loc.addressZip) setAddressZip(loc.addressZip);
                                                                     if (loc.addressPref) setAddressPref(loc.addressPref);
                                                                     if (loc.addressCity) setAddressCity(loc.addressCity);
@@ -2169,6 +2231,7 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                                     const locations = await getLocations();
                                                                     setAllLocations(locations);
                                                                     setLocation(newLocation.name);
+                                                                    setSelectedLocationType(newLocation.type || 'outdoor');
                                                                     if (newLocation.addressZip) setAddressZip(newLocation.addressZip);
                                                                     if (newLocation.addressPref) setAddressPref(newLocation.addressPref);
                                                                     if (newLocation.addressCity) setAddressCity(newLocation.addressCity);

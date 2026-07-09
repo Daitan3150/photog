@@ -42,16 +42,7 @@ export const metadata: Metadata = {
   },
 };
 
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import AnalyticsProvider from "@/components/AnalyticsProvider";
-
-import { LanguageProvider } from "@/lib/i18n/LanguageContext";
-import SecurityProvider from "@/components/SecurityProvider";
-import MaintenanceOverlay from "@/components/MaintenanceOverlay";
-import JsonLd from "@/components/seo/JsonLd";
-
-import SeasonalBackground from "@/components/effects/SeasonalBackground";
+import AppShell from '@/components/AppShell';
 
 export default function RootLayout({
   children,
@@ -61,19 +52,9 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={`${inter.variable} ${notoSerifJP.variable} font-sans antialiased`}>
-        <AnalyticsProvider>
-          <LanguageProvider>
-            <SecurityProvider>
-              <SeasonalBackground />
-              <MaintenanceOverlay />
-              <JsonLd type="Photographer" />
-              <JsonLd type="WebSite" />
-              <Header />
-              {children}
-              <Footer />
-            </SecurityProvider>
-          </LanguageProvider>
-        </AnalyticsProvider>
+        <AppShell>
+          {children}
+        </AppShell>
       </body>
     </html>
   );

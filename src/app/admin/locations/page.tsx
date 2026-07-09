@@ -23,9 +23,25 @@ export default function LocationsPage() {
         latitude: null,
         longitude: null
     });
+
+    const LOCATION_TYPE_LABELS = {
+        outdoor: '屋外',
+        indoor: '室内',
+        other: 'その他',
+    } as const;
+
+    const sortLocationsByType = (items: Location[]) => {
+        const order: Location['type'][] = ['outdoor', 'indoor', 'other'];
+        return [...items].sort((a, b) => {
+            const typeOrder = order.indexOf(a.type) - order.indexOf(b.type);
+            if (typeOrder !== 0) return typeOrder;
+            return a.name.localeCompare(b.name, 'ja', { sensitivity: 'base' });
+        });
+    };
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | Location['type']>('all');
 
     useEffect(() => {
         fetchLocations();
@@ -35,7 +51,7 @@ export default function LocationsPage() {
         setLoading(true);
         try {
             const result = await getLocations();
-            setLocations(result);
+            setLocations(sortLocationsByType(result));
         } catch (err) {
             console.error('Failed to fetch locations:', err);
         }
@@ -133,15 +149,25 @@ export default function LocationsPage() {
         }
     };
 
-    const filteredLocations = locations.filter(loc => {
+    const filteredLocations = sortLocationsByType(locations.filter(loc => {
         const q = searchQuery.toLowerCase();
-        return (
+        const matchesQuery = (
             loc.name.toLowerCase().includes(q) ||
             loc.type.toLowerCase().includes(q) ||
             (loc.address || '').toLowerCase().includes(q) ||
             (loc.note || '').toLowerCase().includes(q)
         );
-    });
+        const matchesType = activeTypeFilter === 'all' || loc.type === activeTypeFilter;
+        return matchesQuery && matchesType;
+    }));
+
+    const groupedLocations = (activeTypeFilter === 'all'
+        ? (['outdoor', 'indoor', 'other'] as Location['type'][]).map(type => ({
+            type,
+            items: filteredLocations.filter(location => location.type === type),
+        })).filter(group => group.items.length > 0)
+        : [{ type: activeTypeFilter, items: filteredLocations }]
+    );
 
     return (
         <div className="max-w-6xl mx-auto py-10 px-4 md:px-8">
@@ -159,7 +185,7 @@ export default function LocationsPage() {
                 </button>
             </header>
 
-            <div className="relative mb-6">
+            <div className="relative mb-4">
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                     type="text"
@@ -170,53 +196,85 @@ export default function LocationsPage() {
                 />
             </div>
 
+            <div className="mb-6">
+                <div className="flex flex-wrap gap-2 p-2 rounded-2xl border border-sky-100 bg-sky-50/70 shadow-sm">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTypeFilter('all')}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTypeFilter === 'all' ? 'bg-sky-600 text-white shadow-sm' : 'bg-white text-sky-700 border border-sky-100 hover:bg-sky-100'}`}
+                    >
+                        すべて
+                    </button>
+                    {(['outdoor', 'indoor', 'other'] as const).map(type => (
+                        <button
+                            key={type}
+                            type="button"
+                            onClick={() => setActiveTypeFilter(type)}
+                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTypeFilter === type ? 'bg-sky-600 text-white shadow-sm' : 'bg-white text-sky-700 border border-sky-100 hover:bg-sky-100'}`}
+                        >
+                            {LOCATION_TYPE_LABELS[type]}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             {loading ? (
                 <div className="flex justify-center py-20">
                     <div className="w-8 h-8 border-2 border-gray-200 border-t-sky-600 rounded-full animate-spin" />
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                     {filteredLocations.length === 0 ? (
                         <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                             <MapPin className="mx-auto text-sky-300 mb-4" size={48} />
                             <p className="text-gray-500">該当するロケーションがありません。</p>
                         </div>
                     ) : (
-                        filteredLocations.map(location => (
-                            <div key={location.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 p-5 bg-white rounded-3xl border border-gray-200 shadow-sm">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold uppercase tracking-widest">{location.type === 'outdoor' ? '屋外' : 'その他'}</span>
-                                        {location.address && <span className="text-[10px] text-gray-400">{location.address}</span>}
-                                    </div>
-                                    <h2 className="text-lg font-bold text-gray-900">{location.name}</h2>
-                                    {location.note && <p className="text-sm text-gray-500 mt-1">{location.note}</p>}
-                                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
-                                        {location.addressPref && <span>{location.addressPref}</span>}
-                                        {location.addressCity && <span>{location.addressCity}</span>}
-                                        {location.addressZip && <span>{location.addressZip}</span>}
-                                        {location.latitude !== undefined && location.latitude !== null && location.longitude !== undefined && location.longitude !== null && (
-                                            <span>{location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}</span>
-                                        )}
-                                    </div>
+                        groupedLocations.map(group => (
+                            <section key={group.type} className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <h2 className="text-sm font-bold text-gray-700">{LOCATION_TYPE_LABELS[group.type]}</h2>
+                                    <span className="text-xs text-gray-400">({group.items.length})</span>
                                 </div>
-                                <div className="flex items-center justify-start md:justify-end gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => openModal(location)}
-                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-sky-200 text-sky-700 hover:bg-sky-50 transition-all"
-                                    >
-                                        <Edit2 size={16} /> 編集
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleDelete(location)}
-                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-rose-200 text-rose-700 hover:bg-rose-50 transition-all"
-                                    >
-                                        <Trash2 size={16} /> 削除
-                                    </button>
+                                <div className="space-y-3">
+                                    {group.items.map(location => (
+                                        <div key={location.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 p-5 bg-white rounded-3xl border border-gray-200 shadow-sm">
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold uppercase tracking-widest">{LOCATION_TYPE_LABELS[location.type]}</span>
+                                                    {location.address && <span className="text-[10px] text-gray-400">{location.address}</span>}
+                                                </div>
+                                                <h3 className="text-lg font-bold text-gray-900">{location.name}</h3>
+                                                {location.note && <p className="text-sm text-gray-500 mt-1">{location.note}</p>}
+                                                <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
+                                                    {location.addressPref && <span>{location.addressPref}</span>}
+                                                    {location.addressCity && <span>{location.addressCity}</span>}
+                                                    {location.addressZip && <span>{location.addressZip}</span>}
+                                                    {location.latitude !== undefined && location.latitude !== null && location.longitude !== undefined && location.longitude !== null && (
+                                                        <span>{location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-start md:justify-end gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openModal(location)}
+                                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-sky-200 text-sky-700 hover:bg-sky-50 transition-all"
+                                                >
+                                                    <Edit2 size={16} /> 編集
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDelete(location)}
+                                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-rose-200 text-rose-700 hover:bg-rose-50 transition-all"
+                                                >
+                                                    <Trash2 size={16} /> 削除
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            </div>
+                            </section>
                         ))
                     )}
                 </div>
@@ -228,7 +286,7 @@ export default function LocationsPage() {
                         <div className="flex items-center justify-between p-6 border-b border-gray-200">
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900">{editingLocation ? 'ロケーションを編集' : '新しいロケーションを追加'}</h2>
-                                <p className="text-sm text-gray-500">屋外・その他の撮影地を事前登録してください。</p>
+                                <p className="text-sm text-gray-500">屋外・室内・その他の撮影地を事前登録してください。</p>
                             </div>
                             <button onClick={closeModal} className="p-2 text-gray-500 hover:text-gray-900 transition-colors">
                                 <X size={20} />
@@ -250,10 +308,11 @@ export default function LocationsPage() {
                                     <label className="text-sm font-semibold text-gray-700">タイプ</label>
                                     <select
                                         value={formData.type}
-                                        onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as 'outdoor' | 'other' }))}
+                                        onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as 'outdoor' | 'indoor' | 'other' }))}
                                         className="w-full p-3 rounded-2xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-sky-500"
                                     >
                                         <option value="outdoor">屋外</option>
+                                        <option value="indoor">室内</option>
                                         <option value="other">その他</option>
                                     </select>
                                 </div>

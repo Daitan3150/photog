@@ -26,7 +26,6 @@ export default function AdminProfilePage() {
     const [saving, setSaving] = useState(false);
     const [mySnsLinks, setMySnsLinks] = useState<SnsLink[]>([]);
     const [message, setMessage] = useState('');
-    const [lensDetailsInput, setLensDetailsInput] = useState('');
     const isAdmin = role === 'admin';
 
     useEffect(() => {
@@ -42,7 +41,6 @@ export default function AdminProfilePage() {
 
                 if (siteProfile.success && siteProfile.data) {
                     setProfile(siteProfile.data);
-                    setLensDetailsInput(Array.isArray((siteProfile.data as any).lensDetails) ? (siteProfile.data as any).lensDetails.map((entry: any) => [entry.name, entry.imageUrl || entry.image || '', entry.description || '', ...(Array.isArray(entry.specs) ? entry.specs : [])].join('\n')).join('\n\n') : '');
                 }
                 if (myData.success && myData.data) {
                     setMySnsLinks(myData.data.snsLinks || []);
@@ -75,26 +73,8 @@ export default function AdminProfilePage() {
         setMessage('');
 
         try {
-            const lensDetails = lensDetailsInput
-                .split(/\n\n+/)
-                .map((block) => block.trim())
-                .filter(Boolean)
-                .map((block) => {
-                    const lines = block.split('\n').map((line) => line.trim()).filter(Boolean);
-                    const [name, imageUrl, description, ...specs] = lines;
-                    return {
-                        name,
-                        imageUrl,
-                        description,
-                        specs,
-                    };
-                })
-                .filter((item) => item.name);
-
-            const profileToSave = {
-                ...profile,
-                lensDetails,
-            };
+            const { lensDetails, ...profileWithoutLensDetails } = profile as any;
+            const profileToSave = profileWithoutLensDetails;
 
             const idToken = await user.getIdToken();
             const results = [];
@@ -264,16 +244,6 @@ export default function AdminProfilePage() {
                                         className="w-full border p-2.5 rounded-xl bg-gray-50 h-[100px] outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                         placeholder="使用レンズを改行で入力..."
                                     />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-bold text-gray-700">レンズ詳細設定</label>
-                                    <textarea
-                                        value={lensDetailsInput}
-                                        onChange={(e) => setLensDetailsInput(e.target.value)}
-                                        className="w-full border p-2.5 rounded-xl bg-gray-50 h-[140px] outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        placeholder="レンズ名&#10;画像URL&#10;説明&#10;仕様1&#10;仕様2"
-                                    />
-                                    <p className="text-[10px] text-gray-400">※ 1ブロックにつき「レンズ名 / 画像URL / 説明 / 仕様」を改行区切りで入力します。ブロック間は空行で区切ります。</p>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="block text-sm font-bold text-gray-700">その他 (Other Gear)</label>

@@ -98,6 +98,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         addressPref: '',
         addressCity: '',
         coordsInput: '',
+        locationType: undefined as 'outdoor' | 'indoor' | 'other' | undefined,
         shootLocationType: 'location' as 'studio' | 'location' | 'other',
         shootLocationId: null as string | null,
     });
@@ -114,6 +115,12 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const [allStudios, setAllStudios] = useState<Studio[]>([]);
     const [allLocations, setAllLocations] = useState<any[]>([]);
     const [showLocationDialog, setShowLocationDialog] = useState(false);
+    const [selectedLocationType, setSelectedLocationType] = useState<'outdoor' | 'indoor' | 'other' | null>(null);
+    const LOCATION_TYPE_LABELS = {
+        outdoor: '屋外',
+        indoor: '室内',
+        other: 'その他',
+    } as const;
     const [locationSearch, setLocationSearch] = useState('');
     const [isStudioMode, setIsStudioMode] = useState<boolean | null>(null); // null: initial, true: studio, false: outside
     const [showNewStudioForm, setShowNewStudioForm] = useState(false);
@@ -133,6 +140,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
 
     const filteredSavedLocations = allLocations.filter(loc => {
         const query = locationSearch.trim().toLowerCase();
+        if (selectedLocationType && loc.type !== selectedLocationType) return false;
         if (!query) return true;
         return (
             (loc.name || '').toLowerCase().includes(query) ||
@@ -213,12 +221,14 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 longitude: data.longitude || null,
                 address: data.address || '',
                 coordsInput: (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : '',
-                addressZip: (data as any).addressZip || '',
+                        addressZip: (data as any).addressZip || '',
                 addressPref: (data as any).addressPref || '',
                 addressCity: (data as any).addressCity || '',
                 shootLocationType: data.shootLocationType || 'location',
                 shootLocationId: data.shootLocationId || null,
+                locationType: data.locationType || undefined,
             });
+            setSelectedLocationType(data.locationType || null);
         }
         setLoading(false);
 
@@ -1351,7 +1361,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                 <div className="p-6 border-b flex items-center justify-between bg-gray-50/50">
                                     <div>
                                         <h3 className="text-xl font-bold text-gray-900 tracking-tight">撮影地の設定</h3>
-                                        <p className="text-xs text-gray-500 mt-1">スタジオか屋外かを選択してください</p>
+                                        <p className="text-xs text-gray-500 mt-1">スタジオ、屋外、室内、その他から選択してください</p>
                                     </div>
                                     <button onClick={() => setShowLocationDialog(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-400">
                                         <X className="w-6 h-6" />
@@ -1364,23 +1374,63 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                         <div className="grid grid-cols-2 gap-4 py-4">
                                             <button
                                                 type="button"
-                                                onClick={() => setIsStudioMode(true)}
+                                                onClick={() => {
+                                                    setIsStudioMode(true);
+                                                    setSelectedLocationType(null);
+                                                    setShowNewLocationForm(false);
+                                                    setLocationSearch('');
+                                                }}
                                                 className="flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-gray-100 hover:border-blue-500 hover:bg-blue-50 group transition-all"
                                             >
                                                 <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                                     <Home className="w-8 h-8 text-blue-600" />
                                                 </div>
-                                                <span className="font-bold text-gray-700">スタジオ撮影</span>
+                                                <span className="font-bold text-gray-700">スタジオ</span>
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => setIsStudioMode(false)}
+                                                onClick={() => {
+                                                    setIsStudioMode(false);
+                                                    setSelectedLocationType('outdoor');
+                                                    setShowNewLocationForm(false);
+                                                    setLocationSearch('');
+                                                }}
                                                 className="flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-gray-100 hover:border-green-500 hover:bg-green-50 group transition-all"
                                             >
                                                 <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                                     <Trees className="w-8 h-8 text-green-600" />
                                                 </div>
-                                                <span className="font-bold text-gray-700">屋外・その他</span>
+                                                <span className="font-bold text-gray-700">屋外</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsStudioMode(false);
+                                                    setSelectedLocationType('indoor');
+                                                    setShowNewLocationForm(false);
+                                                    setLocationSearch('');
+                                                }}
+                                                className="flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-gray-100 hover:border-purple-500 hover:bg-purple-50 group transition-all"
+                                            >
+                                                <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                    <Home className="w-8 h-8 text-purple-600" />
+                                                </div>
+                                                <span className="font-bold text-gray-700">室内</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsStudioMode(false);
+                                                    setSelectedLocationType('other');
+                                                    setShowNewLocationForm(false);
+                                                    setLocationSearch('');
+                                                }}
+                                                className="flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-gray-100 hover:border-yellow-500 hover:bg-yellow-50 group transition-all"
+                                            >
+                                                <div className="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                    <MapPin className="w-8 h-8 text-yellow-600" />
+                                                </div>
+                                                <span className="font-bold text-gray-700">その他</span>
                                             </button>
                                         </div>
                                     ) : isStudioMode ? (
@@ -1419,8 +1469,10 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                 longitude: studio.longitude || null,
                                                                 coordsInput: (studio.latitude && studio.longitude) ? `${studio.latitude}, ${studio.longitude}` : prev.coordsInput,
                                                                 shootLocationType: 'studio',
-                                                                shootLocationId: studio.id || null
+                                                                shootLocationId: studio.id || null,
+                                                                locationType: undefined,
                                                             }));
+                                                            setSelectedLocationType(null);
                                                             setShowLocationDialog(false);
 
                                                             // 座標登録がない場合のみ検索を試みる
@@ -1697,7 +1749,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                             : prev.coordsInput,
                                                                         shootLocationType: 'location',
                                                                         shootLocationId: null,
+                                                                        locationType: loc.type as 'outdoor' | 'indoor' | 'other',
                                                                     }));
+                                                                    setSelectedLocationType(loc.type as 'outdoor' | 'indoor' | 'other');
                                                                     setShowLocationDialog(false);
                                                                 }}
                                                                 className="w-full p-3 rounded-2xl border border-gray-200 text-left hover:bg-green-50 transition-colors"
@@ -1825,7 +1879,9 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                             : prev.coordsInput,
                                                                         shootLocationType: 'location',
                                                                         shootLocationId: null,
+                                                                        locationType: newLocation.type || 'outdoor',
                                                                     }));
+                                                                    setSelectedLocationType(newLocation.type || 'outdoor');
                                                                     setShowLocationDialog(false);
                                                                     setShowNewLocationForm(false);
                                                                     setNewLocation({ name: '', type: 'outdoor', address: '', addressZip: '', addressPref: '', addressCity: '', latitude: null, longitude: null });
