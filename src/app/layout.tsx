@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Serif_JP } from "next/font/google"; // Changed Playfair_Display to Noto_Serif_JP directly based on usage
+import { Inter, Noto_Serif_JP } from "next/font/google";
+import { getSiteSettings } from '@/lib/actions/settings';
 import "./globals.css";
 
 const inter = Inter({
@@ -13,34 +14,45 @@ const notoSerifJP = Noto_Serif_JP({
   variable: "--font-noto-serif-jp",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://next-portfolio-lime-one.vercel.app"),
-  title: {
-    template: "%s | DAITAN フォトグラファー | 北海道・小樽",
-    default: "DAITAN | 北海道・小樽のフォトグラファー | ポートレート・スナップ撮影",
-  },
-  description: "北海道小樽市を拠点に活動するフォトグラファー DAITAN（ダイタン）のポートフォリオ。ポートレート、スナップ、コスプレ撮影など、一瞬を切り取るクリエイティブな写真を提供します。出張撮影のご依頼も受付中。",
-  openGraph: {
-    title: "DAITAN | Portrait & Snapshot Photographer",
-    description: "Capture the moment. Portfolio of Daitan.",
-    url: "https://next-portfolio-lime-one.vercel.app",
-    siteName: "DAITAN Portfolio",
-    locale: "ja_JP",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "DAITAN | Photographer",
-    creator: "@daitan_photo", // Replace with actual Twitter handle if known, or remove
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  verification: {
-    google: "n0Q1yjElyOG9TOlPhc1LpKl80o8tafJAuLW0MSt7MI8",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  const siteImage = settings?.ogp?.siteImage || '';
+
+  return {
+    metadataBase: new URL("https://next-portfolio-lime-one.vercel.app"),
+    icons: {
+      icon: '/favicon.png',
+      apple: '/favicon.png',
+    },
+    title: {
+      template: "%s | DAITAN フォトグラファー | 北海道・小樽",
+      default: "DAITAN | 北海道・小樽のフォトグラファー | ポートレート・スナップ撮影",
+    },
+    description: "北海道小樽市を拠点に活動するフォトグラファー DAITAN（ダイタン）のポートフォリオ。ポートレート、スナップ、コスプレ撮影など、一瞬を切り取るクリエイティブな写真を提供します。出張撮影のご依頼も受付中。",
+    openGraph: {
+      title: "DAITAN | Portrait & Snapshot Photographer",
+      description: "Capture the moment. Portfolio of Daitan.",
+      url: "https://next-portfolio-lime-one.vercel.app",
+      siteName: "DAITAN Portfolio",
+      locale: "ja_JP",
+      type: "website",
+      images: siteImage ? [siteImage] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "DAITAN | Photographer",
+      creator: "@daitan_photo",
+      images: siteImage ? [siteImage] : [],
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+    verification: {
+      google: "n0Q1yjElyOG9TOlPhc1LpKl80o8tafJAuLW0MSt7MI8",
+    },
+  };
+}
 
 import AppShell from '@/components/AppShell';
 
