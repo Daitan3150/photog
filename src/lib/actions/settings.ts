@@ -10,6 +10,9 @@ export interface SiteSettings {
         home_snapshot: string;
         admin_dashboard: string;
     };
+    ogp?: {
+        siteImage: string;
+    };
 }
 
 const SETTINGS_DOC_ID = "site_settings";
@@ -29,6 +32,9 @@ export async function getSiteSettings(): Promise<SiteSettings> {
                 home_portrait: "/images/portrait.jpg",
                 home_snapshot: "/images/snapshot.jpg",
                 admin_dashboard: "",
+            },
+            ogp: {
+                siteImage: "",
             }
         };
     } catch (error) {
@@ -38,6 +44,9 @@ export async function getSiteSettings(): Promise<SiteSettings> {
                 home_portrait: "/images/portrait.jpg",
                 home_snapshot: "/images/snapshot.jpg",
                 admin_dashboard: "",
+            },
+            ogp: {
+                siteImage: "",
             }
         };
     }

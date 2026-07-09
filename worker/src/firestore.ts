@@ -110,6 +110,7 @@ export async function batchSavePhotos(env: Env, uploaderId: string, modelId: str
         if (photo.latitude !== undefined && photo.latitude !== null) fields.latitude = photo.latitude;
         if (photo.longitude !== undefined && photo.longitude !== null) fields.longitude = photo.longitude;
         if (photo.focalPoint) fields.focalPoint = photo.focalPoint;
+        if (photo.shareOgImageUrl) fields.shareOgImageUrl = photo.shareOgImageUrl;
 
         // Convert to Firestore JSON
         const firestoreFields: any = {};

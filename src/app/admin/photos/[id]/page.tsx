@@ -92,6 +92,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         exifRequest: false,
         tags: [] as string[],
         focalPoint: undefined as { x: number, y: number } | undefined,
+        shareOgImageUrl: '',
         latitude: null as number | null,
         longitude: null as number | null,
         addressZip: '',
@@ -217,6 +218,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 exifRequest: data.exifRequest || false,
                 tags: data.tags || [],
                 focalPoint: data.focalPoint || undefined,
+                shareOgImageUrl: data.shareOgImageUrl || '',
                 latitude: data.latitude || null,
                 longitude: data.longitude || null,
                 address: data.address || '',
@@ -396,6 +398,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         const token = await user.getIdToken();
         const result = await updatePhoto(photoId, {
             ...formData,
+            shareOgImageUrl: formData.shareOgImageUrl || '',
             latitude: finalLat,
             longitude: finalLng,
             address: fullAddress,

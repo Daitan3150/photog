@@ -26,6 +26,7 @@ export interface PhotoData {
     categoryId?: string | null;
     displayMode?: 'title' | 'character';
     focalPoint?: { x: number; y: number } | null;
+    shareOgImageUrl?: string | null;
     exif?: Record<string, any> | null;
     tags?: string[];
     latitude?: number | null;

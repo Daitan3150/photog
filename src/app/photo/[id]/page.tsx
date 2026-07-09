@@ -1,5 +1,6 @@
 import { Metadata, ResolvingMetadata } from 'next';
 import { getPhotoPublic } from '@/lib/actions/photos';
+import { resolveOgImageSource } from '@/lib/ogp';
 import { getPublicModels } from '@/lib/actions/users';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -10,7 +11,6 @@ import { getRelatedPhotos } from '@/lib/algolia';
 import LikeButton from '@/components/gallery/LikeButton';
 import cloudinaryLoader from '@/lib/cloudinary-loader';
 import LeafletMap from '@/components/common/LeafletMap';
-
 interface Props {
     params: Promise<{ id: string }>;
 }
@@ -37,25 +37,7 @@ export async function generateMetadata(
 
     const description = parts.length > 0 ? parts.join(' | ') : `Photography by DAITAN.`;
 
-    // Dynamic OGP Image Generation with Focal Point
-    let ogUrl = photo.url;
-    if (ogUrl.includes('res.cloudinary.com')) {
-        let transform = 'c_fill,w_1200,h_630,q_auto,f_auto';
-        if (fp || (photo.focalPoint && photo.focalPoint.x !== undefined && photo.focalPoint.y !== undefined)) {
-            const [xRaw, yRaw] = fp ? fp.split('_') : [photo.focalPoint?.x?.toString() || '50', photo.focalPoint?.y?.toString() || '50'];
-
-            // Use percentage string (e.g. x_50p) for Cloudinary.
-            // This is the most reliable way to target a relative point without affecting w/h pixels.
-            const x = Math.round(parseFloat(xRaw));
-            const y = Math.round(parseFloat(yRaw));
-
-            transform = `c_fill,g_xy_center,x_${x}p,y_${y}p,w_1200,h_630,q_auto,f_auto`;
-        } else {
-            // Default to AI face/subject detection if no focal point provided
-            transform = 'c_fill,g_auto,w_1200,h_630,q_auto,f_auto';
-        }
-        ogUrl = ogUrl.replace('/upload/', `/upload/${transform}/`);
-    }
+    const publicOgUrl = resolveOgImageSource(photo);
 
     return {
         title,
@@ -64,7 +46,7 @@ export async function generateMetadata(
         openGraph: {
             title,
             description,
-            images: [],
+            images: [publicOgUrl],
             type: 'article',
             section: photo.category,
             tags: photo.tags,
@@ -73,7 +55,7 @@ export async function generateMetadata(
             card: 'summary_large_image',
             title,
             description,
-            images: [ogUrl],
+            images: [publicOgUrl],
         },
     };
 }
@@ -92,14 +74,6 @@ export default async function PhotoPage({ params }: Props) {
     if (modelsResult.success && modelsResult.models && photo.subjectName) {
         modelInfo = modelsResult.models.find(m => m.displayName === photo.subjectName) || null;
     }
-
-    // ✅ Debug: Check coordinates on server
-    console.log(`[PhotoPage] Debugging photo coordinates for ID ${id}:`, {
-        latitude: photo.latitude,
-        longitude: photo.longitude,
-        location: photo.location,
-        address: (photo as any).address
-    });
 
     const relatedPhotos = await getRelatedPhotos({
         photoId: id,

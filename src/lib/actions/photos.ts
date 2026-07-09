@@ -217,6 +217,7 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             categoryId: data.categoryId || null,
             displayMode: data.displayMode || 'title',
             focalPoint: data.focalPoint || null,
+            shareOgImageUrl: data.shareOgImageUrl || null,
             exif: serializeData(data.exif),
             tags: data.tags || [],
             shootLocationType: data.shootLocationType || 'location',
@@ -378,6 +379,7 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 categoryId: data.categoryId || null,
                 displayMode: data.displayMode || 'title',
                 focalPoint: data.focalPoint || null,
+                shareOgImageUrl: data.shareOgImageUrl || null,
                 exif: serializeData(data.exif),
                 tags: data.tags || [],
                 shootLocationType,
@@ -1306,6 +1308,7 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         if (data.exifRequest !== undefined) updates.exifRequest = data.exifRequest;
         if (data.tags !== undefined) updates.tags = data.tags;
         if (data.focalPoint !== undefined) updates.focalPoint = data.focalPoint;
+        if (data.shareOgImageUrl !== undefined) updates.shareOgImageUrl = data.shareOgImageUrl || null;
 
         if (data.latitude !== undefined) updates.latitude = data.latitude;
         if (data.longitude !== undefined) updates.longitude = data.longitude;

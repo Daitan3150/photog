@@ -70,8 +70,10 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
         ? { lat: photo.latitude, lng: photo.longitude }
         : null;
     const [copied, setCopied] = useState(false);
-    const [shareConfirmType, setShareConfirmType] = useState<null | 'Twitter' | 'Instagram'>(null);
-    const [focalPoint, setFocalPoint] = useState<{ x: number, y: number }>({ x: 50, y: 50 });
+    const [isShareOpen, setIsShareOpen] = useState(false);
+    const shareUrl = typeof window !== 'undefined' && photo.id
+        ? `${window.location.origin}/photo/${photo.id}`
+        : '';
     const sparkleItems = useMemo(() => {
         const seedText = String(photo.id || photo.url || 'photo');
         const seed = Array.from(seedText).reduce((sum, char) => sum + char.charCodeAt(0), 0);
@@ -432,46 +434,16 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                     <p className="text-[10px] uppercase tracking-[0.3em] text-gray-900 font-bold">この写真をシェア</p>
                                     <div className="h-[1px] flex-1 bg-gray-100 ml-4" />
                                 </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {/* X (Twitter) Share Button */}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setShareConfirmType('Twitter');
-                                        }}
-                                        className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-black text-white hover:bg-gray-800 transition-all pointer-events-auto"
-                                    >
-                                        <Twitter size={18} />
-                                        <span className="text-[10px] font-bold font-sans">Xでシェア</span>
-                                    </button>
-
-                                    {/* Instagram Share Button */}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setShareConfirmType('Instagram');
-                                        }}
-                                        className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white hover:opacity-90 transition-all pointer-events-auto"
-                                    >
-                                        <Instagram size={18} />
-                                        <span className="text-[10px] font-bold font-sans">Instagramへ</span>
-                                    </button>
-
-                                    {/* Copy Link Button */}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const url = `${window.location.origin}/photo/${photo.id}`;
-                                            navigator.clipboard.writeText(url);
-                                            setCopied(true);
-                                            setTimeout(() => setCopied(false), 2000);
-                                        }}
-                                        className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl transition-all pointer-events-auto border ${copied ? 'bg-green-50 border-green-200 text-green-600' : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100'}`}
-                                    >
-                                        {copied ? <Check size={18} /> : <Copy size={18} />}
-                                        <span className="text-[10px] font-bold font-sans">{copied ? 'コピー済み' : 'リンクをコピー'}</span>
-                                    </button>
-                                </div>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsShareOpen(true);
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-gray-900 text-white hover:bg-black transition-all pointer-events-auto"
+                                >
+                                    <Share2 size={18} />
+                                    <span className="text-[10px] font-bold font-sans">SNSに共有する</span>
+                                </button>
                             </div>
                         </div>
 
@@ -516,9 +488,9 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                 </button>
             )}
 
-            {/* Share Confirmation Dialog */}
+            {/* Share URL Dialog */}
             <AnimatePresence>
-                {shareConfirmType && (
+                {isShareOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -526,111 +498,47 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                         className="fixed inset-0 z-[150] bg-black/40 backdrop-blur-md flex items-center justify-center p-4 cursor-default"
                         onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
-                            setShareConfirmType(null);
+                            setIsShareOpen(false);
                         }}
                     >
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-sm"
+                            className="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-md"
                             onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         >
-                            {/* Banner Preview Area */}
-                            <div
-                                className="relative aspect-[1.91/1] w-full bg-gray-100 overflow-hidden cursor-crosshair group/banner"
-                                onClick={(e) => {
-                                    const rect = e.currentTarget.getBoundingClientRect();
-                                    const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
-                                    const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
-                                    setFocalPoint({ x, y });
-                                }}
-                            >
-                                <Image
-                                    src={photo.url}
-                                    alt="Share Preview"
-                                    fill
-                                    className="object-cover transition-transform duration-500"
-                                    style={{
-                                        objectPosition: `${focalPoint.x}% ${focalPoint.y}%`,
-                                        transform: 'scale(1.1)'
-                                    }}
-                                />
-
-                                {/* Focal Point Indicator */}
-                                <div
-                                    className="absolute w-8 h-8 -ml-4 -mt-4 border-2 border-white/80 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)] flex items-center justify-center pointer-events-none transition-all duration-300 ease-out"
-                                    style={{ left: `${focalPoint.x}%`, top: `${focalPoint.y}%` }}
-                                >
-                                    <div className="w-1 h-1 bg-white rounded-full" />
-                                    <div className="absolute w-[150%] h-[0.5px] bg-white/50" />
-                                    <div className="absolute h-[150%] w-[0.5px] bg-white/50" />
-                                </div>
-
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-4">
-                                    <div className="text-white">
-                                        <p className="text-[10px] uppercase tracking-widest opacity-70">Banner Preview</p>
-                                        <p className="text-sm font-bold truncate">{photo.title || '写真'}</p>
-                                    </div>
-                                </div>
-
-                                {/* Click to adjust tooltip */}
-                                <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-md px-2 py-1 rounded text-[8px] text-white/80 opacity-0 group-hover/banner:opacity-100 transition-opacity tracking-widest">
-                                    タップで位置調整
-                                </div>
-                            </div>
-
                             <div className="p-8 text-center">
                                 <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-6 text-blue-500">
                                     <Share2 size={32} />
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">SNSでかっこよく共有！</h3>
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">共有用URL</h3>
                                 <p className="text-sm text-gray-500 leading-relaxed mb-6">
-                                    {shareConfirmType === 'Instagram'
-                                        ? "URLを自動コピーしてInstagramを開きます。キャプションに貼り付けて共有しましょう！"
-                                        : "この写真はSNSで大きなバナーとして共有されます。あなたのフォロワーに最高のクオリティで届けましょう。"
-                                    }
+                                    下のURLをコピーして、SNSの投稿文に貼ってください。
                                 </p>
 
-                                <div className="mb-8 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                    <p className="text-[10px] tracking-widest text-gray-400 font-bold mb-1">切り抜き位置</p>
-                                    <p className="text-[11px] text-gray-500">
-                                        プレビュー画像をクリックして、共有バナーの中心（顔など）を選択してください。
-                                    </p>
+                                <div className="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-3 text-left">
+                                    <p className="text-[10px] tracking-widest text-gray-400 font-bold mb-2">URL</p>
+                                    <p className="text-sm text-gray-700 break-all font-mono">{shareUrl || '読み込み中...'}</p>
                                 </div>
 
                                 <div className="space-y-3">
                                     <button
                                         onClick={() => {
-                                            const url = `${window.location.origin}/photo/${photo.id}?fp=${focalPoint.x}_${focalPoint.y}`;
-                                            const text = `${photo.title || 'Photography'} | DAITAN Portfolio`;
-                                            let shareUrl = '';
-
-                                            if (shareConfirmType === 'Twitter') {
-                                                shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-                                            } else if (shareConfirmType === 'Instagram') {
-                                                // Copy URL to clipboard for Instagram
-                                                navigator.clipboard.writeText(url);
-                                                setCopied(true);
-                                                setTimeout(() => setCopied(false), 2000);
-                                                shareUrl = `https://www.instagram.com/`;
-                                            }
-
-                                            window.open(shareUrl, '_blank');
-                                            setShareConfirmType(null);
+                                            if (!shareUrl) return;
+                                            navigator.clipboard.writeText(shareUrl);
+                                            setCopied(true);
+                                            setTimeout(() => setCopied(false), 2000);
                                         }}
-                                        className={`w-full py-4 rounded-xl text-white font-bold transition-all active:scale-[0.98] shadow-lg ${shareConfirmType === 'Twitter'
-                                            ? 'bg-black shadow-gray-200'
-                                            : 'bg-gradient-to-r from-[#f09433] to-[#bc1888] shadow-orange-100'
-                                            }`}
+                                        className="w-full py-4 rounded-xl bg-gray-900 text-white font-bold transition-all active:scale-[0.98]"
                                     >
-                                        {shareConfirmType === 'Instagram' ? 'Instagramを開く' : 'Xでシェアする'}
+                                        {copied ? 'コピーしました' : 'URLをコピー'}
                                     </button>
                                     <button
-                                        onClick={() => setShareConfirmType(null)}
+                                        onClick={() => setIsShareOpen(false)}
                                         className="w-full py-4 rounded-xl text-gray-400 font-bold hover:bg-gray-50 transition-colors"
                                     >
-                                        キャンセル
+                                        閉じる
                                     </button>
                                 </div>
                             </div>
