@@ -1339,50 +1339,6 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                 <p className="text-[10px] text-gray-400 italic">※ AIが自動でタグを抽出していますが、手動で修正・追加も可能です。</p>
                             </div>
 
-                            {/* [NEW] Focal Point Selection UI */}
-                            <div className="pt-4 space-y-4 border-t border-gray-100">
-                                <label className="flex items-center text-sm font-bold text-gray-700">
-                                    <ArrowLeft className="w-4 h-4 mr-2 text-blue-500 rotate-180" />
-                                    共有バナーの切り抜き位置 (Focal Point)
-                                </label>
-                                <div
-                                    className="relative aspect-[1.91/1] w-full bg-gray-100 rounded-xl overflow-hidden cursor-crosshair group shadow-inner border border-gray-100"
-                                    onClick={(e) => {
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
-                                        const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
-                                        setFormData(prev => ({ ...prev, focalPoint: { x, y } }));
-                                    }}
-                                >
-                                    <Image
-                                        src={formData.url || originalPhoto.url}
-                                        alt="Banner Preview"
-                                        fill
-                                        className="object-cover transition-all duration-500"
-                                        style={{
-                                            objectPosition: formData.focalPoint ? `${formData.focalPoint.x}% ${formData.focalPoint.y}%` : 'center',
-                                            transform: 'scale(1.05)'
-                                        }}
-                                    />
-                                    {formData.focalPoint && (
-                                        <div
-                                            className="absolute w-6 h-6 -ml-3 -mt-3 border-2 border-white rounded-full shadow-lg flex items-center justify-center pointer-events-none transition-all duration-300"
-                                            style={{ left: `${formData.focalPoint.x}%`, top: `${formData.focalPoint.y}%` }}
-                                        >
-                                            <div className="w-1 h-1 bg-white rounded-full" />
-                                        </div>
-                                    )}
-                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <p className="text-white text-[10px] font-bold tracking-widest uppercase bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                                            Click to set banner focus
-                                        </p>
-                                    </div>
-                                </div>
-                                <p className="text-[10px] text-gray-400 italic">
-                                    ※ プレビュー画像をクリックして、SNS共有時に中心となる位置（顔など）を設定してください。
-                                </p>
-                            </div>
-
                             <div className="pt-4 flex gap-4">
                                 <button
                                     type="button"
