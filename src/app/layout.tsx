@@ -17,7 +17,7 @@ const notoSerifJP = Noto_Serif_JP({
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
   const metadataBase = new URL("https://next-portfolio-lime-one.vercel.app");
-  const rawSiteImage = settings?.ogp?.siteImage || '/favicon.png';
+  const rawSiteImage = settings?.ogp?.siteImage || '/images/og-base.jpg';
   const siteImage = rawSiteImage?.startsWith('http')
     ? rawSiteImage
     : new URL(rawSiteImage, metadataBase).toString();
