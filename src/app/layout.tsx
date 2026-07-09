@@ -16,10 +16,14 @@ const notoSerifJP = Noto_Serif_JP({
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
-  const siteImage = settings?.ogp?.siteImage || '/favicon.png';
+  const metadataBase = new URL("https://next-portfolio-lime-one.vercel.app");
+  const rawSiteImage = settings?.ogp?.siteImage || '/favicon.png';
+  const siteImage = rawSiteImage?.startsWith('http')
+    ? rawSiteImage
+    : new URL(rawSiteImage, metadataBase).toString();
 
   return {
-    metadataBase: new URL("https://next-portfolio-lime-one.vercel.app"),
+    metadataBase,
     icons: {
       icon: '/favicon.png',
       apple: '/favicon.png',
@@ -32,11 +36,11 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: "DAITAN | Portrait & Snapshot Photographer",
       description: "Capture the moment. Portfolio of Daitan.",
-      url: "https://next-portfolio-lime-one.vercel.app",
+      url: metadataBase.toString(),
       siteName: "DAITAN Portfolio",
       locale: "ja_JP",
       type: "website",
-      images: siteImage ? [siteImage] : [],
+      images: siteImage ? [{ url: siteImage, alt: 'DAITAN Portfolio', width: 1200, height: 630 }] : [],
     },
     twitter: {
       card: "summary_large_image",
