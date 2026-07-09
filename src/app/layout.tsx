@@ -14,13 +14,24 @@ const notoSerifJP = Noto_Serif_JP({
   variable: "--font-noto-serif-jp",
 });
 
+// Cloudinary画像のURLにOGP最適化変換パラメータを付与する
+function optimizeCloudinaryUrl(url: string): string {
+  if (!url.includes('res.cloudinary.com')) return url;
+  // /upload/ の後に変換パラメータを挿入
+  return url.replace(
+    '/upload/',
+    '/upload/c_fill,w_1200,h_630,f_jpg,q_80/'
+  );
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
   const metadataBase = new URL("https://next-portfolio-lime-one.vercel.app");
   const rawSiteImage = settings?.ogp?.siteImage || '/images/og-base.jpg';
-  const siteImage = rawSiteImage?.startsWith('http')
+  const resolvedImage = rawSiteImage?.startsWith('http')
     ? rawSiteImage
     : new URL(rawSiteImage, metadataBase).toString();
+  const siteImage = optimizeCloudinaryUrl(resolvedImage);
 
   return {
     metadataBase,
