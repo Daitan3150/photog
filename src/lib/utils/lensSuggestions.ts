@@ -9,6 +9,57 @@ export function normalizeLensName(value: string | null | undefined): string {
         .toLowerCase();
 }
 
+function levenshteinDistance(a: string, b: string): number {
+    const matrix: number[][] = Array.from({ length: b.length + 1 }, () => []);
+
+    for (let i = 0; i <= b.length; i += 1) {
+        matrix[i][0] = i;
+    }
+    for (let j = 0; j <= a.length; j += 1) {
+        matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= b.length; i += 1) {
+        for (let j = 1; j <= a.length; j += 1) {
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,
+                matrix[i][j - 1] + 1,
+                matrix[i - 1][j - 1] + (a[j - 1] === b[i - 1] ? 0 : 1)
+            );
+        }
+    }
+
+    return matrix[b.length][a.length];
+}
+
+export function getSimilarLensNames(
+    currentName: string,
+    candidates: Array<string | null | undefined> = [],
+    limit = 5
+): string[] {
+    const normalizedCurrent = normalizeLensName(currentName);
+    if (!normalizedCurrent) return [];
+
+    const scored = candidates
+        .map((value) => {
+            if (!value) return null;
+            const normalized = normalizeLensName(value);
+            if (!normalized || normalized === normalizedCurrent) return null;
+
+            const distance = levenshteinDistance(normalizedCurrent, normalized);
+            const includeScore = normalizedCurrent.includes(normalized) || normalized.includes(normalizedCurrent) ? 0 : 1;
+            const score = distance + includeScore;
+
+            return { value, score };
+        })
+        .filter((item): item is { value: string; score: number } => !!item)
+        .sort((a, b) => a.score - b.score)
+        .slice(0, limit)
+        .map((item) => item.value);
+
+    return Array.from(new Set(scored));
+}
+
 export function buildLensDatalistOptions(
     masterLenses: Array<string | null | undefined> = [],
     additionalLenses: Array<string | null | undefined> = [],

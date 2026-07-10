@@ -46,18 +46,19 @@ export default function LensFilter({ currentLens, lensOptions }: LensFilterProps
             </button>
 
             {isOpen && (
-                <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                    {lensOptions.map((lens) => (
-                        <button
-                            key={lens}
-                            type="button"
-                            onClick={() => selectLens(lens)}
-                            className={`rounded-2xl border px-3 py-2 text-left transition-all text-sm ${currentLens === lens ? 'border-black bg-black text-white shadow-sm' : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-white'}`}
-                        >
-                            <div className="font-semibold">{lens}</div>
-                            <div className="mt-1 text-[10px] opacity-70">このレンズの作例を見る</div>
-                        </button>
-                    ))}
+                <div className="mt-4 overflow-x-auto pb-2">
+                    <div className="flex gap-2 min-w-max">
+                        {lensOptions.map((lens) => (
+                            <button
+                                key={lens}
+                                type="button"
+                                onClick={() => selectLens(lens)}
+                                className={`min-w-max rounded-full border px-3 py-2 text-left transition-all text-xs font-semibold ${currentLens === lens ? 'border-black bg-black text-white shadow-sm' : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-white'}`}
+                            >
+                                {lens}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

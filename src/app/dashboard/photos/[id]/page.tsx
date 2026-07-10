@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { getPhotoById, updatePhoto, requestExifData, getExifSuggestions } from '@/lib/actions/photos';
+import { getPhotoById, updatePhoto, requestExifData } from '@/lib/actions/photos';
 import Image from 'next/image';
 import { Camera, ChevronLeft, Save, ArrowLeft } from 'lucide-react';
 import { storage } from '@/lib/firebase';
@@ -60,9 +60,16 @@ export default function EditPhotoPage({ params }: { params: Promise<{ id: string
             }
 
             // Fetch suggestions
-            getExifSuggestions().then(res => {
-                if (res.success && res.data) setExifSuggestions(res.data);
-            });
+            (async () => {
+                try {
+                    const res = await fetch('/api/exif-suggestions');
+                    if (!res.ok) throw new Error('Failed to load EXIF suggestions');
+                    const data = (await res.json()) as { success: boolean; data?: { models: string[]; lensModels: string[] }; error?: string };
+                    if (data?.success && data.data) setExifSuggestions(data.data);
+                } catch (error) {
+                    console.error('Failed to load EXIF suggestions:', error);
+                }
+            })();
         });
         return () => unsubscribe();
     }, [photoId, router]);

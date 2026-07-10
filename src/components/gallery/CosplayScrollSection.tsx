@@ -297,7 +297,7 @@ export default function CosplayScrollSection({
                 <div className="absolute inset-y-0 right-0 w-12 md:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
 
                 <div
-                    className="flex overflow-x-auto pb-12 gap-6 md:gap-8 px-12 md:px-0 no-scrollbar snap-x snap-mandatory scroll-smooth cursor-grab active:cursor-grabbing"
+                    className="flex overflow-x-auto pb-12 gap-5 md:gap-7 px-12 md:px-0 no-scrollbar snap-x snap-mandatory scroll-smooth cursor-grab active:cursor-grabbing"
                 >
                     {photos.map((photo, index) => (
                         <CosplayPhotoItem
@@ -360,7 +360,7 @@ function CosplayPhotoItem({ photo, index, searchParams, modelName }: {
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
             viewport={{ once: true, amount: 0.1 }}
             transition={{ duration: 1, delay: index * 0.05, ease: "easeOut" }}
-            className="flex-shrink-0 w-[80vw] md:w-[480px] snap-center first:ml-0"
+            className="flex-shrink-0 w-[50vw] md:w-[420px] snap-center first:ml-0"
         >
             {/* Cosplay Gradient Border */}
             <div className="p-[2px] bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 rounded-xl shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 transition-shadow duration-500">
@@ -374,7 +374,7 @@ function CosplayPhotoItem({ photo, index, searchParams, modelName }: {
                         alt={photo.characterName || photo.title || modelName}
                         fill
                         className="object-cover transition-transform duration-[2s] ease-out group-hover/item:scale-105"
-                        sizes="(max-width: 768px) 80vw, 480px"
+                        sizes="(max-width: 768px) 50vw, 420px"
                         priority={index < 2}
                     />
 

@@ -90,6 +90,22 @@ function validatePhotoData(data: PhotoFormData): string | null {
     return null;
 }
 
+async function ensureSubjectExists(db: FirebaseFirestore.Firestore, subjectName: string, snsUrl?: string | null) {
+    const trimmedName = subjectName?.toString().trim();
+    if (!trimmedName) return;
+
+    const subjectsRef = db.collection('subjects');
+    const existing = await subjectsRef.where('name', '==', trimmedName).limit(1).get();
+    if (existing.empty) {
+        await subjectsRef.add({
+            name: trimmedName,
+            snsUrl: snsUrl || null,
+            createdAt: new Date(),
+            autoRegistered: true,
+        });
+    }
+}
+
 export async function savePhoto(data: PhotoFormData, idToken: string): Promise<SavePhotoResult> {
     // Input validation
     const validationError = validatePhotoData(data);
@@ -109,19 +125,7 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
 
         const db = getAdminFirestore();
 
-        // [AUTO-REGISTER MODEL] if subjectName is provided
-        if (data.subjectName) {
-            const subjectsRef = db.collection('subjects');
-            const existing = await subjectsRef.where('name', '==', data.subjectName).limit(1).get();
-            if (existing.empty) {
-                await subjectsRef.add({
-                    name: data.subjectName,
-                    snsUrl: data.snsUrl || null,
-                    createdAt: new Date(),
-                    autoRegistered: true
-                });
-            }
-        }
+        await ensureSubjectExists(db, data.subjectName ?? '', data.snsUrl ?? null);
 
         // Get user profile to include modelId
         const userDoc = await db.collection('users').doc(uploaderId).get();
@@ -274,18 +278,8 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
         // [AUTO-REGISTER MODELS] extract unique names and register if missing
         const uniqueSubjectNames = Array.from(new Set(dataList.map(d => d.subjectName).filter(Boolean)));
         for (const name of uniqueSubjectNames) {
-            const subjectsRef = db.collection('subjects');
-            const existing = await subjectsRef.where('name', '==', name).limit(1).get();
-            if (existing.empty) {
-                // Find first occurrence to get SNS URL
-                const firstOccur = dataList.find(d => d.subjectName === name);
-                await subjectsRef.add({
-                    name: name,
-                    snsUrl: firstOccur?.snsUrl || null,
-                    createdAt: new Date(),
-                    autoRegistered: true
-                });
-            }
+            const firstOccur = dataList.find(d => d.subjectName === name);
+            await ensureSubjectExists(db, name ?? '', firstOccur?.snsUrl ?? null);
         }
 
         // Get user profile to include modelId
@@ -1237,6 +1231,10 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         const photoData = photoDoc.data();
         if (!isAdmin && photoData?.uploaderId !== uid) {
             return { success: false, error: 'Unauthorized to update this photo' };
+        }
+
+        if (data.subjectName) {
+            await ensureSubjectExists(db, data.subjectName, data.snsUrl ?? photoData?.snsUrl ?? null);
         }
 
         const locationNameToRegister = (data.location !== undefined ? data.location : photoData?.location)?.toString().trim();

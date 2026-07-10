@@ -6,6 +6,7 @@ import { useAuth } from '@/components/admin/AuthProvider';
 import CloudinaryScript from '@/components/admin/CloudinaryScript';
 import { getProfileServer, updateProfile } from '@/lib/actions/profile';
 import { LensDetail, Profile } from '@/lib/firebase/profile';
+import { getSimilarLensNames, normalizeLensName } from '@/lib/utils/lensSuggestions';
 import { Plus, Image as ImageIcon, Aperture } from 'lucide-react';
 
 type CloudinaryUploadSuccess = {
@@ -43,8 +44,10 @@ export default function AdminLensesPage() {
   const [widgetLoaded, setWidgetLoaded] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [portfolioLensNames, setPortfolioLensNames] = useState<string[]>([]);
+  const [portfolioLensFilter, setPortfolioLensFilter] = useState('');
   const [isPortfolioLensSelectorOpen, setIsPortfolioLensSelectorOpen] = useState(false);
   const [isRegisteredLensesOpen, setIsRegisteredLensesOpen] = useState(false);
+  const [dismissedMergeCandidates, setDismissedMergeCandidates] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -57,6 +60,10 @@ export default function AdminLensesPage() {
         setProfile(existingProfile);
         const existing = Array.isArray(existingProfile?.lensDetails) ? existingProfile.lensDetails : [];
         setLenses(existing);
+        const ignored = Array.isArray(existingProfile?.ignoredLensMergeCandidates)
+          ? existingProfile.ignoredLensMergeCandidates
+          : [];
+        setDismissedMergeCandidates(ignored.map(normalizeLensName).filter(Boolean));
         if (existing.length > 0) {
           const first = existing[0];
           setEditingId(first.id || first.name || null);
@@ -168,8 +175,88 @@ export default function AdminLensesPage() {
     }
   };
 
-  const removeLens = (targetId: string) => {
-    setLenses((prev) => prev.filter((item) => (item.id || item.name) !== targetId));
+  const deleteLens = async (targetId: string) => {
+    if (!user || !isAdmin) return;
+
+    const targetLens = lenses.find((item) => (item.id || item.name) === targetId);
+    if (!targetLens) return;
+
+    const confirmed = window.confirm(`「${targetLens.name}」を削除しますか？`);
+    if (!confirmed) return;
+
+    const updatedLenses = lenses.filter((item) => (item.id || item.name) !== targetId);
+    const updatedProfile: Profile = {
+      ...(profile ?? {
+        name: '',
+        role: '',
+        location: '',
+        bio: '',
+        gear: [],
+      }),
+      lensDetails: updatedLenses,
+      ignoredLensMergeCandidates: profile?.ignoredLensMergeCandidates ?? [],
+    };
+
+    setSaving(true);
+    setMessage(`「${targetLens.name}」を削除しています...`);
+
+    try {
+      const token = await user.getIdToken();
+      const result = await updateProfile(updatedProfile, token);
+      if (result.success) {
+        setProfile(updatedProfile);
+        setLenses(updatedLenses);
+        if (editingId === targetId) {
+          startNew();
+        }
+        setMessage(`✅ 「${targetLens.name}」を削除しました。`);
+      } else {
+        setMessage(`❌ 削除に失敗しました: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error: unknown) {
+      setMessage(`❌ 削除中にエラーが発生しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const dismissMergeCandidate = async (candidateName: string) => {
+    if (!user || !isAdmin) return;
+    const normalizedCandidate = normalizeLensName(candidateName);
+    if (!normalizedCandidate) return;
+    if (dismissedMergeCandidates.includes(normalizedCandidate)) return;
+
+    const updatedCandidates = [...dismissedMergeCandidates, normalizedCandidate];
+    const updatedProfile: Profile = {
+      ...(profile ?? {
+        name: '',
+        role: '',
+        location: '',
+        bio: '',
+        gear: [],
+      }),
+      lensDetails: lenses,
+      ignoredLensMergeCandidates: updatedCandidates,
+    };
+
+    setSaving(true);
+    setMessage(`「${candidateName}」を候補から非表示にしています...`);
+
+    try {
+      const token = await user.getIdToken();
+      const result = await updateProfile(updatedProfile, token);
+      if (result.success) {
+        setProfile(updatedProfile);
+        setDismissedMergeCandidates(updatedCandidates);
+        setMessage(`✅ 「${candidateName}」は今後の候補から表示されません。`);
+      } else {
+        setMessage(`❌ 保存に失敗しました: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error: unknown) {
+      setMessage(`❌ 保存中にエラーが発生しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const uploadImageFile = async (file: File) => {
@@ -218,6 +305,285 @@ export default function AdminLensesPage() {
     }
 
     open();
+  };
+
+  const filteredPortfolioLensNames = useMemo(() => {
+    const filter = portfolioLensFilter.trim().toLowerCase();
+    if (!filter) return portfolioLensNames;
+    return portfolioLensNames.filter((lens) => lens.toLowerCase().includes(filter));
+  }, [portfolioLensNames, portfolioLensFilter]);
+
+  const mergeCandidates = useMemo(() => {
+    if (!editingId || !draft.name?.trim()) return [];
+    const currentName = draft.name.trim();
+    const otherNames = lenses
+      .filter((lens) => (lens.id || lens.name) !== editingId)
+      .map((lens) => lens.name || '')
+      .filter(Boolean);
+    return getSimilarLensNames(currentName, otherNames, 5)
+      .filter((name) => !dismissedMergeCandidates.includes(normalizeLensName(name)));
+  }, [draft.name, editingId, lenses, dismissedMergeCandidates]);
+
+  const updateLensModelForPhotos = async (oldLensModel: string, newLensModel: string, idToken: string) => {
+    const response = await fetch('/api/photos/bulk-lens-model', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ oldLensModel, newLensModel }),
+    });
+
+    return response.json() as Promise<{ success: boolean; count?: number; error?: string }>;
+  };
+
+  const confirmSimilarLens = async (lensName: string) => {
+    const currentName = draft.name?.trim();
+    if (!currentName || currentName === lensName) return;
+
+    const confirmed = window.confirm(
+      `「${lensName}」と「${currentName}」は同じレンズですか？\n同じレンズであれば、既存の写真データのLensModel（型番）を「${currentName}」（正しい型番）に置き換えます。`
+    );
+    if (!confirmed) return;
+
+    if (!user) {
+      setMessage('ログインユーザーが見つかりません。再度ログインしてください。');
+      return;
+    }
+
+    setMessage(`写真の型番「${lensName}」を「${currentName}」に統一しています...`);
+    try {
+      const token = await user.getIdToken();
+      // 写真データ内の古い名前(lensName)を新しい名前(currentName)に一括置換する
+      const result = await updateLensModelForPhotos(lensName, currentName, token);
+      if (result.success) {
+        setMessage(`✅ ${result.count ?? 0}件の写真のLensModelを「${currentName}」に更新しました。`);
+        
+        // 登録済みレンズ(lenses)の中に古い名前(lensName)の登録データがあれば、現在のdraftとマージして古いデータを削除する
+        const matchedIndex = lenses.findIndex((lens) => lens.name === lensName);
+        let updatedLenses = [...lenses];
+        let finalLens: LensDetail = { ...draft, name: currentName };
+
+        if (matchedIndex !== -1) {
+          const oldLens = lenses[matchedIndex];
+          const mergedLens: LensDetail = {
+            ...oldLens,
+            ...draft,
+            name: currentName,
+            imageUrl: draft.imageUrl || oldLens.imageUrl,
+            manufacturer: draft.manufacturer || oldLens.manufacturer,
+            focalLength: draft.focalLength || oldLens.focalLength,
+            aperture: draft.aperture || oldLens.aperture,
+            mount: draft.mount || oldLens.mount,
+            releaseYear: draft.releaseYear || oldLens.releaseYear,
+            lensConstruction: draft.lensConstruction || oldLens.lensConstruction,
+            minimumFocusDistance: draft.minimumFocusDistance || oldLens.minimumFocusDistance,
+            filterDiameter: draft.filterDiameter || oldLens.filterDiameter,
+            comment: draft.comment || oldLens.comment,
+            description: draft.description || oldLens.description,
+            specs: Array.from(new Set([...(draft.specs || []), ...(oldLens.specs || [])].filter(Boolean))),
+          };
+          updatedLenses.splice(matchedIndex, 1); // 古いレンズ情報を削除
+          
+          const newId = editingId || oldLens.id || `${currentName}-${Date.now()}`;
+          finalLens = { ...mergedLens, id: newId };
+          
+          const existingIndex = updatedLenses.findIndex((lens) => lens.id === newId || lens.name === currentName);
+          if (existingIndex !== -1) {
+            updatedLenses[existingIndex] = finalLens;
+          } else {
+            updatedLenses = [finalLens, ...updatedLenses];
+          }
+        } else {
+          // 古いレンズがない場合でも、現在のdraftに新しい名前を反映したものを追加または更新用にする
+          const newId = editingId || `${currentName}-${Date.now()}`;
+          finalLens = { ...draft, name: currentName, id: newId };
+          
+          const existingIndex = updatedLenses.findIndex((lens) => lens.id === newId || lens.name === currentName);
+          if (existingIndex !== -1) {
+            updatedLenses[existingIndex] = finalLens;
+          } else {
+            updatedLenses = [finalLens, ...updatedLenses];
+          }
+        }
+
+        // プロフィール全体の機材テキスト内の古い名前(lensName)を新しい名前(currentName)に置換する
+        const updatedProfile: Profile = {
+          ...(profile ?? {
+            name: '',
+            role: '',
+            location: '',
+            bio: '',
+            gear: [],
+          }),
+          lensDetails: updatedLenses,
+        };
+
+        const replaceString = (value: string | { manufacturer?: string; modelName?: string } | null | undefined) => {
+          if (!value) return value;
+          if (typeof value === 'object') {
+            return {
+              manufacturer: value.manufacturer ? value.manufacturer.replace(new RegExp(lensName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi'), currentName) : value.manufacturer,
+              modelName: value.modelName ? value.modelName.replace(new RegExp(lensName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi'), currentName) : value.modelName,
+            };
+          }
+
+          const escapedOld = lensName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+          const regex = new RegExp(escapedOld, 'gi');
+          return value.replace(regex, currentName);
+        };
+
+        if (Array.isArray(updatedProfile.lenses)) {
+          updatedProfile.lenses = updatedProfile.lenses.map(replaceString) as Profile['lenses'];
+        }
+        if (Array.isArray(updatedProfile.gear)) {
+          updatedProfile.gear = updatedProfile.gear.map(replaceString) as Profile['gear'];
+        }
+        if (Array.isArray(updatedProfile.mainGear)) {
+          updatedProfile.mainGear = updatedProfile.mainGear.map(replaceString) as Profile['mainGear'];
+        }
+        if (Array.isArray(updatedProfile.subGear)) {
+          updatedProfile.subGear = updatedProfile.subGear.map(replaceString) as Profile['subGear'];
+        }
+        if (Array.isArray(updatedProfile.otherGear)) {
+          updatedProfile.otherGear = updatedProfile.otherGear.map(replaceString) as Profile['otherGear'];
+        }
+
+        // プロフィールを Firebase に即時保存する
+        setSaving(true);
+        try {
+          const updateResult = await updateProfile(updatedProfile, token);
+          if (updateResult.success) {
+            setProfile(updatedProfile);
+            setLenses(updatedLenses);
+            setEditingId(finalLens.id || finalLens.name || null);
+            setDraft({ ...finalLens, specs: finalLens.specs || [] });
+            setMessage(`✅ ${result.count ?? 0}件の写真のLensModelを更新し、プロフィールの機材リストも統合しました。`);
+          } else {
+            setMessage(`❌ プロフィールの保存に失敗しました: ${updateResult.error || 'Unknown error'}`);
+          }
+        } catch (error: unknown) {
+          setMessage(`❌ 保存エラー: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+          setSaving(false);
+        }
+      } else {
+        setMessage(`❌ 写真のLensModel置換に失敗しました: ${result.error || '不明なエラー'}`);
+      }
+    } catch (error: unknown) {
+      setMessage(`❌ 実行中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    }
+  };
+
+  const mergeLensInto = async (targetName: string) => {
+    const targetLens = lenses.find((lens) => lens.name === targetName);
+    const sourceLens = lenses.find((lens) => (lens.id || lens.name) === editingId);
+    if (!targetLens || !sourceLens || targetLens === sourceLens) return;
+
+    const confirmed = window.confirm(
+      `「${sourceLens.name}」を「${targetName}」に統合しますか？\n登録情報だけでなく、既存の写真データのLensModelも「${targetName}」に置き換えます。`
+    );
+    if (!confirmed) return;
+
+    if (!user) {
+      setMessage('ログインユーザーが見つかりません。再度ログインしてください。');
+      return;
+    }
+
+    setMessage(`「${sourceLens.name}」の写真を「${targetName}」に統合しています...`);
+    try {
+      const token = await user.getIdToken();
+      // 写真データ内の古い名前(sourceLens.name)をマージ先(targetLens.name)に一括置換する
+      const result = await updateLensModelForPhotos(sourceLens.name || '', targetName, token);
+      if (!result.success) {
+        setMessage(`❌ 写真のLensModel置換に失敗しました: ${result.error || '不明なエラー'}`);
+        return;
+      }
+
+      // lensesリストのマージ処理
+      const mergedLens: LensDetail = {
+        ...targetLens,
+        imageUrl: targetLens.imageUrl || sourceLens.imageUrl,
+        manufacturer: targetLens.manufacturer || sourceLens.manufacturer,
+        focalLength: targetLens.focalLength || sourceLens.focalLength,
+        aperture: targetLens.aperture || sourceLens.aperture,
+        mount: targetLens.mount || sourceLens.mount,
+        releaseYear: targetLens.releaseYear || sourceLens.releaseYear,
+        lensConstruction: targetLens.lensConstruction || sourceLens.lensConstruction,
+        minimumFocusDistance: targetLens.minimumFocusDistance || sourceLens.minimumFocusDistance,
+        filterDiameter: targetLens.filterDiameter || sourceLens.filterDiameter,
+        comment: targetLens.comment || sourceLens.comment,
+        description: targetLens.description || sourceLens.description,
+        specs: Array.from(new Set([...(targetLens.specs || []), ...(sourceLens.specs || [])].filter(Boolean))),
+      };
+
+      const updatedLenses = lenses
+        .filter((lens) => lens !== sourceLens && lens !== targetLens)
+        .concat(mergedLens);
+
+      // プロフィール全体の機材テキスト内の古い名前(sourceLens.name)を新しい名前(targetName)に置換する
+      const updatedProfile: Profile = {
+        ...(profile ?? {
+          name: '',
+          role: '',
+          location: '',
+          bio: '',
+          gear: [],
+        }),
+        lensDetails: updatedLenses,
+      };
+
+      const replaceString = (value: string | { manufacturer?: string; modelName?: string } | null | undefined) => {
+        if (!value) return value;
+        if (typeof value === 'object') {
+          return {
+            manufacturer: value.manufacturer ? value.manufacturer.replace(new RegExp((sourceLens.name || '').replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi'), targetName) : value.manufacturer,
+            modelName: value.modelName ? value.modelName.replace(new RegExp((sourceLens.name || '').replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi'), targetName) : value.modelName,
+          };
+        }
+
+        const escapedOld = (sourceLens.name || '').replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(escapedOld, 'gi');
+        return value.replace(regex, targetName);
+      };
+
+      if (Array.isArray(updatedProfile.lenses)) {
+        updatedProfile.lenses = updatedProfile.lenses.map(replaceString) as Profile['lenses'];
+      }
+      if (Array.isArray(updatedProfile.gear)) {
+        updatedProfile.gear = updatedProfile.gear.map(replaceString) as Profile['gear'];
+      }
+      if (Array.isArray(updatedProfile.mainGear)) {
+        updatedProfile.mainGear = updatedProfile.mainGear.map(replaceString) as Profile['mainGear'];
+      }
+      if (Array.isArray(updatedProfile.subGear)) {
+        updatedProfile.subGear = updatedProfile.subGear.map(replaceString) as Profile['subGear'];
+      }
+      if (Array.isArray(updatedProfile.otherGear)) {
+        updatedProfile.otherGear = updatedProfile.otherGear.map(replaceString) as Profile['otherGear'];
+      }
+
+      // マージされた結果をデータベースに即時反映・保存する
+      setSaving(true);
+      try {
+        const updateResult = await updateProfile(updatedProfile, token);
+        if (updateResult.success) {
+          setProfile(updatedProfile);
+          setLenses(updatedLenses);
+          setEditingId(mergedLens.id || mergedLens.name || null);
+          setDraft({ ...mergedLens, specs: mergedLens.specs || [] });
+          setMessage(`✅ 「${sourceLens.name}」を「${targetLens.name}」に統合し、${result.count ?? 0}件の写真のLensModelとプロフィールの機材リストを更新しました。`);
+        } else {
+          setMessage(`❌ プロフィールの保存に失敗しました: ${updateResult.error || 'Unknown error'}`);
+        }
+      } catch (error: unknown) {
+        setMessage(`❌ 保存エラー: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        setSaving(false);
+      }
+    } catch (error: unknown) {
+      setMessage(`❌ 実行中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    }
   };
 
   const preview = useMemo(() => {
@@ -281,7 +647,7 @@ export default function AdminLensesPage() {
                     </div>
                     <div className="flex flex-wrap gap-2 sm:flex-nowrap">
                       <button type="button" onClick={() => startEdit(lens)} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">編集</button>
-                      <button type="button" onClick={() => removeLens(lens.id || lens.name || '')} className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600">削除</button>
+                      <button type="button" onClick={() => deleteLens(lens.id || lens.name || '')} className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600">削除</button>
                     </div>
                   </div>
                 ))}
@@ -295,7 +661,14 @@ export default function AdminLensesPage() {
           <div className="mt-6 space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700">レンズ名</label>
-              <input value={draft.name || ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" placeholder="例: Canon RF 24-70mm F2.8L IS USM" />
+              <input
+                value={draft.name || ''}
+                onChange={(e) => {
+                  setDraft({ ...draft, name: e.target.value });
+                }}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                placeholder="例: Canon RF 24-70mm F2.8L IS USM"
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700">画像</label>
@@ -336,33 +709,75 @@ export default function AdminLensesPage() {
                   <span className="text-xs font-semibold text-slate-500">{isPortfolioLensSelectorOpen ? '閉じる' : '開く'}</span>
                 </button>
                 {isPortfolioLensSelectorOpen && (
-                  <div className="space-y-2 pt-1">
-                    <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-                      {portfolioLensNames.slice(0, 8).map((lens) => (
-                        <button
-                          key={lens}
-                          type="button"
-                          onClick={() => selectExistingLensName(lens)}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-800 hover:border-slate-300 hover:bg-slate-100"
-                        >
-                          {lens}
-                        </button>
-                      ))}
+                  <div className="space-y-3 pt-1">
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={portfolioLensFilter}
+                        onChange={(e) => setPortfolioLensFilter(e.target.value)}
+                        placeholder="検索: 例) Canon, RF 24-70..."
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm"
+                      />
+                      <p className="text-[11px] text-slate-500">
+                        フィルターを使うと、登録済みレンズ名を絞り込めます。
+                      </p>
+                    </div>
+                    <div className="max-h-[320px] overflow-y-auto rounded-3xl border border-slate-200 bg-slate-50 p-3 shadow-inner">
+                      <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                        {filteredPortfolioLensNames.map((lens) => (
+                          <button
+                            key={lens}
+                            type="button"
+                            onClick={() => selectExistingLensName(lens)}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-800 hover:border-slate-300 hover:bg-slate-100"
+                          >
+                            {lens}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <p className="text-[11px] text-slate-500">レンズ名を入力すると、既存のポートフォリオ名と一致する場合に同じページの情報を反映できます。</p>
                   </div>
                 )}
               </div>
             )}
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">メーカー</label><input value={draft.manufacturer || ''} onChange={(e) => setDraft({ ...draft, manufacturer: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
-              <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">焦点距離</label><input value={draft.focalLength || ''} onChange={(e) => setDraft({ ...draft, focalLength: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-200/50 px-3 py-2 text-sm" /></div>
-              <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">開放F値</label><input value={draft.aperture || ''} onChange={(e) => setDraft({ ...draft, aperture: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
-              <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">マウント</label><input value={draft.mount || ''} onChange={(e) => setDraft({ ...draft, mount: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
-              <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">発売年</label><input value={draft.releaseYear || ''} onChange={(e) => setDraft({ ...draft, releaseYear: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
-              <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">レンズ構成</label><input value={draft.lensConstruction || ''} onChange={(e) => setDraft({ ...draft, lensConstruction: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
-              <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">最短撮影距離</label><input value={draft.minimumFocusDistance || ''} onChange={(e) => setDraft({ ...draft, minimumFocusDistance: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
-              <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">フィルター径</label><input value={draft.filterDiameter || ''} onChange={(e) => setDraft({ ...draft, filterDiameter: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
+            <div className="space-y-3">
+              {editingId && mergeCandidates.length > 0 && (
+                <div className="rounded-2xl border border-slate-300 bg-slate-50 p-4 text-sm text-slate-700">
+                  <p className="mb-2 font-semibold">このレンズは他の登録済みレンズと似ていますか？</p>
+                  <div className="flex flex-wrap gap-2">
+                    {mergeCandidates.map((name) => (
+                      <div key={name} className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => mergeLensInto(name)}
+                          className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-800 hover:bg-slate-100"
+                        >
+                          これと結合: {name}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => dismissMergeCandidate(name)}
+                          className="rounded-full border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">重複しているレンズを統合すると、同じレンズ名で管理できます。</p>
+                </div>
+              )}
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">メーカー</label><input value={draft.manufacturer || ''} onChange={(e) => setDraft({ ...draft, manufacturer: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
+                <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">焦点距離</label><input value={draft.focalLength || ''} onChange={(e) => setDraft({ ...draft, focalLength: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-200/50 px-3 py-2 text-sm" /></div>
+                <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">開放F値</label><input value={draft.aperture || ''} onChange={(e) => setDraft({ ...draft, aperture: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
+                <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">マウント</label><input value={draft.mount || ''} onChange={(e) => setDraft({ ...draft, mount: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
+                <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">発売年</label><input value={draft.releaseYear || ''} onChange={(e) => setDraft({ ...draft, releaseYear: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
+                <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">レンズ構成</label><input value={draft.lensConstruction || ''} onChange={(e) => setDraft({ ...draft, lensConstruction: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
+                <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">最短撮影距離</label><input value={draft.minimumFocusDistance || ''} onChange={(e) => setDraft({ ...draft, minimumFocusDistance: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
+                <div className="space-y-2"><label className="text-sm font-semibold text-slate-700">フィルター径</label><input value={draft.filterDiameter || ''} onChange={(e) => setDraft({ ...draft, filterDiameter: e.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm" /></div>
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700">レンズの特徴・コメント</label>

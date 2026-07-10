@@ -468,9 +468,16 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
             } catch (err: unknown) {
                 setErrorMsg(err instanceof Error ? err.message : 'Data load error');
             }
-            getExifSuggestions().then(res => {
-                if (res.success && res.data) setExifSuggestions(res.data);
-            });
+            (async () => {
+                try {
+                    const res = await fetch('/api/exif-suggestions');
+                    if (!res.ok) throw new Error('Failed to load EXIF suggestions');
+                    const data = (await res.json()) as { success: boolean; data?: { models: string[]; lensModels: string[] }; error?: string };
+                    if (data?.success && data.data) setExifSuggestions(data.data);
+                } catch (error) {
+                    console.error('Failed to load EXIF suggestions:', error);
+                }
+            })();
 
             // ✅ 履歴をlocalStorageから読み込み
             try {

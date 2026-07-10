@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/admin/AuthProvider';
-import { getPhotoById, updatePhoto, getExifSuggestions, refreshPhotoMetadata, getCoordinatesAction } from '@/lib/actions/photos';
+import { getPhotoById, updatePhoto, refreshPhotoMetadata, getCoordinatesAction } from '@/lib/actions/photos';
 import { getCategories, Category } from '@/lib/actions/categories';
 import { getSubjects, Subject } from '@/lib/actions/subjects';
 import Image from 'next/image';
@@ -178,9 +178,16 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
             getSubjects().then(res => {
                 if (res.success) setSubjects(res.data);
             });
-            getExifSuggestions().then(res => {
-                if (res.success && res.data) setExifSuggestions(res.data);
-            });
+            (async () => {
+                try {
+                    const res = await fetch('/api/exif-suggestions');
+                    if (!res.ok) throw new Error('Failed to load EXIF suggestions');
+                    const data = (await res.json()) as { success: boolean; data?: { models: string[]; lensModels: string[] }; error?: string };
+                    if (data?.success && data.data) setExifSuggestions(data.data);
+                } catch (error) {
+                    console.error('Failed to load EXIF suggestions:', error);
+                }
+            })();
             getStudios().then(stds => {
                 setAllStudios(stds);
             });

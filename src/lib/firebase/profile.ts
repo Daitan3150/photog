@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export interface LensDetail {
     id?: string;
@@ -18,6 +18,40 @@ export interface LensDetail {
     specs?: string[];
 }
 
+export interface GearItem {
+    manufacturer: string;
+    modelName: string;
+}
+
+export type GearEntry = string | GearItem;
+
+export const createGearItem = (manufacturer = '', modelName = ''): GearItem => ({
+    manufacturer: manufacturer.trim(),
+    modelName: modelName.trim(),
+});
+
+export const normalizeGearEntry = (value: GearEntry | null | undefined): GearItem => {
+    if (typeof value === 'string') {
+        return createGearItem('', value);
+    }
+
+    if (value && typeof value === 'object') {
+        return createGearItem(value.manufacturer || '', value.modelName || '');
+    }
+
+    return createGearItem();
+};
+
+export const normalizeGearList = (value: GearEntry[] | null | undefined): GearItem[] => {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .map((item) => normalizeGearEntry(item))
+        .filter((item) => item.manufacturer || item.modelName);
+};
+
 export interface Profile {
     name: string;
     roleJa?: string;
@@ -27,10 +61,10 @@ export interface Profile {
     bioJa?: string;
     bioEn?: string;
     // Gear categorization
-    mainGear?: string[];
-    subGear?: string[];
-    lenses?: string[];
-    otherGear?: string[]; // [NEW] Other category
+    mainGear?: (string | GearItem)[];
+    subGear?: (string | GearItem)[];
+    lenses?: (string | GearItem)[];
+    otherGear?: (string | GearItem)[]; // [NEW] Other category
     // Legacy fields for compatibility
     role: string;
     location: string;
@@ -40,6 +74,7 @@ export interface Profile {
     xUrl?: string; // [NEW] Admin SNS
     instagramUrl?: string; // [NEW] Admin SNS
     lensDetails?: LensDetail[];
+    ignoredLensMergeCandidates?: string[];
 }
 
 const PROFILE_DOC_PATH = 'settings/profile';

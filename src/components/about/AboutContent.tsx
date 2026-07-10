@@ -3,7 +3,24 @@
 import Image from "next/image";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { motion } from "framer-motion";
-import type { Profile } from "@/lib/firebase/profile";
+import { normalizeGearEntry, type GearItem, type Profile } from "@/lib/firebase/profile";
+
+function GearEntryRow({ item, className }: { item: string | GearItem; className: string }) {
+    const entry = normalizeGearEntry(item);
+
+    if (!entry.manufacturer) {
+        return <p className={className}>{entry.modelName}</p>;
+    }
+
+    return (
+        <div className="grid grid-cols-[minmax(0,120px)_minmax(0,1fr)] items-start gap-3">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+                {entry.manufacturer}
+            </div>
+            <p className={className}>{entry.modelName}</p>
+        </div>
+    );
+}
 
 // Helper for gear section (kept simple)
 function GearSection({ profile }: { profile: Profile | null }) {
@@ -29,8 +46,8 @@ function GearSection({ profile }: { profile: Profile | null }) {
                                     <span className="h-1.5 w-1.5 rounded-full bg-black" /> Main Gear
                                 </h3>
                                 <div className="space-y-3 border-l border-gray-100 pl-4">
-                                    {profile.mainGear?.filter(Boolean).map((item: string, i: number) => (
-                                        <p key={i} className="text-sm font-medium leading-tight text-gray-600 transition-colors hover:text-black md:text-base">{item}</p>
+                                    {profile.mainGear?.filter(Boolean).map((item, i: number) => (
+                                        <GearEntryRow key={i} item={item} className="text-sm font-medium leading-tight text-gray-600 transition-colors hover:text-black md:text-base" />
                                     ))}
                                 </div>
                             </div>
@@ -41,8 +58,8 @@ function GearSection({ profile }: { profile: Profile | null }) {
                                     <span className="h-1.5 w-1.5 rounded-full bg-gray-200" /> Sub Gear
                                 </h3>
                                 <div className="space-y-3 border-l border-gray-100 pl-4">
-                                    {profile.subGear?.filter(Boolean).map((item: string, i: number) => (
-                                        <p key={i} className="text-sm font-medium leading-tight text-gray-400 italic transition-colors hover:text-gray-600 md:text-base">{item}</p>
+                                    {profile.subGear?.filter(Boolean).map((item, i: number) => (
+                                        <GearEntryRow key={i} item={item} className="text-sm font-medium leading-tight text-gray-400 italic transition-colors hover:text-gray-600 md:text-base" />
                                     ))}
                                 </div>
                             </div>
@@ -55,8 +72,8 @@ function GearSection({ profile }: { profile: Profile | null }) {
                                     <span className="h-1.5 w-1.5 scale-125 rounded-full bg-gray-900" /> Lenses
                                 </h3>
                                 <div className="grid grid-cols-1 gap-3 border-l border-gray-100 pl-4">
-                                    {profile.lenses?.filter(Boolean).map((item: string, i: number) => (
-                                        <p key={i} className="text-sm font-medium leading-tight text-gray-700 transition-colors hover:text-black md:text-base">{item}</p>
+                                    {profile.lenses?.filter(Boolean).map((item, i: number) => (
+                                        <GearEntryRow key={i} item={item} className="text-sm font-medium leading-tight text-gray-700 transition-colors hover:text-black md:text-base" />
                                     ))}
                                 </div>
                             </div>
@@ -67,8 +84,8 @@ function GearSection({ profile }: { profile: Profile | null }) {
                                     <span className="h-1.5 w-1.5 rounded-full bg-gray-400" /> Other
                                 </h3>
                                 <div className="grid grid-cols-1 gap-3 border-l border-gray-100 pl-4">
-                                    {profile.otherGear?.filter(Boolean).map((item: string, i: number) => (
-                                        <p key={i} className="text-sm font-medium leading-tight text-gray-600 transition-colors hover:text-black md:text-base">{item}</p>
+                                    {profile.otherGear?.filter(Boolean).map((item, i: number) => (
+                                        <GearEntryRow key={i} item={item} className="text-sm font-medium leading-tight text-gray-600 transition-colors hover:text-black md:text-base" />
                                     ))}
                                 </div>
                             </div>

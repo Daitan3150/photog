@@ -323,7 +323,7 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
             viewport={{ once: true, amount: 0.1 }}
             transition={{ duration: 1, delay: index * 0.05, ease: "easeOut" }}
-            className="flex-shrink-0 w-[85vw] md:w-[600px] snap-center first:ml-0"
+            className="flex-shrink-0 w-[58vw] md:w-[480px] snap-center first:ml-0"
         >
             <Link
                 href={`/portfolio?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), img: photo.id }).toString()}`}
@@ -335,13 +335,8 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
                     alt={photo.title || modelName}
                     fill
                     className="object-cover transition-transform duration-[2s] ease-out group-hover/item:scale-105"
-                    sizes="(max-width: 768px) 85vw, 600px"
-                    priority={index < 2}
+                    sizes="(max-width: 768px) 54vw, 480px"
                 />
-
-                {/* Soft Overlay for Hover */}
-                <div className="absolute inset-0 bg-neutral-900/10 opacity-0 group-hover/item:opacity-100 transition-opacity duration-700 pointer-events-none" />
-
                 {/* Uploader Mini-icon & Name at Bottom-Right on Hover (Desktop) / Constant (Mobile) */}
                 <div className="absolute bottom-0 right-0 left-0 p-6 md:p-8 flex flex-col gap-4 transition-all duration-500 md:translate-y-4 md:opacity-0 group-hover/item:translate-y-0 group-hover/item:opacity-100 z-10">
                     <div className="flex flex-col gap-1.5 flex-1">

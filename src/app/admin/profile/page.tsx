@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Profile } from '@/lib/firebase/profile';
+import { Profile, GearItem, normalizeGearList } from '@/lib/firebase/profile';
 import { updateProfile, getProfileServer } from '@/lib/actions/profile';
 import { getMyProfile, updateMySnsLinks, SnsLink } from '@/lib/actions/users';
 import { CldUploadWidget } from 'next-cloudinary';
@@ -16,8 +16,18 @@ const initialProfile: Profile = {
     mainGear: [],
     subGear: [],
     lenses: [],
+    otherGear: [],
     imageUrl: '',
 };
+
+type GearField = 'mainGear' | 'subGear' | 'lenses' | 'otherGear';
+
+type GearRow = {
+    manufacturer: string;
+    modelName: string;
+};
+
+const createGearRow = (): GearRow => ({ manufacturer: '', modelName: '' });
 
 export default function AdminProfilePage() {
     const { user, role } = useAuth();
@@ -26,6 +36,12 @@ export default function AdminProfilePage() {
     const [saving, setSaving] = useState(false);
     const [mySnsLinks, setMySnsLinks] = useState<SnsLink[]>([]);
     const [message, setMessage] = useState('');
+    const [gearDrafts, setGearDrafts] = useState<Record<GearField, GearRow[]>>({
+        mainGear: [createGearRow()],
+        subGear: [createGearRow()],
+        lenses: [createGearRow()],
+        otherGear: [createGearRow()],
+    });
     const isAdmin = role === 'admin';
 
     useEffect(() => {
@@ -41,6 +57,12 @@ export default function AdminProfilePage() {
 
                 if (siteProfile.success && siteProfile.data) {
                     setProfile(siteProfile.data);
+                    setGearDrafts({
+                        mainGear: toGearRows(siteProfile.data.mainGear),
+                        subGear: toGearRows(siteProfile.data.subGear),
+                        lenses: toGearRows(siteProfile.data.lenses),
+                        otherGear: toGearRows(siteProfile.data.otherGear),
+                    });
                 }
                 if (myData.success && myData.data) {
                     setMySnsLinks(myData.data.snsLinks || []);
@@ -57,9 +79,57 @@ export default function AdminProfilePage() {
         setProfile({ ...profile, [e.target.name]: e.target.value });
     };
 
-    const handleGearChange = (category: 'mainGear' | 'subGear' | 'lenses' | 'otherGear') => (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setProfile({ ...profile, [category]: e.target.value.split('\n') });
+    const toGearRows = (items: Array<string | GearItem> | undefined): GearRow[] => {
+        const normalized = normalizeGearList(items).map((item) => ({
+            manufacturer: item.manufacturer,
+            modelName: item.modelName,
+        }));
+
+        return normalized.length > 0 ? normalized : [createGearRow()];
     };
+
+    const updateGearRow = (category: GearField, index: number, field: keyof GearRow, value: string) => {
+        setGearDrafts((prev) => {
+            const nextRows = [...prev[category]];
+            nextRows[index] = {
+                ...nextRows[index],
+                [field]: value,
+            };
+
+            if (index === nextRows.length - 1 && (nextRows[index].manufacturer.trim() || nextRows[index].modelName.trim())) {
+                nextRows.push(createGearRow());
+            }
+
+            return {
+                ...prev,
+                [category]: nextRows,
+            };
+        });
+    };
+
+    const addGearRow = (category: GearField) => {
+        setGearDrafts((prev) => ({
+            ...prev,
+            [category]: [...prev[category], createGearRow()],
+        }));
+    };
+
+    const removeGearRow = (category: GearField, index: number) => {
+        setGearDrafts((prev) => {
+            const nextRows = prev[category].filter((_, rowIndex) => rowIndex !== index);
+            return {
+                ...prev,
+                [category]: nextRows.length > 0 ? nextRows : [createGearRow()],
+            };
+        });
+    };
+
+    const getGearPayload = (rows: GearRow[]) => rows
+        .filter((row) => row.manufacturer.trim() || row.modelName.trim())
+        .map((row) => ({
+            manufacturer: row.manufacturer.trim(),
+            modelName: row.modelName.trim(),
+        }));
 
     const handleLegacyGearChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setProfile({ ...profile, gear: e.target.value.split('\n') });
@@ -73,8 +143,14 @@ export default function AdminProfilePage() {
         setMessage('');
 
         try {
-            const { lensDetails, ...profileWithoutLensDetails } = profile as any;
-            const profileToSave = profileWithoutLensDetails;
+            const { lensDetails: _lensDetails, ...profileWithoutLensDetails } = profile;
+            const profileToSave = {
+                ...profileWithoutLensDetails,
+                mainGear: getGearPayload(gearDrafts.mainGear),
+                subGear: getGearPayload(gearDrafts.subGear),
+                lenses: getGearPayload(gearDrafts.lenses),
+                otherGear: getGearPayload(gearDrafts.otherGear),
+            };
 
             const idToken = await user.getIdToken();
             const results = [];
@@ -93,7 +169,7 @@ export default function AdminProfilePage() {
                 const errors = results.filter(r => !r.success).map(r => r.error).join(', ');
                 setMessage('❌ 保存に失敗しました: ' + (errors || 'Unknown error'));
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
             setMessage('❌ エラーが発生しました');
         }
@@ -104,7 +180,18 @@ export default function AdminProfilePage() {
     const removeSnsLink = (index: number) => setMySnsLinks(mySnsLinks.filter((_, i) => i !== index));
     const updateSnsLink = (index: number, key: keyof SnsLink, val: string) => {
         const newLinks = [...mySnsLinks];
-        (newLinks[index] as any)[key] = val;
+        const targetLink = newLinks[index];
+        if (!targetLink) {
+            setMySnsLinks(newLinks);
+            return;
+        }
+
+        if (key === 'type') {
+            targetLink.type = val as SnsLink['type'];
+        } else {
+            targetLink.value = val;
+        }
+
         setMySnsLinks(newLinks);
     };
 
@@ -132,8 +219,14 @@ export default function AdminProfilePage() {
                                 )}
                                 <CldUploadWidget
                                     uploadPreset="profile_preset"
-                                    onSuccess={(result: any) => {
-                                        setProfile(prev => ({ ...prev, imageUrl: result.info.secure_url }));
+                                    onSuccess={(result) => {
+                                        const info = result?.info;
+                                        const secureUrl = typeof info === 'object' && info && 'secure_url' in info && typeof info.secure_url === 'string'
+                                            ? info.secure_url
+                                            : undefined;
+                                        if (secureUrl) {
+                                            setProfile(prev => ({ ...prev, imageUrl: secureUrl }));
+                                        }
                                     }}
                                 >
                                     {({ open }) => (
@@ -217,42 +310,107 @@ export default function AdminProfilePage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-gray-50">
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-bold text-gray-700">メイン機材 (Main Gear)</label>
-                                    <textarea
-                                        value={(profile.mainGear || []).join('\n')}
-                                        onChange={handleGearChange('mainGear')}
-                                        className="w-full border p-2.5 rounded-xl bg-gray-50 h-24 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        placeholder="メインカメラなどを改行で入力..."
-                                    />
+                                    <div className="flex items-center justify-between gap-3">
+                                        <label className="block text-sm font-bold text-gray-700">メイン機材 (Main Gear)</label>
+                                        <button type="button" onClick={() => addGearRow('mainGear')} className="text-xs font-semibold text-blue-600 hover:text-blue-700">+ 追加</button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {gearDrafts.mainGear.map((row, index) => (
+                                            <div key={`main-${index}`} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                                                <input
+                                                    value={row.manufacturer}
+                                                    onChange={(e) => updateGearRow('mainGear', index, 'manufacturer', e.target.value)}
+                                                    className="w-full border p-2.5 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                                    placeholder="メーカー"
+                                                />
+                                                <input
+                                                    value={row.modelName}
+                                                    onChange={(e) => updateGearRow('mainGear', index, 'modelName', e.target.value)}
+                                                    className="w-full border p-2.5 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                                    placeholder="型番・商品名"
+                                                />
+                                                <button type="button" onClick={() => removeGearRow('mainGear', index)} className="h-11 w-11 rounded-xl border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500">×</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="text-[11px] text-gray-400">メーカーと型番・商品名を別々に入力できます。</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-bold text-gray-700">サブ機材 (Sub Gear)</label>
-                                    <textarea
-                                        value={(profile.subGear || []).join('\n')}
-                                        onChange={handleGearChange('subGear')}
-                                        className="w-full border p-2.5 rounded-xl bg-gray-50 h-24 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        placeholder="サブ機材を改行で入力..."
-                                    />
+                                    <div className="flex items-center justify-between gap-3">
+                                        <label className="block text-sm font-bold text-gray-700">サブ機材 (Sub Gear)</label>
+                                        <button type="button" onClick={() => addGearRow('subGear')} className="text-xs font-semibold text-blue-600 hover:text-blue-700">+ 追加</button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {gearDrafts.subGear.map((row, index) => (
+                                            <div key={`sub-${index}`} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                                                <input
+                                                    value={row.manufacturer}
+                                                    onChange={(e) => updateGearRow('subGear', index, 'manufacturer', e.target.value)}
+                                                    className="w-full border p-2.5 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                                    placeholder="メーカー"
+                                                />
+                                                <input
+                                                    value={row.modelName}
+                                                    onChange={(e) => updateGearRow('subGear', index, 'modelName', e.target.value)}
+                                                    className="w-full border p-2.5 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                                    placeholder="型番・商品名"
+                                                />
+                                                <button type="button" onClick={() => removeGearRow('subGear', index)} className="h-11 w-11 rounded-xl border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500">×</button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-bold text-gray-700">レンズ (Lenses)</label>
-                                    <textarea
-                                        value={(profile.lenses || []).join('\n')}
-                                        onChange={handleGearChange('lenses')}
-                                        className="w-full border p-2.5 rounded-xl bg-gray-50 h-[100px] outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        placeholder="使用レンズを改行で入力..."
-                                    />
+                                    <div className="flex items-center justify-between gap-3">
+                                        <label className="block text-sm font-bold text-gray-700">レンズ (Lenses)</label>
+                                        <button type="button" onClick={() => addGearRow('lenses')} className="text-xs font-semibold text-blue-600 hover:text-blue-700">+ 追加</button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {gearDrafts.lenses.map((row, index) => (
+                                            <div key={`lenses-${index}`} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                                                <input
+                                                    value={row.manufacturer}
+                                                    onChange={(e) => updateGearRow('lenses', index, 'manufacturer', e.target.value)}
+                                                    className="w-full border p-2.5 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                                    placeholder="メーカー"
+                                                />
+                                                <input
+                                                    value={row.modelName}
+                                                    onChange={(e) => updateGearRow('lenses', index, 'modelName', e.target.value)}
+                                                    className="w-full border p-2.5 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                                    placeholder="型番・商品名"
+                                                />
+                                                <button type="button" onClick={() => removeGearRow('lenses', index)} className="h-11 w-11 rounded-xl border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500">×</button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-bold text-gray-700">その他 (Other Gear)</label>
-                                    <textarea
-                                        value={(profile.otherGear || []).join('\n')}
-                                        onChange={handleGearChange('otherGear')}
-                                        className="w-full border p-2.5 rounded-xl bg-gray-50 h-[100px] outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        placeholder="照明、三脚などを改行で入力..."
-                                    />
+                                    <div className="flex items-center justify-between gap-3">
+                                        <label className="block text-sm font-bold text-gray-700">その他 (Other Gear)</label>
+                                        <button type="button" onClick={() => addGearRow('otherGear')} className="text-xs font-semibold text-blue-600 hover:text-blue-700">+ 追加</button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {gearDrafts.otherGear.map((row, index) => (
+                                            <div key={`other-${index}`} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                                                <input
+                                                    value={row.manufacturer}
+                                                    onChange={(e) => updateGearRow('otherGear', index, 'manufacturer', e.target.value)}
+                                                    className="w-full border p-2.5 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                                    placeholder="メーカー"
+                                                />
+                                                <input
+                                                    value={row.modelName}
+                                                    onChange={(e) => updateGearRow('otherGear', index, 'modelName', e.target.value)}
+                                                    className="w-full border p-2.5 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                                    placeholder="型番・商品名"
+                                                />
+                                                <button type="button" onClick={() => removeGearRow('otherGear', index)} className="h-11 w-11 rounded-xl border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500">×</button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -357,8 +515,9 @@ export default function AdminProfilePage() {
                                             alert('エラーが発生しました: ' + result.error);
                                             setSaving(false);
                                         }
-                                    } catch (e: any) {
-                                        alert('エラー: ' + e.message);
+                                    } catch (e: unknown) {
+                                        const message = e instanceof Error ? e.message : 'Unknown error';
+                                        alert('エラー: ' + message);
                                         setSaving(false);
                                     }
                                 }
