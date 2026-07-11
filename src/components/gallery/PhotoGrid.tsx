@@ -41,6 +41,7 @@ export interface Photo {
     uploaderName?: string;
     uploaderPhotoURL?: string;
     exif?: {
+        Make?: string;
         Model?: string;
         LensModel?: string;
         FNumber?: number;
@@ -56,6 +57,20 @@ interface PhotoGridProps {
     photos: Photo[];
     overlayVariant?: "metadata" | "category";
 }
+
+const normalizeDisplayText = (value?: string | null) => value?.trim() || '';
+
+const isUntitledText = (value?: string | null) => {
+    const normalized = normalizeDisplayText(value).toLowerCase();
+    return !normalized || ['untitled', 'untiled', 'untitle', 'no title', 'no-name', 'noname', '無記名', '名無し'].includes(normalized);
+};
+
+const getPhotoDisplayTitle = (photo: Photo) => {
+    if (photo.displayMode === 'character' && photo.characterName) {
+        return photo.characterName;
+    }
+    return photo.title;
+};
 
 export default function PhotoGrid({ photos, overlayVariant = "metadata" }: PhotoGridProps) {
     const searchParams = useSearchParams();
@@ -125,7 +140,16 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
     return (
         <div className="relative">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 px-4 md:px-0">
-                {photos.slice(0, visibleCount).map((photo, index) => (
+                {photos.slice(0, visibleCount).map((photo, index) => {
+                    const displayTitle = getPhotoDisplayTitle(photo);
+                    const normalizedTitle = normalizeDisplayText(displayTitle);
+                    const shouldShowTitle = !!normalizedTitle && !isUntitledText(normalizedTitle);
+                    const camera = normalizeDisplayText(photo.exif?.Model || photo.exif?.Make);
+                    const lens = normalizeDisplayText(photo.exif?.LensModel);
+                    const location = [photo.location, photo.address].filter(Boolean).join(' / ');
+                    const hasMetadata = Boolean(camera || lens || location);
+
+                    return (
                     <div key={photo.id} className="relative">
                         <motion.div
                             className={clsx(
@@ -146,7 +170,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                         <Image
                                             loader={cloudinaryLoader}
                                             src={photo.url}
-                                            alt={photo.title || (photo.characterName ? `${photo.characterName} - Photo` : "Photo")}
+                                            alt={photo.title || (photo.characterName ? `${photo.characterName} - Photo` : "")}
                                             fill
                                             className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
@@ -164,76 +188,34 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                 )}
 
                                 {/* Hover Overlay */}
-                                <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 text-left pointer-events-none">
-                                    <div className="pointer-events-auto w-full">
-                                        <div className="flex flex-col gap-1 text-white/90">
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1">
-                                                    {(photo.location || photo.subjectName) && (
-                                                        <div className="flex flex-col gap-0.5 mb-1">
-                                                            {photo.location && (
-                                                                <p className="text-[8px] md:text-[9px] tracking-[0.2em] uppercase opacity-60">
-                                                                    LOC. {photo.location}
-                                                                </p>
-                                                            )}
-                                                            {photo.subjectName && (
-                                                                <p className="text-[8px] md:text-[9px] tracking-[0.2em] uppercase opacity-60">
-                                                                    MDL. {photo.subjectName}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <Link
-                                                    href={`/photo/${photo.id}`}
-                                                    className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
-                                                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                                                >
-                                                    <Share2 className="w-3 h-3 text-white" />
-                                                </Link>
-                                            </div>
-
-                                            {photo.event && (
-                                                <p className="text-[9px] text-amber-300 font-medium tracking-wider flex items-center gap-1">
-                                                    <Calendar className="w-2.5 h-2.5" /> {photo.event}
-                                                </p>
-                                            )}
-
-                                            <div className="flex justify-between items-center mt-1 border-t border-white/10 pt-1.5">
-                                                <div className="flex flex-col">
-                                                    <h3 className="text-[10px] md:text-xs font-serif tracking-[0.05em] line-clamp-1">
-                                                        {photo.displayMode === 'character' && photo.characterName
-                                                            ? photo.characterName
-                                                            : (photo.title || 'Untitled')}
-                                                    </h3>
-                                                    {photo.seriesName && (
-                                                        <p className="text-[8px] md:text-[9px] text-white/50 tracking-wider truncate">
-                                                            {photo.seriesName}
-                                                        </p>
-                                                    )}
-                                                </div>
-
-                                                {/* Attribution Avatar */}
-                                                {(photo.uploaderName || photo.subjectName) && (() => {
-                                                    const name = (photo.uploaderName?.includes('@') ? photo.uploaderName.split('@')[0] : photo.uploaderName) || photo.subjectName || 'MEMBER';
-                                                    return (
-                                                        <div className="relative w-5 h-5 rounded-full overflow-hidden border border-white/30 bg-white/10 shrink-0">
-                                                            {photo.uploaderPhotoURL ? (
-                                                                <img src={photo.uploaderPhotoURL} alt={name} className="w-full h-full object-cover" />
-                                                            ) : (
-                                                                <div className="w-full h-full flex items-center justify-center text-[7px] font-bold text-white/50">
-                                                                    {name.charAt(0).toUpperCase()}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })()}
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-end items-start p-3 pointer-events-none">
+                                    <Link
+                                        href={`/photo/${photo.id}`}
+                                        className="pointer-events-auto p-1.5 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
+                                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                                    >
+                                        <Share2 className="w-3 h-3 text-white" />
+                                    </Link>
                                 </div>
                             </div>
                         </motion.div>
+
+                        <div className="px-2 pt-3 pb-3 flex flex-col gap-1.5 min-h-[2.5rem]">
+                            {shouldShowTitle ? (
+                                <h3 className="text-[10px] sm:text-[11px] font-serif tracking-[0.08em] text-gray-900 leading-snug break-words">
+                                    {normalizedTitle}
+                                </h3>
+                            ) : (
+                                <div className="h-6" />
+                            )}
+                            {(hasMetadata || shouldShowTitle) && (
+                                <div className="flex flex-col gap-1 text-[10px] sm:text-[11px] text-gray-600 leading-relaxed break-words whitespace-normal">
+                                    {camera && <p className="break-words">Camera: {camera}</p>}
+                                    {lens && <p className="break-words">Lens: {lens}</p>}
+                                    {location && <p className="break-words">Location: {location}</p>}
+                                </div>
+                            )}
+                        </div>
 
                         {/* SNS Icon Area - Outside the hover box to prevent flickering */}
                         {photo.snsUrl && (
@@ -252,7 +234,8 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                             </div>
                         )}
                     </div>
-                ))}
+                    );
+                })}
             </div>
 
             <div ref={sentinelRef} className="h-4" />

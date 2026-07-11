@@ -414,7 +414,7 @@ function CosplayPhotoItem({ photo, index, searchParams, modelName }: {
                         <div className="flex items-end justify-between mt-1">
                             <div className="flex flex-col">
                                 <p className="text-white text-[11px] md:text-sm font-serif tracking-[0.1em] drop-shadow-md">
-                                    {photo.title || "Untitled"}
+                                    {photo.title}
                                 </p>
                                 {photo.location && (
                                     <p className="text-white/30 text-[8px] md:text-[9px] uppercase tracking-widest mt-0.5">

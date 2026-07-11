@@ -359,7 +359,7 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
                         <div className="flex items-end justify-between">
                             <div className="flex flex-col">
                                 <p className="text-white text-[11px] md:text-sm font-serif tracking-[0.2em] uppercase drop-shadow-md">
-                                    {photo.title || "Untitled"}
+                                    {photo.title}
                                 </p>
                                 {photo.location && (
                                     <p className="text-white/40 text-[8px] md:text-[9px] uppercase tracking-widest mt-1">
