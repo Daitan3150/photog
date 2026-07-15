@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import PhotoGrid from "@/components/gallery/PhotoGrid";
+import PhotoGrid, { type Photo } from "@/components/gallery/PhotoGrid";
 import LensDetailPanel from '@/components/portfolio/LensDetailPanel';
 import { searchPhotos } from '@/lib/actions/photos';
 import { getPublicModels } from '@/lib/actions/users';
@@ -37,18 +37,17 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
         category: effectiveCategory,
         limit: 500
     });
-    type PhotoRecord = { exif?: { LensModel?: string }; subjectName?: string } & Record<string, unknown>;
-    const filteredPhotos = allPhotos as PhotoRecord[];
+    const filteredPhotos = allPhotos as Photo[];
 
     const availableLensModels = Array.from(new Set(
-        filteredPhotos.flatMap((photo: PhotoRecord) => photo.exif?.LensModel ? [photo.exif.LensModel] : [])
+        filteredPhotos.flatMap((photo: Photo) => photo.exif?.LensModel ? [photo.exif.LensModel] : [])
     )).sort().filter(Boolean);
     const currentLens = currentView === 'lens'
         ? (params.lens || availableLensModels[0] || '')
         : '';
 
     const lensFilteredPhotos = currentLens
-        ? filteredPhotos.filter((photo: PhotoRecord) => photo.exif?.LensModel === currentLens)
+        ? filteredPhotos.filter((photo: Photo) => photo.exif?.LensModel === currentLens)
         : filteredPhotos;
 
     const displayPhotos = currentView === 'lens' ? lensFilteredPhotos : filteredPhotos;
@@ -95,27 +94,27 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
     }
 
     const lensMetadataMap = new Map<string, { name?: string; imageUrl?: string; specs?: string[]; description?: string }>();
-    const lensMetadataList = Array.isArray((profileResult as { data?: { lensDetails?: unknown } })?.data?.lensDetails)
-        ? (profileResult as { data: { lensDetails: unknown[] } }).data.lensDetails
-        : [];
     type LensEntry = { name?: string; imageUrl?: string; image?: string; specs?: unknown; description?: string };
-    lensMetadataList.forEach((entry: LensEntry) => {
+    const lensMetadataList = Array.isArray((profileResult as { data?: { lensDetails?: unknown } })?.data?.lensDetails)
+        ? ((profileResult as { data: { lensDetails: unknown[] } }).data.lensDetails as LensEntry[])
+        : [];
+    lensMetadataList.forEach((entry) => {
         if (entry?.name) {
             lensMetadataMap.set(entry.name, {
                 name: entry.name,
                 imageUrl: entry.imageUrl || entry.image || '',
-                specs: Array.isArray(entry.specs) ? entry.specs.filter(Boolean) : [],
+                specs: Array.isArray(entry.specs) ? entry.specs.filter((value): value is string => typeof value === 'string' && Boolean(value)) : [],
                 description: entry.description || '',
             });
         }
     });
 
-    const groupedPhotos: Record<string, PhotoRecord[]> = {};
-    const singlePhotoGroups: { modelName: string; photos: PhotoRecord[] }[] = [];
+    const groupedPhotos: Record<string, Photo[]> = {};
+    const singlePhotoGroups: { modelName: string; photos: Photo[] }[] = [];
 
     if (isPortraitStyle || isCosplay) {
-        displayPhotos.forEach((photo: PhotoRecord) => {
-            const modelName = (photo.subjectName as string) || 'Unknown';
+        displayPhotos.forEach((photo: Photo) => {
+            const modelName = photo.subjectName || 'Unknown';
             if (!groupedPhotos[modelName]) groupedPhotos[modelName] = [];
             groupedPhotos[modelName].push(photo);
         });

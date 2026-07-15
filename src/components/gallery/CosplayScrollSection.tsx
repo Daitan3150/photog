@@ -7,33 +7,9 @@ import cloudinaryLoader from "@/lib/cloudinary-loader";
 import { User, ChevronRight, Sparkles, Calendar } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Lightbox from "./Lightbox";
+import type { Photo as GalleryPhoto } from "./PhotoGrid";
 
-interface Photo {
-    id: string;
-    url: string;
-    title: string;
-    category: string;
-    subjectName?: string;
-    uploaderName?: string;
-    uploaderPhotoURL?: string;
-    nextPhotoUrl?: string | null;
-    prevPhotoUrl?: string | null;
-    location?: string;
-    snsUrl?: string;
-    characterName?: string;
-    seriesName?: string;
-    event?: string;
-    displayMode?: 'title' | 'character';
-    aspectRatio?: number;
-    exif?: {
-        Model?: string;
-        LensModel?: string;
-        FNumber?: number;
-        ExposureTime?: number;
-        ISO?: number;
-        FocalLength?: number;
-    };
-}
+type Photo = GalleryPhoto;
 
 interface CosplayScrollSectionProps {
     modelName: string;
