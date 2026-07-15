@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { getSnsUrl } from "@/lib/utils/sns";
-import { Instagram, Twitter, ExternalLink, Globe, Share2, Calendar, Sparkles } from "lucide-react";
+import { Instagram, Twitter, ExternalLink, Globe, Share2, Calendar, Sparkles, Camera } from "lucide-react";
 import Lightbox from "./Lightbox";
 import cloudinaryLoader from "@/lib/cloudinary-loader";
 import { clsx } from "clsx";
@@ -59,6 +59,15 @@ interface PhotoGridProps {
 }
 
 const normalizeDisplayText = (value?: string | null) => value?.trim() || '';
+
+const normalizeAddressText = (value?: string | null) => {
+    const text = value?.trim();
+    if (!text) return '';
+    return text
+        .replace(/〒?\d{3}-?\d{4}/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
 
 const isUntitledText = (value?: string | null) => {
     const normalized = normalizeDisplayText(value).toLowerCase();
@@ -139,26 +148,25 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
 
     return (
         <div className="relative">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 px-4 md:px-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 px-2 md:px-0">
                 {photos.slice(0, visibleCount).map((photo, index) => {
                     const displayTitle = getPhotoDisplayTitle(photo);
                     const normalizedTitle = normalizeDisplayText(displayTitle);
                     const shouldShowTitle = !!normalizedTitle && !isUntitledText(normalizedTitle);
                     const camera = normalizeDisplayText(photo.exif?.Model || photo.exif?.Make);
                     const lens = normalizeDisplayText(photo.exif?.LensModel);
-                    const location = [photo.location, photo.address].filter(Boolean).join(' / ');
-                    const hasMetadata = Boolean(camera || lens || location);
+                    const location = normalizeDisplayText(photo.location);
+                    const address = normalizeAddressText(photo.address);
+                    const hasMetadata = Boolean(camera || lens || location || address);
+                    const showOverlayMetadata = hasMetadata;
+                    const showCaptionBelow = shouldShowTitle;
 
                     return (
                     <div key={photo.id} className="relative">
                         <motion.div
                             className={clsx(
-                                "relative group rounded-xl overflow-hidden transition-all duration-300",
-                                photo.category?.toLowerCase() === 'cosplay' ? (
-                                    "p-[2px] bg-gradient-to-br from-purple-500 via-pink-500 to-amber-500 shadow-lg shadow-purple-500/20"
-                                ) : (
-                                    "border border-gray-100"
-                                )
+                                "relative group overflow-hidden transition-all duration-300",
+                                photo.category?.toLowerCase() === 'cosplay' && "shadow-lg shadow-purple-500/20"
                             )}
                         >
                             <div className="relative overflow-hidden bg-black" style={{ borderRadius: 12 }}>
@@ -197,22 +205,54 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                         <Share2 className="w-3 h-3 text-white" />
                                     </Link>
                                 </div>
+
+                                {showOverlayMetadata && (
+                                    <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-3 pb-3 pt-8 text-white">
+                                        <div className="flex flex-col gap-1">
+                                            {camera && (
+                                                <div className="flex items-center gap-1">
+                                                    <Camera size={6} className="text-amber-300/90" />
+                                                    <span className="text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/70">
+                                                        Camera
+                                                    </span>
+                                                    <span className="text-[6px] sm:text-[7px] font-medium tracking-[0.3em] text-amber-300">
+                                                        {camera}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {lens && (
+                                                <div className="flex items-center gap-1">
+                                                    <Sparkles size={6} className="text-white/70" />
+                                                    <span className="text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/70">
+                                                        Lens
+                                                    </span>
+                                                    <span className="text-[6px] sm:text-[7px] font-medium tracking-[0.3em] text-white/90">
+                                                        {lens}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {location && (
+                                                <p className="mt-1 text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                                                    Near {location}
+                                                </p>
+                                            )}
+                                            {address && (
+                                                <p className="text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                                                    {address}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
 
-                        <div className="px-2 pt-3 pb-3 flex flex-col gap-1.5 min-h-[2.5rem]">
-                            {shouldShowTitle ? (
-                                <h3 className="text-[10px] sm:text-[11px] font-serif tracking-[0.08em] text-gray-900 leading-snug break-words">
-                                    {normalizedTitle}
-                                </h3>
-                            ) : (
-                                <div className="h-6" />
-                            )}
-                            {(hasMetadata || shouldShowTitle) && (
-                                <div className="flex flex-col gap-1 text-[10px] sm:text-[11px] text-gray-600 leading-relaxed break-words whitespace-normal">
-                                    {camera && <p className="break-words">Camera: {camera}</p>}
-                                    {lens && <p className="break-words">Lens: {lens}</p>}
-                                    {location && <p className="break-words">Location: {location}</p>}
+                        <div className="px-2 -mt-2 pb-3">
+                            {showCaptionBelow && (
+                                <div className="inline-flex rounded-full bg-white/90 px-2.5 py-1 shadow-[0_8px_20px_-20px_rgba(15,23,42,0.9)] backdrop-blur-sm">
+                                    <h3 className="text-[9px] sm:text-[10px] font-serif font-medium uppercase tracking-[0.18em] text-slate-900 leading-none">
+                                        {normalizedTitle}
+                                    </h3>
                                 </div>
                             )}
                         </div>

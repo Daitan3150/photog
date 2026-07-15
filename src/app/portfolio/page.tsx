@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 export default async function PortfolioPage({ searchParams }: PageProps) {
     // URLからカテゴリーと写真IDを取得
     const params = await searchParams;
-    let currentCategory = params.category || 'cosplay';
+    const currentCategory = params.category || 'cosplay';
 
     const currentView = params.view === 'lens' ? 'lens' : 'category';
     const effectiveCategory = currentView === 'lens' ? undefined : currentCategory;
@@ -37,23 +37,24 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
         category: effectiveCategory,
         limit: 500
     });
-    const filteredPhotos = allPhotos as any[];
-
-    const isPortrait = currentView === 'category' && currentCategory === 'portrait';
-    const isCosplay = currentView === 'category' && currentCategory === 'cosplay';
+    type PhotoRecord = { exif?: { LensModel?: string }; subjectName?: string } & Record<string, unknown>;
+    const filteredPhotos = allPhotos as PhotoRecord[];
 
     const availableLensModels = Array.from(new Set(
-        filteredPhotos.flatMap((photo: any) => photo.exif?.LensModel ? [photo.exif.LensModel] : [])
+        filteredPhotos.flatMap((photo: PhotoRecord) => photo.exif?.LensModel ? [photo.exif.LensModel] : [])
     )).sort().filter(Boolean);
     const currentLens = currentView === 'lens'
         ? (params.lens || availableLensModels[0] || '')
         : '';
 
     const lensFilteredPhotos = currentLens
-        ? filteredPhotos.filter((photo: any) => photo.exif?.LensModel === currentLens)
+        ? filteredPhotos.filter((photo: PhotoRecord) => photo.exif?.LensModel === currentLens)
         : filteredPhotos;
 
     const displayPhotos = currentView === 'lens' ? lensFilteredPhotos : filteredPhotos;
+    const portraitCategories = ['portrait'];
+    const isPortraitStyle = currentView === 'category' && portraitCategories.includes(currentCategory);
+    const isCosplay = currentView === 'category' && currentCategory === 'cosplay';
 
     // 公開用モデルデータ（生没年）の取得とマッピング
     const modelsResult = await getPublicModels();
@@ -94,8 +95,11 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
     }
 
     const lensMetadataMap = new Map<string, { name?: string; imageUrl?: string; specs?: string[]; description?: string }>();
-    const lensMetadataList = Array.isArray((profileResult as any)?.data?.lensDetails) ? (profileResult as any).data.lensDetails : [];
-    lensMetadataList.forEach((entry: any) => {
+    const lensMetadataList = Array.isArray((profileResult as { data?: { lensDetails?: unknown } })?.data?.lensDetails)
+        ? (profileResult as { data: { lensDetails: unknown[] } }).data.lensDetails
+        : [];
+    type LensEntry = { name?: string; imageUrl?: string; image?: string; specs?: unknown; description?: string };
+    lensMetadataList.forEach((entry: LensEntry) => {
         if (entry?.name) {
             lensMetadataMap.set(entry.name, {
                 name: entry.name,
@@ -106,15 +110,12 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
         }
     });
 
-    // ポートレートまたはコスプレカテゴリーの場合、モデル名（subjectName）ごとにグループ化する
-    const shouldGroup = isPortrait || isCosplay;
+    const groupedPhotos: Record<string, PhotoRecord[]> = {};
+    const singlePhotoGroups: { modelName: string; photos: PhotoRecord[] }[] = [];
 
-    const groupedPhotos: Record<string, any[]> = {};
-    const singlePhotoGroups: { modelName: string; photos: any[] }[] = [];
-
-    if (shouldGroup) {
-        displayPhotos.forEach((photo: any) => {
-            const modelName = photo.subjectName || 'Unknown';
+    if (isPortraitStyle || isCosplay) {
+        displayPhotos.forEach((photo: PhotoRecord) => {
+            const modelName = (photo.subjectName as string) || 'Unknown';
             if (!groupedPhotos[modelName]) groupedPhotos[modelName] = [];
             groupedPhotos[modelName].push(photo);
         });
@@ -172,7 +173,7 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
                                     return null;
                                 }
 
-                                if (isPortrait) {
+                                if (isPortraitStyle) {
                                     return (
                                         <div className="space-y-24">
                                             {Object.entries(groupedPhotos).map(([modelName, photos]) => {

@@ -21,13 +21,15 @@ export interface LensDetail {
 export interface GearItem {
     manufacturer: string;
     modelName: string;
+    category?: string;
 }
 
 export type GearEntry = string | GearItem;
 
-export const createGearItem = (manufacturer = '', modelName = ''): GearItem => ({
+export const createGearItem = (manufacturer = '', modelName = '', category = ''): GearItem => ({
     manufacturer: manufacturer.trim(),
     modelName: modelName.trim(),
+    ...(category ? { category: category.trim() } : {}),
 });
 
 export const normalizeGearEntry = (value: GearEntry | null | undefined): GearItem => {
@@ -36,7 +38,7 @@ export const normalizeGearEntry = (value: GearEntry | null | undefined): GearIte
     }
 
     if (value && typeof value === 'object') {
-        return createGearItem(value.manufacturer || '', value.modelName || '');
+        return createGearItem(value.manufacturer || '', value.modelName || '', value.category || '');
     }
 
     return createGearItem();
@@ -60,6 +62,10 @@ export interface Profile {
     locationEn?: string;
     bioJa?: string;
     bioEn?: string;
+    conceptJa?: string;
+    conceptEn?: string;
+    visionJa?: string;
+    visionEn?: string;
     // Gear categorization
     mainGear?: (string | GearItem)[];
     subGear?: (string | GearItem)[];
