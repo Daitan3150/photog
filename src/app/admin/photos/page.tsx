@@ -40,6 +40,7 @@ export default function PhotosPage() {
     const [nextCursor, setNextCursor] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
     // 🔄 初期データの一括取得（最適化された Effect）
     useEffect(() => {
@@ -74,7 +75,7 @@ export default function PhotosPage() {
 
                 // 写真取得
                 try {
-                    const photoResult = await getPhotos(token, { limit: 50 });
+                    const photoResult = await getPhotos(token, { limit: 100 });
                     if (isMounted) {
                         if (photoResult && photoResult.photos) {
                             setPhotos(photoResult.photos);
@@ -124,7 +125,7 @@ export default function PhotosPage() {
             const token = await user.getIdToken();
             const currentCursor = reset ? undefined : (nextCursor || undefined);
 
-            const result = await getPhotos(token, { limit: 50, cursor: currentCursor });
+            const result = await getPhotos(token, { limit: 100, cursor: currentCursor });
 
             if (result && result.photos) {
                 if (reset) {
@@ -262,6 +263,13 @@ export default function PhotosPage() {
         if (!categoryId) return null;
         if (categoryId === 'archived') return '🗑️ 削除済みユーザーの投稿';
         return categories.find(c => c.id === categoryId)?.name || categoryId;
+    };
+
+    const toggleCategorySection = (catName: string) => {
+        setExpandedCategories(prev => ({
+            ...prev,
+            [catName]: !prev[catName],
+        }));
     };
 
     return (
@@ -507,7 +515,7 @@ export default function PhotosPage() {
                                             写真をクリックして編集画面からカテゴリーを設定するか、複数選択で一括カテゴリー変更ができます。
                                         </p>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 xl:gap-5">
                                         {uncategorized.map(renderPhotoCard)}
                                     </div>
                                 </div>
@@ -529,46 +537,72 @@ export default function PhotosPage() {
                                     }, {});
 
                                     return (
-                                        <div key={catName} className="mb-14" id={`section-${catName}`}>
-                                            <div className="flex items-center gap-3 mb-8">
-                                                <h2 className="text-xl font-bold text-gray-800 tracking-widest flex items-center gap-2">
+                                        <div key={catName} className="mb-8" id={`section-${catName}`}>
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <h2 className="text-lg font-bold text-gray-800 tracking-widest flex items-center gap-2">
                                                     <Trash2 className="w-5 h-5 text-gray-400" />
                                                     退会ユーザーの投稿 <span className="text-sm font-normal text-gray-400">({photosInCategory.length}枚)</span>
                                                 </h2>
                                                 <div className="h-[1px] flex-1 bg-gray-200" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleCategorySection(catName)}
+                                                    className="text-sm font-medium text-gray-500 hover:text-gray-700"
+                                                >
+                                                    {expandedCategories[catName] ? '閉じる' : '開く'}
+                                                </button>
                                             </div>
 
-                                            <div className="space-y-12 pl-2">
-                                                {Object.entries(groupedByUser).map(([userName, userPhotos]: [string, any]) => (
-                                                    <div key={userName} className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 relative shadow-sm">
-                                                        <div className="absolute top-6 left-0 w-1 h-8 bg-gray-300 rounded-r-md" />
-                                                        <h3 className="text-lg font-bold text-gray-700 mb-6 flex items-center gap-2 pl-4">
-                                                            <User className="w-5 h-5 text-gray-400" />
-                                                            {userName}
-                                                            <span className="text-sm font-medium text-gray-400 ml-2 bg-white px-2 py-0.5 rounded-md border border-gray-200">
-                                                                {userPhotos.length} 枚
-                                                            </span>
-                                                        </h3>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                                            {userPhotos.map(renderPhotoCard)}
+                                            {expandedCategories[catName] ? (
+                                                <div className="space-y-6 pl-2">
+                                                    {Object.entries(groupedByUser).map(([userName, userPhotos]: [string, any]) => (
+                                                        <div key={userName} className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100 relative shadow-sm">
+                                                            <div className="absolute top-6 left-0 w-1 h-8 bg-gray-300 rounded-r-md" />
+                                                            <h3 className="text-base font-bold text-gray-700 mb-4 flex items-center gap-2 pl-4">
+                                                                <User className="w-4 h-4 text-gray-400" />
+                                                                {userName}
+                                                                <span className="text-sm font-medium text-gray-400 ml-2 bg-white px-2 py-0.5 rounded-md border border-gray-200">
+                                                                    {userPhotos.length} 枚
+                                                                </span>
+                                                            </h3>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 xl:gap-5">
+                                                                {userPhotos.map(renderPhotoCard)}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+                                                    このカテゴリは折りたたまれています。開くと写真を確認できます。
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 }
 
                                 return (
-                                    <div key={catName} className="mb-10" id={`section-${catName}`}>
-                                        <div className="flex items-center gap-3 mb-4">
+                                    <div key={catName} className="mb-6" id={`section-${catName}`}>
+                                        <div className="flex items-center gap-3 mb-3">
                                             <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wider">{catName}</h2>
                                             <span className="text-sm text-gray-400 font-medium">{photosInCategory.length}枚</span>
                                             <div className="h-[1px] flex-1 bg-gray-200" />
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleCategorySection(catName)}
+                                                className="text-sm font-medium text-gray-500 hover:text-gray-700"
+                                            >
+                                                {expandedCategories[catName] ? '閉じる' : '開く'}
+                                            </button>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                            {photosInCategory.map(renderPhotoCard)}
-                                        </div>
+                                        {expandedCategories[catName] ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 xl:gap-5">
+                                                {photosInCategory.map(renderPhotoCard)}
+                                            </div>
+                                        ) : (
+                                            <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+                                                このカテゴリは折りたたまれています。開くと写真を確認できます。
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })

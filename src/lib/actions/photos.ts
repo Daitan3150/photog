@@ -434,8 +434,9 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
             query = query.where('uploaderId', '==', uid);
         }
 
-        // Limit を少し多めに取ってメモリでソートする (インデックス不要にするため)
-        const fetchLimit = 200;
+        // Limit を少し多めに取り、メモリ上でソート・ページングする
+        const pageSize = Math.max(1, options.limit || 50);
+        const fetchLimit = Math.max(pageSize * 10, 200);
         const snapshot = await query.limit(fetchLimit).get();
         console.log(`[getPhotos] Firestore returned ${snapshot.size} docs.`);
 
@@ -481,11 +482,21 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
         // 🔄 Enrich with uploader profiles
         const photosWithUploader = await enrichPhotosWithUploader(photos, db);
 
-        // 本来の Limit 分だけ抽出
-        const finalPhotos = photosWithUploader.slice(0, options.limit || 50);
-        const nextCursor = photosWithUploader.length > (options.limit || 50) ? String(photosWithUploader[(options.limit || 50) - 1].id) : null;
+        const cursorValue = options.cursor ? String(options.cursor) : null;
+        let startIndex = 0;
+        if (cursorValue) {
+            const cursorIndex = photosWithUploader.findIndex((photo: any) => String(photo.id) === cursorValue);
+            if (cursorIndex !== -1) {
+                startIndex = cursorIndex + 1;
+            }
+        }
 
-        console.log(`[getPhotos] Returning ${finalPhotos.length} photos.`);
+        const finalPhotos = photosWithUploader.slice(startIndex, startIndex + pageSize);
+        const nextCursor = startIndex + finalPhotos.length < photosWithUploader.length
+            ? String(photosWithUploader[startIndex + finalPhotos.length - 1]?.id ?? '')
+            : null;
+
+        console.log(`[getPhotos] Returning ${finalPhotos.length} photos (startIndex=${startIndex}, total=${photosWithUploader.length}).`);
 
         const result = {
             photos: finalPhotos,
