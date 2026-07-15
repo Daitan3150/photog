@@ -111,13 +111,13 @@ export default function PortraitScrollSection({
                         viewport={{ once: true }}
                         transition={{ duration: 1, ease: "easeOut" }}
                     >
-                        <span className="text-[10px] md:text-xs text-neutral-400 uppercase tracking-[0.5em] block mb-2 font-light">
+                        <span className="text-[9px] md:text-[10px] text-neutral-400 uppercase tracking-[0.45em] block mb-2 font-light">
                             Featured Model
                         </span>
-                        <h2 className="text-3xl md:text-5xl font-serif tracking-[0.05em] text-neutral-900 lowercase italic first-letter:uppercase leading-none">
+                        <h2 className="text-2xl md:text-3xl font-serif tracking-[0.04em] text-neutral-900 lowercase italic first-letter:uppercase leading-none">
                             {modelName}
                             {realName && realName !== modelName && (
-                                <span className="text-xl md:text-3xl ml-4 font-normal text-neutral-500 italic">
+                                <span className="text-sm md:text-[22px] ml-3 font-normal text-neutral-500 italic">
                                     ({realName})
                                 </span>
                             )}
@@ -215,16 +215,16 @@ export default function PortraitScrollSection({
                                             <div className="flex items-center gap-3">
                                                 <p className={`font-medium ${
                                                     showYear
-                                                        ? 'text-[11px] text-neutral-400 tracking-[0.3em] uppercase font-light'
-                                                        : 'text-[22px] md:text-[28px] text-neutral-800 font-black tracking-tight'
+                                                        ? 'text-[10px] text-neutral-400 tracking-[0.3em] uppercase font-light'
+                                                        : 'text-[18px] md:text-[22px] text-neutral-800 font-black tracking-tight'
                                                 }`}>
                                                     {!showYear && (
-                                                        <span className="text-[9px] text-neutral-300 mr-2 font-light tracking-[0.4em] uppercase">b.</span>
+                                                        <span className="text-[9px] md:text-[10px] text-neutral-300 mr-2 font-light tracking-[0.4em] uppercase">b.</span>
                                                     )}
                                                     {formatB()}
                                                 </p>
                                                 {ageLabel && (
-                                                    <span className={`text-[13px] md:text-[15px] font-bold tracking-widest px-3 py-1.5 rounded-full shadow-sm ${ageBadgeClass}`}>
+                                                    <span className={`text-[12px] md:text-[14px] font-bold tracking-widest px-3 py-1.5 rounded-full shadow-sm ${ageBadgeClass}`}>
                                                         {ageLabel}
                                                     </span>
                                                 )}

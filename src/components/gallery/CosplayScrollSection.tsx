@@ -114,14 +114,14 @@ export default function CosplayScrollSection({
                         viewport={{ once: true }}
                         transition={{ duration: 1, ease: "easeOut" }}
                     >
-                        <span className="text-[10px] md:text-xs text-purple-400 uppercase tracking-[0.5em] block mb-2 font-light flex items-center gap-2">
+                        <span className="text-[9px] md:text-[10px] text-purple-400 uppercase tracking-[0.45em] block mb-2 font-light flex items-center gap-2">
                             <Sparkles size={12} className="text-amber-400" />
                             Cosplayer
                         </span>
-                        <h2 className="text-3xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500 leading-none">
+                        <h2 className="text-2xl md:text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500 leading-none">
                             {modelName}
                             {realName && realName !== modelName && (
-                                <span className="text-xl md:text-2xl ml-4 font-medium opacity-80 text-purple-400">
+                                <span className="text-sm md:text-[22px] ml-3 font-medium opacity-80 text-purple-400">
                                     ({realName})
                                 </span>
                             )}
@@ -224,14 +224,14 @@ export default function CosplayScrollSection({
                                             <div className="flex items-center gap-3">
                                                 <p className={`font-medium tracking-widest ${
                                                     showYear
-                                                        ? 'text-[11px] text-purple-300/70 uppercase'
-                                                        : 'text-[18px] md:text-[22px] text-purple-300/80 font-black'
+                                                        ? 'text-[10px] text-purple-300/70 uppercase'
+                                                        : 'text-[16px] md:text-[20px] text-purple-300/80 font-black'
                                                 }`}>
-                                                    {!showYear && <span className="text-[10px] text-purple-300/40 mr-1 font-normal tracking-[0.3em] uppercase">b.</span>}
+                                                    {!showYear && <span className="text-[9px] md:text-[10px] text-purple-300/40 mr-1 font-normal tracking-[0.3em] uppercase">b.</span>}
                                                     {formatB()}
                                                 </p>
                                                 {ageLabel && (
-                                                    <span className={`text-[14px] md:text-[16px] font-black tracking-widest px-3.5 py-1.5 rounded-full shadow-sm ${ageBadgeClass}`}>
+                                                    <span className={`text-[12px] md:text-[14px] font-black tracking-widest px-3 py-1.5 rounded-full shadow-sm ${ageBadgeClass}`}>
                                                         {ageLabel}
                                                     </span>
                                                 )}
