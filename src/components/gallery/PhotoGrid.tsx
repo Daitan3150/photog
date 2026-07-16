@@ -253,7 +253,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata", variant
                         <div className="px-1.5 mt-1 pb-2 flex justify-center">
                             {showCaptionBelow && (
                                 <div className="inline-flex px-0 py-0">
-                                    <h3 className="text-[9px] sm:text-[10px] font-serif font-medium uppercase tracking-[0.18em] text-slate-900 leading-none text-center">
+                                    <h3 className="text-[8px] sm:text-[10px] font-serif font-medium uppercase tracking-[0.14em] text-slate-900 leading-none text-center">
                                         {normalizedTitle}
                                     </h3>
                                 </div>
