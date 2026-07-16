@@ -56,6 +56,7 @@ export interface Photo {
 interface PhotoGridProps {
     photos: Photo[];
     overlayVariant?: "metadata" | "category";
+    variant?: "default" | "photos-only";
 }
 
 const normalizeDisplayText = (value?: string | null) => value?.trim() || '';
@@ -81,7 +82,7 @@ const getPhotoDisplayTitle = (photo: Photo) => {
     return photo.title;
 };
 
-export default function PhotoGrid({ photos, overlayVariant = "metadata" }: PhotoGridProps) {
+export default function PhotoGrid({ photos, overlayVariant = "metadata", variant = "default" }: PhotoGridProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
@@ -148,7 +149,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
 
     return (
         <div className="relative">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 px-1 md:px-0">
+            <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-1.5 sm:gap-2.5 px-1 md:px-0">
                 {photos.slice(0, visibleCount).map((photo, index) => {
                     const displayTitle = getPhotoDisplayTitle(photo);
                     const normalizedTitle = normalizeDisplayText(displayTitle);
@@ -158,8 +159,8 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                     const location = normalizeDisplayText(photo.location);
                     const address = normalizeAddressText(photo.address);
                     const hasMetadata = Boolean(camera || lens || location || address);
-                    const showOverlayMetadata = hasMetadata;
-                    const showCaptionBelow = shouldShowTitle;
+                    const showOverlayMetadata = variant === "default" && hasMetadata;
+                    const showCaptionBelow = variant === "default" && shouldShowTitle;
                     const normalizedCategory = normalizeDisplayText(photo.category).toLowerCase();
                     const shouldUsePlainCaption = ['snapshot', 'landscape', 'animal'].includes(normalizedCategory);
 
