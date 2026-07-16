@@ -148,7 +148,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
 
     return (
         <div className="relative">
-            <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 xl:grid-cols-4 gap-1.5 sm:gap-2.5 px-1 md:px-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 px-1 md:px-0">
                 {photos.slice(0, visibleCount).map((photo, index) => {
                     const displayTitle = getPhotoDisplayTitle(photo);
                     const normalizedTitle = normalizeDisplayText(displayTitle);
