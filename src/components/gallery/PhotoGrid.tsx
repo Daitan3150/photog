@@ -159,9 +159,10 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata", variant
                     const location = normalizeDisplayText(photo.location);
                     const address = normalizeAddressText(photo.address);
                     const hasMetadata = Boolean(camera || lens || location || address);
-                    const showOverlayMetadata = variant === "default" && hasMetadata;
-                    const showCaptionBelow = variant === "default" && shouldShowTitle;
                     const normalizedCategory = normalizeDisplayText(photo.category).toLowerCase();
+                    const isCompactCategoryOverlay = variant === "default" && ['snapshot', 'landscape', 'animal'].includes(normalizedCategory);
+                    const showOverlayMetadata = variant === "default" && (isCompactCategoryOverlay ? Boolean(lens || location) : hasMetadata);
+                    const showCaptionBelow = variant === "default" && shouldShowTitle;
                     const shouldUsePlainCaption = ['snapshot', 'landscape', 'animal'].includes(normalizedCategory);
 
                     return (
@@ -210,39 +211,59 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata", variant
                                 </div>
 
                                 {showOverlayMetadata && (
-                                    <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-2.5 pb-2.5 pt-7 text-white">
-                                        <div className="flex flex-col gap-1">
-                                            {camera && (
-                                                <div className="flex items-center gap-1">
-                                                    <Camera size={6} className="text-amber-300/90" />
-                                                    <span className="text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/70">
-                                                        Camera
-                                                    </span>
-                                                    <span className="text-[6px] sm:text-[7px] font-medium tracking-[0.3em] text-amber-300">
-                                                        {camera}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {lens && (
-                                                <div className="flex items-center gap-1">
-                                                    <Sparkles size={6} className="text-white/70" />
-                                                    <span className="text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/70">
-                                                        Lens
-                                                    </span>
-                                                    <span className="text-[6px] sm:text-[7px] font-medium tracking-[0.3em] text-white/90">
-                                                        {lens}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {location && (
-                                                <p className="mt-1 text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                                                    Near {location}
-                                                </p>
-                                            )}
-                                            {address && (
-                                                <p className="text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                                                    {address}
-                                                </p>
+                                    <div className={`absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-2 pb-2 pt-6 text-white ${isCompactCategoryOverlay ? 'text-left' : ''}`}>
+                                        <div className={`flex flex-col ${isCompactCategoryOverlay ? 'items-start gap-0.5' : 'gap-1'}`}>
+                                            {isCompactCategoryOverlay ? (
+                                                <>
+                                                    {lens && (
+                                                        <div className="flex items-center gap-1">
+                                                            <Sparkles size={5} className="text-white/70" />
+                                                            <span className="text-[7px] sm:text-[8px] uppercase tracking-[0.24em] text-white/90">
+                                                                {lens}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {location && (
+                                                        <p className="text-[7px] sm:text-[8px] uppercase tracking-[0.24em] text-white/70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                                                            {location}
+                                                        </p>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {camera && (
+                                                        <div className="flex items-center gap-1">
+                                                            <Camera size={6} className="text-amber-300/90" />
+                                                            <span className="text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/70">
+                                                                Camera
+                                                            </span>
+                                                            <span className="text-[6px] sm:text-[7px] font-medium tracking-[0.3em] text-amber-300">
+                                                                {camera}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {lens && (
+                                                        <div className="flex items-center gap-1">
+                                                            <Sparkles size={6} className="text-white/70" />
+                                                            <span className="text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/70">
+                                                                Lens
+                                                            </span>
+                                                            <span className="text-[6px] sm:text-[7px] font-medium tracking-[0.3em] text-white/90">
+                                                                {lens}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {location && (
+                                                        <p className="mt-1 text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                                                            Near {location}
+                                                        </p>
+                                                    )}
+                                                    {address && (
+                                                        <p className="text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                                                            {address}
+                                                        </p>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     </div>
