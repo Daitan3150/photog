@@ -148,7 +148,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
 
     return (
         <div className="relative">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 px-2 md:px-0">
+            <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 xl:grid-cols-4 gap-1.5 sm:gap-2.5 px-1 md:px-0">
                 {photos.slice(0, visibleCount).map((photo, index) => {
                     const displayTitle = getPhotoDisplayTitle(photo);
                     const normalizedTitle = normalizeDisplayText(displayTitle);
@@ -160,6 +160,8 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                     const hasMetadata = Boolean(camera || lens || location || address);
                     const showOverlayMetadata = hasMetadata;
                     const showCaptionBelow = shouldShowTitle;
+                    const normalizedCategory = normalizeDisplayText(photo.category).toLowerCase();
+                    const shouldUsePlainCaption = ['snapshot', 'landscape', 'animal'].includes(normalizedCategory);
 
                     return (
                     <div key={photo.id} className="relative">
@@ -196,7 +198,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                 )}
 
                                 {/* Hover Overlay */}
-                                <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-end items-start p-3 pointer-events-none">
+                                <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-end items-start p-2.5 pointer-events-none">
                                     <Link
                                         href={`/photo/${photo.id}`}
                                         className="pointer-events-auto p-1.5 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
@@ -207,7 +209,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                                 </div>
 
                                 {showOverlayMetadata && (
-                                    <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-3 pb-3 pt-8 text-white">
+                                    <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-2.5 pb-2.5 pt-7 text-white">
                                         <div className="flex flex-col gap-1">
                                             {camera && (
                                                 <div className="flex items-center gap-1">
@@ -247,10 +249,10 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
                             </div>
                         </motion.div>
 
-                        <div className="px-2 -mt-2 pb-3">
+                        <div className="px-1.5 mt-1 pb-2 flex justify-center">
                             {showCaptionBelow && (
-                                <div className="inline-flex rounded-full bg-white/90 px-2.5 py-1 shadow-[0_8px_20px_-20px_rgba(15,23,42,0.9)] backdrop-blur-sm">
-                                    <h3 className="text-[9px] sm:text-[10px] font-serif font-medium uppercase tracking-[0.18em] text-slate-900 leading-none">
+                                <div className="inline-flex px-0 py-0">
+                                    <h3 className="text-[9px] sm:text-[10px] font-serif font-medium uppercase tracking-[0.18em] text-slate-900 leading-none text-center">
                                         {normalizedTitle}
                                     </h3>
                                 </div>
@@ -259,7 +261,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata" }: Photo
 
                         {/* SNS Icon Area - Outside the hover box to prevent flickering */}
                         {photo.snsUrl && (
-                            <div className="mt-3 flex justify-center items-center h-10">
+                            <div className="mt-2 flex justify-center items-center h-8">
                                 <a
                                     href={getSnsUrl(photo.snsUrl)}
                                     target="_blank"
