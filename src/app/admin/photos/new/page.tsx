@@ -23,6 +23,7 @@ import { Location } from '@/types/location';
 import { Studio } from '@/types/studio';
 import { X, Plus, Home, Trees, Search, ChevronRight } from 'lucide-react';
 import SubjectSelect from '@/components/admin/SubjectSelect';
+import { buildFullAddress } from '@/lib/utils/address';
 
 // ✅ ファイル検証定数
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
@@ -199,6 +200,7 @@ export default function NewPhotoPage() {
     const [addressPref, setAddressPref] = useState('');
     const [addressCity, setAddressCity] = useState('');
     const [addressDetail, setAddressDetail] = useState('');
+    const [locationUrl, setLocationUrl] = useState('');
     const [coordsInput, setCoordsInput] = useState('');
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
@@ -260,7 +262,7 @@ export default function NewPhotoPage() {
     const [showNewStudioForm, setShowNewStudioForm] = useState(false);
     const [newStudio, setNewStudio] = useState<Partial<Studio>>({ name: '', url: '' });
     const [showNewLocationForm, setShowNewLocationForm] = useState(false);
-    const [newLocation, setNewLocation] = useState<Partial<Location>>({ name: '', type: 'outdoor' });
+    const [newLocation, setNewLocation] = useState<Partial<Location>>({ name: '', type: 'outdoor', url: '' });
 
     const LOCATION_TYPE_LABELS = {
         outdoor: '屋外',
@@ -836,9 +838,14 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                 const finalLng = longitude;
 
                 // ✅ 住所の結合
-                const fullAddress = address || [addressZip, addressPref, addressCity, addressDetail].filter(Boolean).join(' ');
+                const fullAddress = buildFullAddress({
+                    address,
+                    addressZip,
+                    addressPref,
+                    addressCity,
+                    addressDetail,
+                });
 
-                
                 return {
                     url: file.url,
                     publicId: file.publicId,
@@ -2071,9 +2078,14 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                         onClick={async () => {
                                                             setLocation(studio.name);
                                                             if (studio.addressZip) setAddressZip(studio.addressZip);
+                                                            else setAddressZip('');
                                                             if (studio.addressPref) setAddressPref(studio.addressPref);
+                                                            else setAddressPref('');
                                                             if (studio.addressCity) setAddressCity(studio.addressCity);
+                                                            else setAddressCity('');
                                                             if (studio.address) setAddress(studio.address);
+                                                            else setAddress('');
+                                                            setLocationUrl('');
                                                             setShowLocationDialog(false);
 
                                                             // 座標取得 (スタジオに登録があれば優先)
@@ -2245,9 +2257,15 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                                     setSelectedLocationType(loc.type as 'outdoor' | 'indoor' | 'other');
                                                                     setIsStudioMode(false);
                                                                     if (loc.addressZip) setAddressZip(loc.addressZip);
+                                                                    else setAddressZip('');
                                                                     if (loc.addressPref) setAddressPref(loc.addressPref);
+                                                                    else setAddressPref('');
                                                                     if (loc.addressCity) setAddressCity(loc.addressCity);
+                                                                    else setAddressCity('');
                                                                     if (loc.address) setAddress(loc.address);
+                                                                    else setAddress('');
+                                                                    if (loc.url) setLocationUrl(loc.url);
+                                                                    else setLocationUrl('');
                                                                     setShowLocationDialog(false);
                                                                     if (loc.latitude !== undefined && loc.longitude !== undefined && loc.latitude !== null && loc.longitude !== null) {
                                                                         setLatitude(loc.latitude);
@@ -2346,6 +2364,13 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                             className="w-full p-3 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500"
                                                         />
                                                     </div>
+                                                    <input
+                                                        type="url"
+                                                        value={newLocation.url || ''}
+                                                        onChange={e => setNewLocation({ ...newLocation, url: e.target.value })}
+                                                        placeholder="WEBサイト (任意)"
+                                                        className="w-full p-3 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:ring-2 focus:ring-green-500"
+                                                    />
                                                     <div className="flex gap-2">
                                                         <button
                                                             type="button"
@@ -2367,6 +2392,7 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                                     addressZip: newLocation.addressZip || '',
                                                                     addressPref: newLocation.addressPref || '',
                                                                     addressCity: newLocation.addressCity || '',
+                                                                    url: newLocation.url || '',
                                                                     latitude: newLocation.latitude ?? null,
                                                                     longitude: newLocation.longitude ?? null,
                                                                 }, token);
@@ -2376,9 +2402,15 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                                                     setLocation(newLocation.name);
                                                                     setSelectedLocationType(newLocation.type || 'outdoor');
                                                                     if (newLocation.addressZip) setAddressZip(newLocation.addressZip);
+                                                                    else setAddressZip('');
                                                                     if (newLocation.addressPref) setAddressPref(newLocation.addressPref);
+                                                                    else setAddressPref('');
                                                                     if (newLocation.addressCity) setAddressCity(newLocation.addressCity);
+                                                                    else setAddressCity('');
                                                                     if (newLocation.address) setAddress(newLocation.address);
+                                                                    else setAddress('');
+                                                                    if (newLocation.url) setLocationUrl(newLocation.url);
+                                                                    else setLocationUrl('');
                                                                     if (newLocation.latitude !== undefined && newLocation.longitude !== undefined && newLocation.latitude !== null && newLocation.longitude !== null) {
                                                                         setLatitude(newLocation.latitude);
                                                                         setLongitude(newLocation.longitude);

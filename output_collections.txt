@@ -1,0 +1,612 @@
+--- ALL COLLECTIONS ---
+Collection: ai_memories
+Sample [0HqwlX5d738ZskqOHrPM]: {
+  "title": "写真説明文の文体",
+  "content": "短く余白を残す。主語を多用せず写真が主役のトーン。「〜しました」より「〜の一枚」「〜にて撮影」のような叙情的な短句。過度なハッシュタグ羅列は避ける。被写体への敬意を込め、勝手なネタバレや過激表現は使わない。英語併記は必要な場合のみ。",
+  "category": "writing_style",
+  "priority": 5,
+  "seeded": true,
+  "createdAt": {
+    "_seconds": 1782773325,
+    "_nanoseconds": 646000000
+  },
+  "updatedAt": {
+    "_seconds": 1782773325,
+    "_nanoseconds": 646000000
+  }
+}
+-----------------------
+Collection: announcements
+Sample [pWlWvqPac7ouajW8kHME]: {
+  "content": "Webサイト ポートフォリオを公開しました",
+  "priority": 1,
+  "isActive": true,
+  "createdBy": "daitan10618@icloud.com",
+  "createdAt": "2026-02-12T16:35:50.519Z",
+  "updatedAt": "2026-02-12T16:35:50.519Z"
+}
+-----------------------
+Collection: categories
+Sample [animal]: {
+  "id": "animal",
+  "display": "動物",
+  "order": 5,
+  "coverUrl": "",
+  "name": "動物の写真",
+  "updatedAt": {
+    "_seconds": 1771415839,
+    "_nanoseconds": 961000000
+  }
+}
+-----------------------
+Collection: invitation_codes
+Sample [1voJpePj1oToG5ZE6D7R]: {
+  "code": "FE713940",
+  "isUsed": false,
+  "createdAt": "2026-03-07T05:30:44.421Z"
+}
+-----------------------
+Collection: locations
+Sample [7kjS7cK1Y2aHcOKR93HO]: {
+  "name": "札幌歩行者天国",
+  "address": "〒060-0061\n北海道札幌市中央区\n南1条西2丁目18\n",
+  "latitude": 43.05927,
+  "longitude": 141.35434,
+  "createdAt": {
+    "_seconds": 1783319684,
+    "_nanoseconds": 710000000
+  },
+  "type": "other",
+  "addressPref": "北海道",
+  "note": "サツコス限定で設営される撮影スポット",
+  "addressZip": "060-0061",
+  "addressCity": "札幌市中央区南1条西2丁目18",
+  "updatedAt": {
+    "_seconds": 1783557419,
+    "_nanoseconds": 213000000
+  }
+}
+-----------------------
+Collection: news
+Sample [8tc44e6UAK7lTwNC7zOH]: {
+  "text": "サイト開設 (2026/02/12 02:00:20)",
+  "createdAt": "2026-02-11T17:00:26.130Z"
+}
+-----------------------
+Collection: photo_stats
+Sample [0ZPh0M3YG3nQCmKQxti1]: {
+  "createdAt": {
+    "_seconds": 1783672053,
+    "_nanoseconds": 310000000
+  },
+  "views": 1,
+  "likes": 0,
+  "updatedAt": {
+    "_seconds": 1783672053,
+    "_nanoseconds": 310000000
+  }
+}
+-----------------------
+Collection: photos
+Sample [0ZPh0M3YG3nQCmKQxti1]: {
+  "uploaderId": "wDY7kU3rMjainKBCo4k9obbCUnh2",
+  "modelId": null,
+  "url": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1783670306/portfolio/cwemfehktjse0kwfsrkx.jpg",
+  "publicId": "portfolio/cwemfehktjse0kwfsrkx",
+  "addressZip": null,
+  "addressPref": null,
+  "addressCity": null,
+  "latitude": null,
+  "longitude": null,
+  "displayMode": "title",
+  "focalPoint": {
+    "x": 50,
+    "y": 50
+  },
+  "shareOgImageUrl": null,
+  "tags": [],
+  "shootLocationType": "location",
+  "shootLocationId": null,
+  "createdAt": {
+    "_seconds": 1783670772,
+    "_nanoseconds": 394000000
+  },
+  "address": "",
+  "seriesName": "",
+  "shotAt": {
+    "_seconds": 1713830400,
+    "_nanoseconds": 0
+  },
+  "exifRequest": false,
+  "snsUrl": "",
+  "characterName": "",
+  "location": "",
+  "title": "春を告げる草",
+  "event": "",
+  "exif": {
+    "Make": "SONY",
+    "Model": "ILCE-7RM5",
+    "ExposureTime": "1/50",
+    "FNumber": "2.8",
+    "ISO": 2000,
+    "DateTimeOriginal": "2024-04-23T09:38:10.000Z",
+    "FocalLength": 35,
+    "LensModel": "MC W.Rokkor HG 35mm F2.8"
+  },
+  "subjectName": "",
+  "categoryId": "landscape",
+  "updatedAt": {
+    "_seconds": 1783674020,
+    "_nanoseconds": 186000000
+  }
+}
+-----------------------
+Collection: settings
+Sample [profile]: {
+  "role": "",
+  "name": "",
+  "bio": "北海道を拠点に、人と世界のあいだに生まれる“かすかな気配”を写し取るフォトグラファー。\n\n被写体がキャラクターであれ、日常の断片であれ、\nそこに流れる温度・呼吸・沈黙を丁寧に拾い上げ、\n写真という形に変換することを探求している。\n\nDaitanの写真には、派手な演出や誇張はほとんどない。\n光の柔らかさ、色の静けさ、余白の深さ。\nそのすべてが、被写体の“存在そのもの”を際立たせるためにある。\n\nコスプレ撮影では、キャラクターを再現するのではなく、\n**「その世界に生きている人間の気配」**を写すことを目的とする。\n日常のスナップでは、誰も気に留めない景色の中に潜む\n小さな物語の断片を見つけ出し、静かに提示する。\n\n写真は、世界を“説明する”ためではなく、\n世界の奥にある感情や余韻をそっと掬い上げるための行為。\nDaitanはそう信じて、今日もシャッターを切り続けている。\n\n---",
+  "location": "北海道　札幌　小樽近郊",
+  "imageUrl": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1771071950/pka8ayqeh8o7o4bl51ja.png",
+  "locationEn": "Hokkaido, Sapporo",
+  "roleEn": "Photographer",
+  "bioEn": "Based in Hokkaido, Daitan is a photographer who captures the subtle presence that emerges between people and the world around them.\n\nWhether the subject is a character or a fragment of everyday life,\nDaitan seeks to translate the temperature, breath, and quiet that flow through the moment into the form of a photograph.\n\nThere is little exaggeration or spectacle in Daitan’s work.\nSoft light, muted tones, and generous space—\neach element exists to reveal the subject’s very presence.\n\nIn cosplay photography, the goal is not to recreate a character,\nbut to capture “the trace of a person living within that world.”\nIn everyday snapshots, Daitan uncovers small, overlooked stories hidden in ordinary scenery and presents them with quiet clarity.\n\nPhotography, for Daitan, is not a tool to explain the world,\nbut a way to gently scoop up the emotions and afterglow that lie beneath its surface.\nWith that belief, Daitan continues to press the shutter.\n\n---",
+  "bioJa": "北海道を拠点に、人と世界のあいだに生まれる“かすかな気配”を写し取るフォトグラファー。\n\n被写体がキャラクターであれ、日常の断片であれ、 そこに流れる温度・呼吸・沈黙を丁寧に拾い上げ、 写真という形に変換することを探求している。\n\nDaitanの写真には、派手な演出や誇張はほとんどない。 光の柔らかさ、色の静けさ、余白の深さ。 そのすべてが、被写体の“存在そのもの”を際立たせるためにある。\n\nコスプレ撮影では、キャラクターを再現するのではなく、 **「その世界に生きている人間の気配」**を写すことを目的とする。 日常のスナップでは、誰も気に留めない景色の中に潜む 小さな物語の断片を見つけ出し、静かに提示する。\n\n写真は、世界を“説明する”ためではなく、 世界の奥にある感情や余韻をそっと掬い上げるための行為。 Daitanはそう信じて、今日もシャッターを切り続けている。",
+  "xUrl": "https://x.com/photg_d3150no_1?s=21",
+  "instagramUrl": "https://www.instagram.com/photog_daitan3150_no.1?igsh=MTBydXYwb2FjNjZhNA%3D%3D&utm_source=qr",
+  "gear": [
+    "Main System｜メイン機材",
+    "",
+    "• Sony α7R V（ILCE‑7RM5）",
+    "• SIGMA 24-70mm F2.8 DG DN II | Art（2nd Gen）",
+    "",
+    "",
+    "Sub System｜サブ機材",
+    "",
+    "• Sony α7（ILCE‑7）",
+    "• Sony α6400（ILCE‑6400）",
+    "• FUJIFILM X-HF1（X-HALF）",
+    "• Kodak FZ55",
+    "",
+    "",
+    "---",
+    "",
+    "Lenses｜レンズ",
+    "",
+    "AF Lenses（Sony E-mount）",
+    "",
+    "• Sony FE 85mm F1.8",
+    "• Sony FE 70-200mm F2.8 GM OSS II（SEL70200GM2）",
+    "• Sony FE 55mm F1.8 ZA（Sonnar T*）",
+    "• Sony FE 50mm F1.8",
+    "• SIGMA 45mm F2.8 DG DN | Contemporary",
+    "",
+    "",
+    "Old Lenses（オールドレンズ / MF）",
+    "",
+    "• Minolta MC W.ROKKOR-HG 35mm F2.8",
+    "• Minolta MC ROKKOR-PF 55mm F1.7",
+    "• Konishiroku HEXANON 52mm F1.8",
+    "• ASAHI PENTAX Super Takumar 50mm F1.4",
+    "• SIGMA FISHEYE 16mm F2.8",
+    "",
+    "",
+    "Manual Lenses（現行MF）",
+    "",
+    "• TTArtisan 50mm F2.0",
+    "voigtlander NOKTON classic 40mm F1.4 SC",
+    "",
+    "",
+    "---",
+    "Adapters｜アダプター",
+    "",
+    "• TECHART LM-EA9（AFアダプター）",
+    "• TTArtisan M-E 6bit II",
+    "",
+    "",
+    "",
+    "---",
+    ""
+  ],
+  "locationJa": "北海道　札幌,小樽近郊",
+  "roleJa": "フォトグラファー",
+  "subGear": [
+    "• Sony α7（ILCE‑7）",
+    "• Sony α6400（ILCE‑6400）",
+    "• FUJIFILM X-HF1（X-HALF）",
+    "• Kodak FZ55",
+    "･ レトロデジ90"
+  ],
+  "mainGear": [
+    "• Sony α7R V（ILCE‑7RM5）",
+    "• SIGMA 24-70mm F2.8 DG DN II | Art 024（2nd Gen）"
+  ],
+  "otherGear": [
+    "Adapters｜アダプター",
+    "　",
+    "＜AFアダプター＞",
+    "• TECHART LM-EA9(ライカMマウント⇨ソニーEマウント)",
+    "• TELECONVERTER 2.0X（ソニーEマウント）",
+    "",
+    "＜MFアダプター＞",
+    "• TTArtisan M-E 6bit II (ライカMマウント⇨ソニーEマウント)"
+  ],
+  "lenses": [
+    "AF Lenses（Sony E-mount）",
+    "",
+    "• Sony FE 85mm F1.8",
+    "• Sony FE 70-200mm F2.8 GM OSS II（SEL70200GM2）",
+    "• Sony FE 55mm F1.8 ZA（Sonnar T*）",
+    "• Sony FE 50mm F2.5G",
+    "• SIGMA 45mm F2.8 DG DN | Contemporary",
+    "",
+    "",
+    "---",
+    "",
+    "Old Lenses（オールドレンズ / MF）",
+    "",
+    "• Minolta MC W.ROKKOR-HG 35mm F2.8",
+    "• Minolta MC ROKKOR-PF 55mm F1.7",
+    "• Konishiroku HEXANON 52mm F1.8",
+    "• ASAHI PENTAX Super Takumar 50mm F1.4",
+    "• SIGMA FISHEYE 16mm F2.8",
+    "",
+    "",
+    "---",
+    "",
+    "Manual Lenses（現行MF）",
+    "",
+    "• TTArtisan 50mm F2.0",
+    "･ Voigtlander Nokton 40mm f1.4 sc",
+    "･ 7Artisans 10mm F2.8 II Fish-eye ED ",
+    "",
+    "---",
+    ""
+  ],
+  "lensDetails": [
+    {
+      "name": "SMC TAKUMAR 50mm F1.4",
+      "imageUrl": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1783681549/ygfifya6gxx1ikljx5cn.jpg",
+      "manufacturer": "旭光学工業（現 PENTAX）",
+      "focalLength": "50mm",
+      "aperture": "F1.4",
+      "mount": "M42マウント",
+      "releaseYear": "1971年",
+      "lensConstruction": "6郡7枚 ",
+      "minimumFocusDistance": "0.45m",
+      "filterDiameter": "49mm",
+      "comment": "アトムレンズが使用されてる為 かなり描写が綺麗で、コントラスト高め！！ トリウムガラス使用されてる為 若干の放射線物質を発してる為扱いには注意が必要なレンズです。",
+      "description": "",
+      "specs": [
+        "メーカー: 旭光学工業（現 PENTAX）",
+        "焦点距離: 50mm",
+        "開放F値: F1.4",
+        "マウント: M42マウント",
+        "発売年: 1971年",
+        "レンズ構成: 6郡7枚 ",
+        "最短撮影距離: 0.45m",
+        "フィルター径: 49mm",
+        "コメント: アトムレンズが使用されてる為 かなり描写が綺麗で、コントラスト高め！！ トリウムガラス使用されてる為 若干の放射線物質を発してる為扱いには注意が必要なレンズです。"
+      ],
+      "id": "SMC TAKUMAR 50mm F1.4-1783681481971"
+    },
+    {
+      "name": "MC W.Rokkor HG 35mm F2.8",
+      "imageUrl": "",
+      "manufacturer": "Minolta",
+      "focalLength": "35mm",
+      "aperture": "F2.8",
+      "mount": "ミノルタSRマウント",
+      "releaseYear": "1966年",
+      "lensConstruction": "6郡7枚",
+      "minimumFocusDistance": "0.4 m",
+      "filterDiameter": "φ52 mm",
+      "comment": "",
+      "description": "",
+      "specs": [
+        "メーカー: Minolta",
+        "焦点距離: 35mm",
+        "開放F値: F2.8",
+        "マウント: ミノルタSRマウント",
+        "発売年: 1966年",
+        "レンズ構成: 6郡7枚",
+        "最短撮影距離: 0.4 m",
+        "フィルター径: φ52 mm"
+      ],
+      "id": "MC W.Rokkor HG 35mm F2.8-1783680240689"
+    },
+    {
+      "name": "18-35mm F1.8 DC HSM | Art 013",
+      "imageUrl": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1783679973/et1yoc51yh17zr4vep0e.png",
+      "manufacturer": "SIGMA",
+      "focalLength": "27mm-52.5mm（35mm換算）",
+      "aperture": "F1.8",
+      "mount": "EFマウント",
+      "releaseYear": "2013年",
+      "lensConstruction": "12群17枚",
+      "minimumFocusDistance": "28cm",
+      "filterDiameter": "φ72mm",
+      "comment": "",
+      "description": "",
+      "specs": [
+        "メーカー: SIGMA",
+        "焦点距離: 27mm-52.5mm（35mm換算）",
+        "開放F値: F1.8",
+        "マウント: EFマウント",
+        "発売年: 2013年",
+        "レンズ構成: 12群17枚",
+        "最短撮影距離: 28cm",
+        "フィルター径: φ72mm"
+      ],
+      "id": "18-35mm F1.8 DC HSM | Art 013-1783679922321"
+    },
+    {
+      "name": "FE 70-200mm F2.8 GM OSS II + 2X Teleconverter",
+      "imageUrl": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1783500357/mxdifdanxtjnclzbpl3l.webp",
+      "manufacturer": "Sony × viltrox",
+      "focalLength": "140mm-400mm",
+      "aperture": "F5.6",
+      "mount": "Eマウント",
+      "releaseYear": "2026年",
+      "lensConstruction": "14群17枚 x 5郡9枚",
+      "minimumFocusDistance": "0.4(W)-0.82(T)",
+      "filterDiameter": "φ77mm",
+      "comment": "2倍テレコンバーター装着により、140-400mm F5.6の超望遠域をカバー。高い解像力と高速・高精度AFを維持し、野鳥やスポーツなど遠距離撮影で優れた性能を発揮します。",
+      "description": "",
+      "specs": [
+        "メーカー: Sony × viltrox",
+        "焦点距離: 140mm-400mm",
+        "開放F値: F5.6",
+        "マウント: Eマウント",
+        "発売年: 2026年",
+        "レンズ構成: 14群17枚 x 5郡9枚",
+        "最短撮影距離: 0.4(W)-0.82(T)",
+        "フィルター径: φ77mm",
+        "コメント: 2倍テレコンバーター装着により、140-400mm F5.6の超望遠域をカバー。高い解像力と高速・高精度AFを維持し、野鳥やスポーツなど遠距離撮影で優れた性能を発揮します。"
+      ],
+      "id": "FE 70-200mm F2.8 GM OSS II + 2X Teleconverter-1783499571980"
+    },
+    {
+      "name": "TTArtisan 50mm f2",
+      "imageUrl": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1783497518/vfp1hh4pafbyvoomqsxx.jpg",
+      "manufacturer": "銘匠光学",
+      "focalLength": "50mm",
+      "aperture": "F2",
+      "mount": "ソニーEマウント",
+      "releaseYear": "2022年",
+      "lensConstruction": "５群６枚(高屈折レンズ２枚）",
+      "minimumFocusDistance": "0.5m",
+      "filterDiameter": "φ43mm",
+      "comment": "クラシカルな描写と柔らかなボケが楽しめる、小型・軽量のマニュアル単焦点レンズ。 初めてMFレンズに挑戦するならかなりコストパフォーマンスが良いおすすめなレンズです。",
+      "description": "",
+      "specs": [
+        "メーカー: 銘匠光学",
+        "焦点距離: 50mm",
+        "開放F値: F2",
+        "マウント: ソニーEマウント",
+        "発売年: 2022年",
+        "レンズ構成: ５群６枚(高屈折レンズ２枚）",
+        "最短撮影距離: 0.5m",
+        "フィルター径: φ43mm",
+        "コメント: クラシカルな描写と柔らかなボケが楽しめる、小型・軽量のマニュアル単焦点レンズ。 初めてMFレンズに挑戦するならかなりコストパフォーマンスが良いおすすめなレンズです。"
+      ],
+      "id": "TTArtisan 50mm f2-1783497525441"
+    },
+    {
+      "name": "FE 85mm F1.8",
+      "imageUrl": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1783497415/c1ysq4wgvhanmtcuvi8v.jpg",
+      "manufacturer": "Sony",
+      "focalLength": "85mm",
+      "aperture": "F1.8",
+      "mount": "ソニー Eマウント",
+      "releaseYear": "2017年",
+      "lensConstruction": "8群9枚　ED（特殊低分散ガラス1枚含む）",
+      "minimumFocusDistance": "0.8m",
+      "filterDiameter": "φ67mm",
+      "comment": "高い解像力と自然で美しいボケ味を備えた、軽量・コンパクトな中望遠単焦点レンズ。",
+      "description": "",
+      "specs": [
+        "メーカー: Sony",
+        "焦点距離: 85mm",
+        "開放F値: F1.8",
+        "マウント: ソニー Eマウント",
+        "発売年: 2017年",
+        "レンズ構成: 8群9枚　ED（特殊低分散ガラス1枚含む）",
+        "最短撮影距離: 0.8m",
+        "フィルター径: φ67mm",
+        "コメント: 高い解像力と自然で美しいボケ味を備えた、軽量・コンパクトな中望遠単焦点レンズ。"
+      ],
+      "id": "Sony FE 85mm F1.8-1783497417081"
+    },
+    {
+      "name": "FE 55mm F1.8 ZA（Sonnar T*）",
+      "imageUrl": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1783497377/zjhqwbb7jnoqier2xyr7.jpg",
+      "manufacturer": "Sony",
+      "focalLength": "55mm",
+      "aperture": "F1.8",
+      "mount": "ソニー Eマウント",
+      "releaseYear": "2013年",
+      "lensConstruction": "5群7枚　非球面レンズ3枚（うち2枚は両面非球面）",
+      "minimumFocusDistance": "0.5m",
+      "filterDiameter": "φ49mm",
+      "comment": "コンパクトなボディに、ツァイスならではの高い解像力と透明感のある描写を凝縮した標準単焦点レンズ。",
+      "description": "",
+      "specs": [
+        "メーカー: Sony",
+        "焦点距離: 55mm",
+        "開放F値: F1.8",
+        "マウント: ソニー Eマウント",
+        "発売年: 2013年",
+        "レンズ構成: 5群7枚　非球面レンズ3枚（うち2枚は両面非球面）",
+        "最短撮影距離: 0.5m",
+        "フィルター径: φ49mm",
+        "コメント: コンパクトなボディに、ツァイスならではの高い解像力と透明感のある描写を凝縮した標準単焦点レンズ。"
+      ],
+      "id": "Sony FE 55mm F1.8 ZA（Sonnar T*）-1783497381941"
+    },
+    {
+      "name": "24-70mm F2.8 DG DN II | Art 024",
+      "imageUrl": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1783497334/gwgejev43myrp0n7evjz.png",
+      "manufacturer": "SIGMA",
+      "focalLength": "24mm-70mm",
+      "aperture": "F2.8",
+      "mount": "ソニー Eマウント",
+      "releaseYear": "2024年",
+      "lensConstruction": "15群19枚（FLDガラス6枚、SLDガラス2枚、非球面レンズ5枚）",
+      "minimumFocusDistance": "17(W)-34(T)cm",
+      "filterDiameter": "φ82mm",
+      "comment": "圧倒的な解像力と美しいボケ、高速AFを兼ね備え、小型・軽量化も実現した標準ズームレンズ。\nArtシリーズならではの、絵のような描写とシャープさ、コントラストの高さが特徴的です。",
+      "description": "",
+      "specs": [
+        "メーカー: SIGMA",
+        "焦点距離: 24mm-70mm",
+        "開放F値: F2.8",
+        "マウント: ソニー Eマウント",
+        "発売年: 2024年",
+        "レンズ構成: 15群19枚（FLDガラス6枚、SLDガラス2枚、非球面レンズ5枚）",
+        "最短撮影距離: 17(W)-34(T)cm",
+        "フィルター径: φ82mm",
+        "コメント: 圧倒的な解像力と美しいボケ、高速AFを兼ね備え、小型・軽量化も実現した標準ズームレンズ。\nArtシリーズならではの、絵のような描写とシャープさ、コントラストの高さが特徴的です。"
+      ],
+      "id": "SIGMA　24-70mm F2.8 DG DN II | Art 024-1783497338903"
+    },
+    {
+      "name": "FE 70-200mm F2.8 GM OSS II",
+      "imageUrl": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1783497227/m71ootnewvdvampkbowi.jpg",
+      "manufacturer": "Sony",
+      "focalLength": "70mm-200mm",
+      "aperture": "F2.8",
+      "mount": "Eマウント",
+      "releaseYear": "2021年",
+      "lensConstruction": "14群17枚",
+      "minimumFocusDistance": "0.4(W)-0.82(T)",
+      "filterDiameter": "φ77",
+      "comment": "G Masterシリーズの高い解像力と美しいボケ、純正の特権の高速AFを兼ね備えた望遠ズームレンズ。\n1本で、ポートレート〜ちょっとしたスポーツ撮影が可能",
+      "description": "",
+      "specs": [
+        "メーカー: Sony",
+        "焦点距離: 70mm-200mm",
+        "開放F値: F2.8",
+        "マウント: Eマウント",
+        "発売年: 2021年",
+        "レンズ構成: 14群17枚",
+        "最短撮影距離: 0.4(W)-0.82(T)",
+        "フィルター径: φ77",
+        "コメント: G Masterシリーズの高い解像力と美しいボケ、純正の特権の高速AFを兼ね備えた望遠ズームレンズ。\n1本で、ポートレート〜ちょっとしたスポーツ撮影が可能"
+      ],
+      "id": "FE 70-200mm F2.8 GM OSS II-1783497061598"
+    },
+    {
+      "name": "45mm F2.8 DG DN | Contemporary 019",
+      "imageUrl": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1783510674/ekv05vcydabdczozxnml.png",
+      "manufacturer": "SIGMA",
+      "focalLength": "45mm",
+      "aperture": "F2.8",
+      "mount": "Eマウント",
+      "releaseYear": "2019年",
+      "lensConstruction": "7群8枚（非球面レンズ2枚含む）",
+      "minimumFocusDistance": "24cm",
+      "filterDiameter": "φ55mm",
+      "comment": "コンパクトながらSIGMAならではの高い描写力と、\n柔らかく美しいボケ味を両立した標準単焦点レンズ。",
+      "description": "",
+      "specs": [
+        "メーカー: SIGMA",
+        "焦点距離: 45mm",
+        "開放F値: F2.8",
+        "マウント: Eマウント",
+        "発売年: 2019年",
+        "レンズ構成: 7群8枚（非球面レンズ2枚含む）",
+        "最短撮影距離: 24cm",
+        "フィルター径: φ55mm",
+        "コメント: コンパクトながらSIGMAならではの高い描写力と、\n柔らかく美しいボケ味を両立した標準単焦点レンズ。"
+      ],
+      "id": "45mm F2.8 DG DN | Contemporary 019-1783494787643"
+    },
+    {
+      "name": "NOKTON classic 40mm f1.4 SC",
+      "imageUrl": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1783496698/yizzznpdjhz8ijcsqjdc.jpg",
+      "manufacturer": "Voigtländer",
+      "focalLength": "40mm",
+      "aperture": "F1.4",
+      "mount": "VMマウント",
+      "releaseYear": "2013年",
+      "lensConstruction": "6群7枚",
+      "minimumFocusDistance": "0.7m",
+      "filterDiameter": "φ43mm",
+      "comment": "非常にコンパクトで、美しいボケ味と自然な立体感が魅力の標準レンズ。\n\n開放からシャープで、ポートレートからスナップまで幅広く活躍します。",
+      "description": "非常にコンパクトで、美しいボケ味と自然な立体感が魅力の標準レンズ。\n\n開放からシャープで、ポートレートからスナップまで幅広く活躍します。",
+      "specs": [
+        "メーカー: Voigtländer",
+        "焦点距離: 40mm",
+        "開放F値: F1.4",
+        "マウント: VMマウント",
+        "発売年: 2013年",
+        "レンズ構成: 6群7枚",
+        "最短撮影距離: 0.7m",
+        "フィルター径: φ43mm",
+        "コメント: 非常にコンパクトで、美しいボケ味と自然な立体感が魅力の標準レンズ。\n\n開放からシャープで、ポートレートからスナップまで幅広く活躍します。"
+      ],
+      "id": "Voigtlander NOKTON classic 40mm f1.4 SC-1783482589122"
+    }
+  ],
+  "updatedAt": "2026-07-10T11:05:54.563Z"
+}
+-----------------------
+Collection: studios
+Sample [0G41WoOzHVO0fnvSgy3q]: {
+  "name": "Studio sheata",
+  "addressZip": "060-0063",
+  "addressPref": "北海道",
+  "address": "",
+  "url": "https://www.cosp.studio-sheata.com/",
+  "createdAt": {
+    "_seconds": 1773660814,
+    "_nanoseconds": 287000000
+  },
+  "addressCity": "札幌市中央区南三条西9丁目999-7",
+  "latitude": 43.05519,
+  "longitude": 141.34383,
+  "updatedAt": {
+    "_seconds": 1773664932,
+    "_nanoseconds": 314000000
+  }
+}
+-----------------------
+Collection: subjects
+Sample [3XgLJUgaZcI1y7duG0MY]: {
+  "name": "めゑこぶ",
+  "realName": "",
+  "birthday": "2000-09-25",
+  "deceasedDate": "",
+  "snsUrl": "https://www.instagram.com/______villain_00?igsh=bHF5Z21hMjBmcHdt",
+  "notes": "",
+  "createdAt": {
+    "_seconds": 1781242077,
+    "_nanoseconds": 773000000
+  },
+  "birthDay": "25",
+  "birthMonth": "09",
+  "deceasedMonth": "",
+  "birthYear": "2000",
+  "approximateAge": "",
+  "deceasedYear": "",
+  "deceasedDay": "",
+  "showBirthYear": true,
+  "showAge": true,
+  "showRealName": false,
+  "ageDisplayMode": "formal",
+  "updatedAt": {
+    "_seconds": 1783510767,
+    "_nanoseconds": 331000000
+  }
+}
+-----------------------
+Collection: users
+Sample [daitan10618@icloud.com]: {
+  "role": "admin",
+  "email": "daitan10618@icloud.com",
+  "createdAt": "2026-02-11T14:22:00.356Z",
+  "photoURL": "https://res.cloudinary.com/ds4prfv5z/image/upload/v1771071950/pka8ayqeh8o7o4bl51ja.png",
+  "displayName": "DAITAN"
+}
+-----------------------

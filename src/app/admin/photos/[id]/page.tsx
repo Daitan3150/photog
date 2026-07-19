@@ -19,6 +19,7 @@ import { formatShutterSpeed, validateShutterSpeed, STANDARD_APERTURES, getMinApe
 import SmartDatePicker from '@/components/admin/SmartDatePicker';
 import LeafletMap from '@/components/common/LeafletMap';
 import { motion, AnimatePresence } from 'framer-motion';
+import { buildFullAddress } from '@/lib/utils/address';
 
 // ✅ 署名取得
 const fetchSignature = async (paramsToSign: Record<string, any>, token: string) => {
@@ -82,6 +83,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         characterName: '',
         location: '',
         address: '', // [NEW] Formal address
+        locationUrl: '',
         shotAt: '',
         snsUrl: '',
         categoryId: '',
@@ -128,7 +130,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
     const [showNewStudioForm, setShowNewStudioForm] = useState(false);
     const [showNewLocationForm, setShowNewLocationForm] = useState(false);
     const [newStudio, setNewStudio] = useState({ name: '', url: '', addressZip: '', addressPref: '', addressCity: '', latitude: null as number | null, longitude: null as number | null, coordsInput: '' });
-    const [newLocation, setNewLocation] = useState({ name: '', type: 'outdoor' as 'outdoor' | 'indoor' | 'other', address: '', addressZip: '', addressPref: '', addressCity: '', latitude: null as number | null, longitude: null as number | null });
+    const [newLocation, setNewLocation] = useState({ name: '', type: 'outdoor' as 'outdoor' | 'indoor' | 'other', address: '', addressZip: '', addressPref: '', addressCity: '', url: '', latitude: null as number | null, longitude: null as number | null });
 
     // ✅ 新機能: 項目表示制御
     const [activeFields, setActiveFields] = useState({
@@ -211,6 +213,8 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 seriesName: data.seriesName || '',
                 characterName: data.characterName || '',
                 location: data.location || '',
+                address: data.address || '',
+                locationUrl: (data as any).locationUrl || '',
                 shotAt: data.shotAt ? data.shotAt.split('T')[0] : '',
                 snsUrl: data.snsUrl || '',
                 categoryId: data.categoryId || 'Works',
@@ -229,7 +233,6 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 shareOgImageUrl: data.shareOgImageUrl || '',
                 latitude: data.latitude || null,
                 longitude: data.longitude || null,
-                address: data.address || '',
                 coordsInput: (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : '',
                         addressZip: (data as any).addressZip || '',
                 addressPref: (data as any).addressPref || '',
@@ -458,7 +461,12 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         }
 
         // ✅ 住所の結合
-        const fullAddress = formData.address || [formData.addressZip, formData.addressPref, formData.addressCity].filter(Boolean).join(' ');
+        const fullAddress = buildFullAddress({
+            address: formData.address,
+            addressZip: formData.addressZip,
+            addressPref: formData.addressPref,
+            addressCity: formData.addressCity,
+        });
 
         setSaving(true);
         const token = await user.getIdToken();
@@ -1996,7 +2004,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                                                     setSelectedLocationType(newLocation.type || 'outdoor');
                                                                     setShowLocationDialog(false);
                                                                     setShowNewLocationForm(false);
-                                                                    setNewLocation({ name: '', type: 'outdoor', address: '', addressZip: '', addressPref: '', addressCity: '', latitude: null, longitude: null });
+                                                                    setNewLocation({ name: '', type: 'outdoor', address: '', addressZip: '', addressPref: '', addressCity: '', url: '', latitude: null, longitude: null });
                                                                 } else {
                                                                     alert('ロケーションの保存に失敗しました: ' + result.error);
                                                                 }

@@ -1,39 +1,559 @@
 {
   "node": {
-    "0083197d54883bf9bb9669492cdc07aeb863e1361b": {
+    "00185f304488e8ecdde9dca84b4e6862cd4dbbd155": {
+      "workers": {
+        "app/_not-found/page": {
+          "moduleId": 24942,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/about/page": {
+          "moduleId": 33071,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/ai-lab/page": {
+          "moduleId": 65900,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/blog/[id]/page": {
+          "moduleId": 87574,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/blog/new/page": {
+          "moduleId": 6224,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/blog/page": {
+          "moduleId": 77414,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/help/page": {
+          "moduleId": 88423,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/invite/page": {
+          "moduleId": 69596,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/lenses/page": {
+          "moduleId": 48600,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/locations/page": {
+          "moduleId": 603,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/login/page": {
+          "moduleId": 54336,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/page": {
+          "moduleId": 13920,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/photos/page": {
+          "moduleId": 431,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/profile/page": {
+          "moduleId": 22551,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/requests/page": {
+          "moduleId": 45563,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/reset-password/page": {
+          "moduleId": 62263,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/settings/covers/page": {
+          "moduleId": 26244,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/settings/page": {
+          "moduleId": 75719,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/subjects/page": {
+          "moduleId": 83259,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/users/page": {
+          "moduleId": 12163,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/contact/page": {
+          "moduleId": 3651,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/dashboard/page": {
+          "moduleId": 30362,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/dashboard/photos/[id]/page": {
+          "moduleId": 65889,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/dashboard/photos/new/page": {
+          "moduleId": 72774,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/dashboard/photos/page": {
+          "moduleId": 84531,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/invite/claim/page": {
+          "moduleId": 25107,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/register/form/page": {
+          "moduleId": 57134,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/register/page": {
+          "moduleId": 72626,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/register/terms/page": {
+          "moduleId": 65009,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/search/page": {
+          "moduleId": 28367,
+          "async": false,
+          "exportedName": "getSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/_not-found/page": "rsc",
+        "app/about/page": "rsc",
+        "app/admin/ai-lab/page": "rsc",
+        "app/admin/blog/[id]/page": "rsc",
+        "app/admin/blog/new/page": "rsc",
+        "app/admin/blog/page": "rsc",
+        "app/admin/help/page": "rsc",
+        "app/admin/invite/page": "rsc",
+        "app/admin/lenses/page": "rsc",
+        "app/admin/locations/page": "rsc",
+        "app/admin/login/page": "rsc",
+        "app/admin/page": "action-browser",
+        "app/admin/photos/[id]/page": "rsc",
+        "app/admin/photos/new/page": "rsc",
+        "app/admin/photos/page": "rsc",
+        "app/admin/profile/page": "rsc",
+        "app/admin/requests/page": "rsc",
+        "app/admin/reset-password/page": "rsc",
+        "app/admin/settings/covers/page": "action-browser",
+        "app/admin/settings/page": "rsc",
+        "app/admin/studios/page": "rsc",
+        "app/admin/subjects/page": "rsc",
+        "app/admin/users/page": "rsc",
+        "app/contact/page": "rsc",
+        "app/dashboard/page": "rsc",
+        "app/dashboard/photos/[id]/page": "rsc",
+        "app/dashboard/photos/new/page": "rsc",
+        "app/dashboard/photos/page": "rsc",
+        "app/invite/claim/page": "rsc",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc",
+        "app/register/form/page": "rsc",
+        "app/register/page": "rsc",
+        "app/register/terms/page": "rsc",
+        "app/search/page": "rsc"
+      },
+      "filename": "src/lib/actions/settings.ts",
+      "exportedName": "getSiteSettings"
+    },
+    "409a8eb2be63a3e81ebf5733d150c8df63477b62cf": {
+      "workers": {
+        "app/_not-found/page": {
+          "moduleId": 24942,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/about/page": {
+          "moduleId": 33071,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/ai-lab/page": {
+          "moduleId": 65900,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/blog/[id]/page": {
+          "moduleId": 87574,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/blog/new/page": {
+          "moduleId": 6224,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/blog/page": {
+          "moduleId": 77414,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/help/page": {
+          "moduleId": 88423,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/invite/page": {
+          "moduleId": 69596,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/lenses/page": {
+          "moduleId": 48600,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/locations/page": {
+          "moduleId": 603,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/login/page": {
+          "moduleId": 54336,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/page": {
+          "moduleId": 13920,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/photos/page": {
+          "moduleId": 431,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/profile/page": {
+          "moduleId": 22551,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/requests/page": {
+          "moduleId": 45563,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/reset-password/page": {
+          "moduleId": 62263,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/settings/covers/page": {
+          "moduleId": 26244,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/settings/page": {
+          "moduleId": 75719,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/subjects/page": {
+          "moduleId": 83259,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/admin/users/page": {
+          "moduleId": 12163,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/contact/page": {
+          "moduleId": 3651,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/dashboard/page": {
+          "moduleId": 30362,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/dashboard/photos/[id]/page": {
+          "moduleId": 65889,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/dashboard/photos/new/page": {
+          "moduleId": 72774,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/dashboard/photos/page": {
+          "moduleId": 84531,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/invite/claim/page": {
+          "moduleId": 25107,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/register/form/page": {
+          "moduleId": 57134,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/register/page": {
+          "moduleId": 72626,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/register/terms/page": {
+          "moduleId": 65009,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        },
+        "app/search/page": {
+          "moduleId": 28367,
+          "async": false,
+          "exportedName": "updateSiteSettings",
+          "filename": "src/lib/actions/settings.ts"
+        }
+      },
+      "layer": {
+        "app/_not-found/page": "rsc",
+        "app/about/page": "rsc",
+        "app/admin/ai-lab/page": "rsc",
+        "app/admin/blog/[id]/page": "rsc",
+        "app/admin/blog/new/page": "rsc",
+        "app/admin/blog/page": "rsc",
+        "app/admin/help/page": "rsc",
+        "app/admin/invite/page": "rsc",
+        "app/admin/lenses/page": "rsc",
+        "app/admin/locations/page": "rsc",
+        "app/admin/login/page": "rsc",
+        "app/admin/page": "rsc",
+        "app/admin/photos/[id]/page": "rsc",
+        "app/admin/photos/new/page": "rsc",
+        "app/admin/photos/page": "rsc",
+        "app/admin/profile/page": "rsc",
+        "app/admin/requests/page": "rsc",
+        "app/admin/reset-password/page": "rsc",
+        "app/admin/settings/covers/page": "action-browser",
+        "app/admin/settings/page": "rsc",
+        "app/admin/studios/page": "rsc",
+        "app/admin/subjects/page": "rsc",
+        "app/admin/users/page": "rsc",
+        "app/contact/page": "rsc",
+        "app/dashboard/page": "rsc",
+        "app/dashboard/photos/[id]/page": "rsc",
+        "app/dashboard/photos/new/page": "rsc",
+        "app/dashboard/photos/page": "rsc",
+        "app/invite/claim/page": "rsc",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc",
+        "app/register/form/page": "rsc",
+        "app/register/page": "rsc",
+        "app/register/terms/page": "rsc",
+        "app/search/page": "rsc"
+      },
+      "filename": "src/lib/actions/settings.ts",
+      "exportedName": "updateSiteSettings"
+    },
+    "00db40d3a812af9875474c2242bb3db64b8b439fdf": {
       "workers": {
         "app/admin/photos/[id]/page": {
-          "moduleId": 32862,
+          "moduleId": 75275,
           "async": false,
           "exportedName": "getExifSuggestions",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/admin/photos/new/page": {
-          "moduleId": 10752,
+          "moduleId": 85654,
           "async": false,
           "exportedName": "getExifSuggestions",
           "filename": "src/lib/actions/photos.ts"
         },
-        "app/dashboard/photos/[id]/page": {
-          "moduleId": 39675,
+        "app/admin/studios/page": {
+          "moduleId": 34005,
           "async": false,
           "exportedName": "getExifSuggestions",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/page": {
-          "moduleId": 98044,
+          "moduleId": 46759,
           "async": false,
           "exportedName": "getExifSuggestions",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/photo/[id]/page": {
-          "moduleId": 56414,
+          "moduleId": 48791,
           "async": false,
           "exportedName": "getExifSuggestions",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/portfolio/page": {
-          "moduleId": 30618,
+          "moduleId": 44327,
           "async": false,
           "exportedName": "getExifSuggestions",
           "filename": "src/lib/actions/photos.ts"
@@ -42,7 +562,7 @@
       "layer": {
         "app/admin/photos/[id]/page": "action-browser",
         "app/admin/photos/new/page": "action-browser",
-        "app/dashboard/photos/[id]/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
         "app/page": "rsc",
         "app/photo/[id]/page": "rsc",
         "app/portfolio/page": "rsc"
@@ -50,57 +570,106 @@
       "filename": "src/lib/actions/photos.ts",
       "exportedName": "getExifSuggestions"
     },
-    "40aedb8a5590a8566929db7265a86529ccaf72f95b": {
+    "403caf7dde3531da17d16f48cc6203689cc63bb6ce": {
       "workers": {
-        "app/page": {
-          "moduleId": 98044,
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
           "async": false,
-          "exportedName": "getPhotoPublic",
+          "exportedName": "searchCoordinatesAction",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "searchCoordinatesAction",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/page": {
+          "moduleId": 431,
+          "async": false,
+          "exportedName": "searchCoordinatesAction",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "searchCoordinatesAction",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "searchCoordinatesAction",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/photo/[id]/page": {
-          "moduleId": 56414,
+          "moduleId": 48791,
           "async": false,
-          "exportedName": "getPhotoPublic",
+          "exportedName": "searchCoordinatesAction",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/portfolio/page": {
-          "moduleId": 30618,
+          "moduleId": 44327,
           "async": false,
-          "exportedName": "getPhotoPublic",
+          "exportedName": "searchCoordinatesAction",
           "filename": "src/lib/actions/photos.ts"
         }
       },
       "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/photos/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
         "app/page": "rsc",
         "app/photo/[id]/page": "rsc",
         "app/portfolio/page": "rsc"
       },
       "filename": "src/lib/actions/photos.ts",
-      "exportedName": "getPhotoPublic"
+      "exportedName": "searchCoordinatesAction"
     },
-    "40b5542aa13980f060e5cfe67b0b021c904e48f427": {
+    "4040b52b87cbd69d33bd18dc595500e66def7118b0": {
       "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "getPublicPhotoById",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "getPublicPhotoById",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "getPublicPhotoById",
+          "filename": "src/lib/actions/photos.ts"
+        },
         "app/page": {
-          "moduleId": 98044,
+          "moduleId": 46759,
           "async": false,
           "exportedName": "getPublicPhotoById",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/photo/[id]/page": {
-          "moduleId": 56414,
+          "moduleId": 48791,
           "async": false,
           "exportedName": "getPublicPhotoById",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/portfolio/page": {
-          "moduleId": 30618,
+          "moduleId": 44327,
           "async": false,
           "exportedName": "getPublicPhotoById",
           "filename": "src/lib/actions/photos.ts"
         }
       },
       "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
         "app/page": "rsc",
         "app/photo/[id]/page": "rsc",
         "app/portfolio/page": "rsc"
@@ -108,57 +677,49 @@
       "filename": "src/lib/actions/photos.ts",
       "exportedName": "getPublicPhotoById"
     },
-    "40c9c10d18c44fb22fb3d9547d21831bae084da4aa": {
+    "4050ff2aa0e49b0432e403d575bbf07b76a4c08a5c": {
       "workers": {
-        "app/page": {
-          "moduleId": 98044,
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
           "async": false,
-          "exportedName": "searchPhotos",
+          "exportedName": "getRecentPhotos",
           "filename": "src/lib/actions/photos.ts"
         },
-        "app/photo/[id]/page": {
-          "moduleId": 56414,
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
           "async": false,
-          "exportedName": "searchPhotos",
+          "exportedName": "getRecentPhotos",
           "filename": "src/lib/actions/photos.ts"
         },
-        "app/portfolio/page": {
-          "moduleId": 30618,
+        "app/admin/studios/page": {
+          "moduleId": 34005,
           "async": false,
-          "exportedName": "searchPhotos",
+          "exportedName": "getRecentPhotos",
           "filename": "src/lib/actions/photos.ts"
-        }
-      },
-      "layer": {
-        "app/page": "rsc",
-        "app/photo/[id]/page": "rsc",
-        "app/portfolio/page": "rsc"
-      },
-      "filename": "src/lib/actions/photos.ts",
-      "exportedName": "searchPhotos"
-    },
-    "40e07dca474e13b7a228bbbd9404962a8a19d58254": {
-      "workers": {
+        },
         "app/page": {
-          "moduleId": 98044,
+          "moduleId": 46759,
           "async": false,
           "exportedName": "getRecentPhotos",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/photo/[id]/page": {
-          "moduleId": 56414,
+          "moduleId": 48791,
           "async": false,
           "exportedName": "getRecentPhotos",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/portfolio/page": {
-          "moduleId": 30618,
+          "moduleId": 44327,
           "async": false,
           "exportedName": "getRecentPhotos",
           "filename": "src/lib/actions/photos.ts"
         }
       },
       "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
         "app/page": "rsc",
         "app/photo/[id]/page": "rsc",
         "app/portfolio/page": "rsc"
@@ -166,69 +727,389 @@
       "filename": "src/lib/actions/photos.ts",
       "exportedName": "getRecentPhotos"
     },
-    "600166f56d8d0f4fdb489443f0b50b888363223d95": {
+    "4093df5dae0fa5d4f49cb45993cb06b52ebb1c6c71": {
       "workers": {
-        "app/page": {
-          "moduleId": 98044,
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
           "async": false,
-          "exportedName": "bulkRequestDeletion",
+          "exportedName": "getPhotoPublic",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "getPhotoPublic",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "getPhotoPublic",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "getPhotoPublic",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/photo/[id]/page": {
-          "moduleId": 56414,
+          "moduleId": 48791,
           "async": false,
-          "exportedName": "bulkRequestDeletion",
+          "exportedName": "getPhotoPublic",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/portfolio/page": {
-          "moduleId": 30618,
+          "moduleId": 44327,
           "async": false,
-          "exportedName": "bulkRequestDeletion",
+          "exportedName": "getPhotoPublic",
           "filename": "src/lib/actions/photos.ts"
         }
       },
       "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
         "app/page": "rsc",
         "app/photo/[id]/page": "rsc",
         "app/portfolio/page": "rsc"
       },
       "filename": "src/lib/actions/photos.ts",
-      "exportedName": "bulkRequestDeletion"
+      "exportedName": "getPhotoPublic"
     },
-    "6011e54447f1543c7d785077274fbe5d228bb2c77c": {
+    "40e48da88b1999957d61f5ebc1630cea6eb9901cf5": {
       "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "getCoordinatesAction",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "getCoordinatesAction",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "getCoordinatesAction",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "getCoordinatesAction",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "getCoordinatesAction",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "getCoordinatesAction",
+          "filename": "src/lib/actions/photos.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/photos.ts",
+      "exportedName": "getCoordinatesAction"
+    },
+    "600cafd55e5fb87b1c4ad91a0643ad111b9e70ac96": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "deletePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "deletePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/page": {
+          "moduleId": 431,
+          "async": false,
+          "exportedName": "deletePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/requests/page": {
+          "moduleId": 45563,
+          "async": false,
+          "exportedName": "deletePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "deletePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "deletePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "deletePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "deletePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/photos/page": "action-browser",
+        "app/admin/requests/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/photos.ts",
+      "exportedName": "deletePhoto"
+    },
+    "6011a5b04d9f88727db524dd8b56515175ac2bb19b": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "savePhotosBulk",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "savePhotosBulk",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "savePhotosBulk",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "savePhotosBulk",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "savePhotosBulk",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "savePhotosBulk",
+          "filename": "src/lib/actions/photos.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/photos.ts",
+      "exportedName": "savePhotosBulk"
+    },
+    "6034b1182e32f8dff903e0d590bb18e56fc9e0b7a9": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "getPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "getPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/page": {
+          "moduleId": 431,
+          "async": false,
+          "exportedName": "getPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "getPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "getPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "getPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "getPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/photos/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/photos.ts",
+      "exportedName": "getPhotos"
+    },
+    "6066e1f62f82ac93eb8d14cb6379be7d3be23241d5": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "refreshPhotoMetadata",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "refreshPhotoMetadata",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/page": {
+          "moduleId": 431,
+          "async": false,
+          "exportedName": "refreshPhotoMetadata",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "refreshPhotoMetadata",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "refreshPhotoMetadata",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "refreshPhotoMetadata",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "refreshPhotoMetadata",
+          "filename": "src/lib/actions/photos.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/photos/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/photos.ts",
+      "exportedName": "refreshPhotoMetadata"
+    },
+    "60740620395b02dbe904aa36adcfc649ce7a109d8c": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "requestExifData",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "requestExifData",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "requestExifData",
+          "filename": "src/lib/actions/photos.ts"
+        },
         "app/dashboard/photos/[id]/page": {
-          "moduleId": 39675,
+          "moduleId": 65889,
           "async": false,
           "exportedName": "requestExifData",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/dashboard/photos/page": {
-          "moduleId": 30041,
+          "moduleId": 84531,
           "async": false,
           "exportedName": "requestExifData",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/page": {
-          "moduleId": 98044,
+          "moduleId": 46759,
           "async": false,
           "exportedName": "requestExifData",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/photo/[id]/page": {
-          "moduleId": 56414,
+          "moduleId": 48791,
           "async": false,
           "exportedName": "requestExifData",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/portfolio/page": {
-          "moduleId": 30618,
+          "moduleId": 44327,
           "async": false,
           "exportedName": "requestExifData",
           "filename": "src/lib/actions/photos.ts"
         }
       },
       "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
         "app/dashboard/photos/[id]/page": "action-browser",
         "app/dashboard/photos/page": "action-browser",
         "app/page": "rsc",
@@ -238,214 +1119,153 @@
       "filename": "src/lib/actions/photos.ts",
       "exportedName": "requestExifData"
     },
-    "601cddadf63c8d26fde02945701a349ec69fce7da9": {
-      "workers": {
-        "app/admin/photos/page": {
-          "moduleId": 21547,
-          "async": false,
-          "exportedName": "bulkDeletePhotos",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/page": {
-          "moduleId": 98044,
-          "async": false,
-          "exportedName": "bulkDeletePhotos",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/photo/[id]/page": {
-          "moduleId": 56414,
-          "async": false,
-          "exportedName": "bulkDeletePhotos",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/portfolio/page": {
-          "moduleId": 30618,
-          "async": false,
-          "exportedName": "bulkDeletePhotos",
-          "filename": "src/lib/actions/photos.ts"
-        }
-      },
-      "layer": {
-        "app/admin/photos/page": "action-browser",
-        "app/page": "rsc",
-        "app/photo/[id]/page": "rsc",
-        "app/portfolio/page": "rsc"
-      },
-      "filename": "src/lib/actions/photos.ts",
-      "exportedName": "bulkDeletePhotos"
-    },
-    "603e23194f1a764ed7bc7d99dac006686b3d177349": {
-      "workers": {
-        "app/page": {
-          "moduleId": 98044,
-          "async": false,
-          "exportedName": "savePhotosBulk",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/photo/[id]/page": {
-          "moduleId": 56414,
-          "async": false,
-          "exportedName": "savePhotosBulk",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/portfolio/page": {
-          "moduleId": 30618,
-          "async": false,
-          "exportedName": "savePhotosBulk",
-          "filename": "src/lib/actions/photos.ts"
-        }
-      },
-      "layer": {
-        "app/page": "rsc",
-        "app/photo/[id]/page": "rsc",
-        "app/portfolio/page": "rsc"
-      },
-      "filename": "src/lib/actions/photos.ts",
-      "exportedName": "savePhotosBulk"
-    },
-    "6041c6d0036e2f50d24d2ead64c6977e93202fa5c9": {
-      "workers": {
-        "app/admin/photos/page": {
-          "moduleId": 21547,
-          "async": false,
-          "exportedName": "getPhotos",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/page": {
-          "moduleId": 98044,
-          "async": false,
-          "exportedName": "getPhotos",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/photo/[id]/page": {
-          "moduleId": 56414,
-          "async": false,
-          "exportedName": "getPhotos",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/portfolio/page": {
-          "moduleId": 30618,
-          "async": false,
-          "exportedName": "getPhotos",
-          "filename": "src/lib/actions/photos.ts"
-        }
-      },
-      "layer": {
-        "app/admin/photos/page": "action-browser",
-        "app/page": "rsc",
-        "app/photo/[id]/page": "rsc",
-        "app/portfolio/page": "rsc"
-      },
-      "filename": "src/lib/actions/photos.ts",
-      "exportedName": "getPhotos"
-    },
-    "60494aa22778f331a848ee2449817dab9c05ba2765": {
-      "workers": {
-        "app/dashboard/photos/new/page": {
-          "moduleId": 39353,
-          "async": false,
-          "exportedName": "savePhoto",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/page": {
-          "moduleId": 98044,
-          "async": false,
-          "exportedName": "savePhoto",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/photo/[id]/page": {
-          "moduleId": 56414,
-          "async": false,
-          "exportedName": "savePhoto",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/portfolio/page": {
-          "moduleId": 30618,
-          "async": false,
-          "exportedName": "savePhoto",
-          "filename": "src/lib/actions/photos.ts"
-        }
-      },
-      "layer": {
-        "app/dashboard/photos/new/page": "action-browser",
-        "app/page": "rsc",
-        "app/photo/[id]/page": "rsc",
-        "app/portfolio/page": "rsc"
-      },
-      "filename": "src/lib/actions/photos.ts",
-      "exportedName": "savePhoto"
-    },
-    "60bc70459917dcf6a7195a5df5e30132b1d35ad9ec": {
-      "workers": {
-        "app/admin/photos/page": {
-          "moduleId": 21547,
-          "async": false,
-          "exportedName": "deletePhoto",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/admin/requests/page": {
-          "moduleId": 27590,
-          "async": false,
-          "exportedName": "deletePhoto",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/page": {
-          "moduleId": 98044,
-          "async": false,
-          "exportedName": "deletePhoto",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/photo/[id]/page": {
-          "moduleId": 56414,
-          "async": false,
-          "exportedName": "deletePhoto",
-          "filename": "src/lib/actions/photos.ts"
-        },
-        "app/portfolio/page": {
-          "moduleId": 30618,
-          "async": false,
-          "exportedName": "deletePhoto",
-          "filename": "src/lib/actions/photos.ts"
-        }
-      },
-      "layer": {
-        "app/admin/photos/page": "action-browser",
-        "app/admin/requests/page": "action-browser",
-        "app/page": "rsc",
-        "app/photo/[id]/page": "rsc",
-        "app/portfolio/page": "rsc"
-      },
-      "filename": "src/lib/actions/photos.ts",
-      "exportedName": "deletePhoto"
-    },
-    "60c862e5aa1704c00b653640280df232f01be02c5c": {
+    "60822bd04409acf339afb9552f9be3ebc4804c62ab": {
       "workers": {
         "app/admin/photos/[id]/page": {
-          "moduleId": 32862,
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "searchPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "searchPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/settings/covers/page": {
+          "moduleId": 26244,
+          "async": false,
+          "exportedName": "searchPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "searchPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "searchPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "searchPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "searchPhotos",
+          "filename": "src/lib/actions/photos.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/settings/covers/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/photos.ts",
+      "exportedName": "searchPhotos"
+    },
+    "60867fb21876551f984770ba6861925965673d6d4b": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "bulkRequestDeletion",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "bulkRequestDeletion",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "bulkRequestDeletion",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "bulkRequestDeletion",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "bulkRequestDeletion",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "bulkRequestDeletion",
+          "filename": "src/lib/actions/photos.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/photos.ts",
+      "exportedName": "bulkRequestDeletion"
+    },
+    "60a1ae168aa7fa7d1af077e22e7c608c3938eafac3": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "getPhotoById",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "getPhotoById",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
           "async": false,
           "exportedName": "getPhotoById",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/dashboard/photos/[id]/page": {
-          "moduleId": 39675,
+          "moduleId": 65889,
           "async": false,
           "exportedName": "getPhotoById",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/page": {
-          "moduleId": 98044,
+          "moduleId": 46759,
           "async": false,
           "exportedName": "getPhotoById",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/photo/[id]/page": {
-          "moduleId": 56414,
+          "moduleId": 48791,
           "async": false,
           "exportedName": "getPhotoById",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/portfolio/page": {
-          "moduleId": 30618,
+          "moduleId": 44327,
           "async": false,
           "exportedName": "getPhotoById",
           "filename": "src/lib/actions/photos.ts"
@@ -453,6 +1273,8 @@
       },
       "layer": {
         "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
         "app/dashboard/photos/[id]/page": "action-browser",
         "app/page": "rsc",
         "app/photo/[id]/page": "rsc",
@@ -461,78 +1283,227 @@
       "filename": "src/lib/actions/photos.ts",
       "exportedName": "getPhotoById"
     },
-    "60f48f51d96dce5efd0024f3d024bf8ac2156ec862": {
+    "60b3021e1331db2f52670f2660350abffd10883006": {
       "workers": {
         "app/admin/photos/[id]/page": {
-          "moduleId": 32862,
+          "moduleId": 75275,
           "async": false,
-          "exportedName": "refreshPhotoMetadata",
+          "exportedName": "bulkDeletePhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "bulkDeletePhotos",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/admin/photos/page": {
-          "moduleId": 21547,
+          "moduleId": 431,
           "async": false,
-          "exportedName": "refreshPhotoMetadata",
+          "exportedName": "bulkDeletePhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "bulkDeletePhotos",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/page": {
-          "moduleId": 98044,
+          "moduleId": 46759,
           "async": false,
-          "exportedName": "refreshPhotoMetadata",
+          "exportedName": "bulkDeletePhotos",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/photo/[id]/page": {
-          "moduleId": 56414,
+          "moduleId": 48791,
           "async": false,
-          "exportedName": "refreshPhotoMetadata",
+          "exportedName": "bulkDeletePhotos",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/portfolio/page": {
-          "moduleId": 30618,
+          "moduleId": 44327,
           "async": false,
-          "exportedName": "refreshPhotoMetadata",
+          "exportedName": "bulkDeletePhotos",
           "filename": "src/lib/actions/photos.ts"
         }
       },
       "layer": {
         "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
         "app/admin/photos/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
         "app/page": "rsc",
         "app/photo/[id]/page": "rsc",
         "app/portfolio/page": "rsc"
       },
       "filename": "src/lib/actions/photos.ts",
-      "exportedName": "refreshPhotoMetadata"
+      "exportedName": "bulkDeletePhotos"
     },
-    "7009bb60e62997f84436fe8a0b9901b38e8375de36": {
+    "60d17a50c576c4b7b4b76f99f4c31f7adce295fbe4": {
       "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "savePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "savePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "savePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/dashboard/photos/new/page": {
+          "moduleId": 72774,
+          "async": false,
+          "exportedName": "savePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "savePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "savePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "savePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/dashboard/photos/new/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/photos.ts",
+      "exportedName": "savePhoto"
+    },
+    "705fa058f9dfebb1e8a0b68d4f2f8e7d73afde3b39": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "bulkUpdatePhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "bulkUpdatePhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
         "app/admin/photos/page": {
-          "moduleId": 21547,
+          "moduleId": 431,
+          "async": false,
+          "exportedName": "bulkUpdatePhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "bulkUpdatePhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "bulkUpdatePhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "bulkUpdatePhotos",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "bulkUpdatePhotos",
+          "filename": "src/lib/actions/photos.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/photos/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/photos.ts",
+      "exportedName": "bulkUpdatePhotos"
+    },
+    "709af87ed7a687962defe380240c85e4e3b48fecdb": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "bulkUpdateCategory",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "bulkUpdateCategory",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/page": {
+          "moduleId": 431,
+          "async": false,
+          "exportedName": "bulkUpdateCategory",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
           "async": false,
           "exportedName": "bulkUpdateCategory",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/page": {
-          "moduleId": 98044,
+          "moduleId": 46759,
           "async": false,
           "exportedName": "bulkUpdateCategory",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/photo/[id]/page": {
-          "moduleId": 56414,
+          "moduleId": 48791,
           "async": false,
           "exportedName": "bulkUpdateCategory",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/portfolio/page": {
-          "moduleId": 30618,
+          "moduleId": 44327,
           "async": false,
           "exportedName": "bulkUpdateCategory",
           "filename": "src/lib/actions/photos.ts"
         }
       },
       "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
         "app/admin/photos/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
         "app/page": "rsc",
         "app/photo/[id]/page": "rsc",
         "app/portfolio/page": "rsc"
@@ -540,34 +1511,46 @@
       "filename": "src/lib/actions/photos.ts",
       "exportedName": "bulkUpdateCategory"
     },
-    "707a9050f463e96fe7852ee31bd33733bc9ab86377": {
+    "70a632130a763e85c7d9e29b84c96480def6e9fdf8": {
       "workers": {
         "app/admin/photos/[id]/page": {
-          "moduleId": 32862,
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "updatePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "updatePhoto",
+          "filename": "src/lib/actions/photos.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
           "async": false,
           "exportedName": "updatePhoto",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/dashboard/photos/[id]/page": {
-          "moduleId": 39675,
+          "moduleId": 65889,
           "async": false,
           "exportedName": "updatePhoto",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/page": {
-          "moduleId": 98044,
+          "moduleId": 46759,
           "async": false,
           "exportedName": "updatePhoto",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/photo/[id]/page": {
-          "moduleId": 56414,
+          "moduleId": 48791,
           "async": false,
           "exportedName": "updatePhoto",
           "filename": "src/lib/actions/photos.ts"
         },
         "app/portfolio/page": {
-          "moduleId": 30618,
+          "moduleId": 44327,
           "async": false,
           "exportedName": "updatePhoto",
           "filename": "src/lib/actions/photos.ts"
@@ -575,6 +1558,8 @@
       },
       "layer": {
         "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
         "app/dashboard/photos/[id]/page": "action-browser",
         "app/page": "rsc",
         "app/photo/[id]/page": "rsc",
@@ -583,52 +1568,522 @@
       "filename": "src/lib/actions/photos.ts",
       "exportedName": "updatePhoto"
     },
-    "70a4761765009d8db6ebd06c61d023cccfe74628b3": {
+    "4093d70da1b4934091a787e4e3545003e53ac88d23": {
       "workers": {
-        "app/admin/photos/page": {
-          "moduleId": 21547,
+        "app/admin/locations/page": {
+          "moduleId": 603,
           "async": false,
-          "exportedName": "bulkUpdatePhotos",
-          "filename": "src/lib/actions/photos.ts"
+          "exportedName": "getLocations",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "getLocations",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "getLocations",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "getLocations",
+          "filename": "src/lib/actions/locations.ts"
         },
         "app/page": {
-          "moduleId": 98044,
+          "moduleId": 46759,
           "async": false,
-          "exportedName": "bulkUpdatePhotos",
-          "filename": "src/lib/actions/photos.ts"
+          "exportedName": "getLocations",
+          "filename": "src/lib/actions/locations.ts"
         },
         "app/photo/[id]/page": {
-          "moduleId": 56414,
+          "moduleId": 48791,
           "async": false,
-          "exportedName": "bulkUpdatePhotos",
-          "filename": "src/lib/actions/photos.ts"
+          "exportedName": "getLocations",
+          "filename": "src/lib/actions/locations.ts"
         },
         "app/portfolio/page": {
-          "moduleId": 30618,
+          "moduleId": 44327,
           "async": false,
-          "exportedName": "bulkUpdatePhotos",
-          "filename": "src/lib/actions/photos.ts"
+          "exportedName": "getLocations",
+          "filename": "src/lib/actions/locations.ts"
         }
       },
       "layer": {
-        "app/admin/photos/page": "action-browser",
+        "app/admin/locations/page": "action-browser",
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
         "app/page": "rsc",
         "app/photo/[id]/page": "rsc",
         "app/portfolio/page": "rsc"
       },
-      "filename": "src/lib/actions/photos.ts",
-      "exportedName": "bulkUpdatePhotos"
+      "filename": "src/lib/actions/locations.ts",
+      "exportedName": "getLocations"
     },
-    "00baa37c28a1aa0f041f84930b0d824153c0c23a6c": {
+    "60a1f1525bd6710bae428ee80f14ae972cee6d4d84": {
+      "workers": {
+        "app/admin/locations/page": {
+          "moduleId": 603,
+          "async": false,
+          "exportedName": "saveLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "saveLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "saveLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "saveLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "saveLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "saveLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "saveLocation",
+          "filename": "src/lib/actions/locations.ts"
+        }
+      },
+      "layer": {
+        "app/admin/locations/page": "action-browser",
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/locations.ts",
+      "exportedName": "saveLocation"
+    },
+    "60bfd0ec9fe0ba9b320d64be5f34ead3a1b573736d": {
+      "workers": {
+        "app/admin/locations/page": {
+          "moduleId": 603,
+          "async": false,
+          "exportedName": "deleteLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "deleteLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "deleteLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "deleteLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "deleteLocation",
+          "filename": "src/lib/actions/locations.ts"
+        }
+      },
+      "layer": {
+        "app/admin/locations/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/locations.ts",
+      "exportedName": "deleteLocation"
+    },
+    "60dceb1cd4e202172ab5af42a9d3ac54e2d7b851e1": {
+      "workers": {
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "ensureLocationExists",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "ensureLocationExists",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "ensureLocationExists",
+          "filename": "src/lib/actions/locations.ts"
+        }
+      },
+      "layer": {
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/locations.ts",
+      "exportedName": "ensureLocationExists"
+    },
+    "70c8bd1c2beb03a7af369cf6167347ab34d0b43f08": {
+      "workers": {
+        "app/admin/locations/page": {
+          "moduleId": 603,
+          "async": false,
+          "exportedName": "updateLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "updateLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "updateLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "updateLocation",
+          "filename": "src/lib/actions/locations.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "updateLocation",
+          "filename": "src/lib/actions/locations.ts"
+        }
+      },
+      "layer": {
+        "app/admin/locations/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/locations.ts",
+      "exportedName": "updateLocation"
+    },
+    "40002baa72413efe9a9ec08b0392ebee61be2e8fb3": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "getStudios",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "getStudios",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "getStudios",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "getStudios",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "getStudios",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "getStudios",
+          "filename": "src/lib/actions/studios.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/studios.ts",
+      "exportedName": "getStudios"
+    },
+    "4066a5c6afbb86d1882bbe9810098c9af234b4206e": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "getZipAddressAction",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "getZipAddressAction",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "getZipAddressAction",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "getZipAddressAction",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "getZipAddressAction",
+          "filename": "src/lib/actions/studios.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/studios.ts",
+      "exportedName": "getZipAddressAction"
+    },
+    "60108593fd544e59387ba2774f6e3e7da7e6c15d6b": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "ensureStudioExists",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "ensureStudioExists",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "ensureStudioExists",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "ensureStudioExists",
+          "filename": "src/lib/actions/studios.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/studios.ts",
+      "exportedName": "ensureStudioExists"
+    },
+    "60a96f4e40889822ee3b4b59fc747a6bd64616ee9a": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "saveStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "saveStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "saveStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "saveStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "saveStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "saveStudio",
+          "filename": "src/lib/actions/studios.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/studios.ts",
+      "exportedName": "saveStudio"
+    },
+    "60ba1439562e05543a7303a079b6527b8a080a9bb6": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "deleteStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "deleteStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "deleteStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "deleteStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "deleteStudio",
+          "filename": "src/lib/actions/studios.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/studios.ts",
+      "exportedName": "deleteStudio"
+    },
+    "70fcf2b2e249fac09ca6332a172d166288e2b88aa1": {
+      "workers": {
+        "app/admin/photos/[id]/page": {
+          "moduleId": 75275,
+          "async": false,
+          "exportedName": "updateStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/admin/studios/page": {
+          "moduleId": 34005,
+          "async": false,
+          "exportedName": "updateStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/page": {
+          "moduleId": 46759,
+          "async": false,
+          "exportedName": "updateStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "updateStudio",
+          "filename": "src/lib/actions/studios.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "updateStudio",
+          "filename": "src/lib/actions/studios.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/[id]/page": "action-browser",
+        "app/admin/studios/page": "action-browser",
+        "app/page": "rsc",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/studios.ts",
+      "exportedName": "updateStudio"
+    },
+    "0057ef1b099d57108627b6c51a4d4fbe8d3a34914d": {
       "workers": {
         "app/about/page": {
-          "moduleId": 29865,
+          "moduleId": 33071,
+          "async": false,
+          "exportedName": "getProfileServer",
+          "filename": "src/lib/actions/profile.ts"
+        },
+        "app/admin/lenses/page": {
+          "moduleId": 48600,
           "async": false,
           "exportedName": "getProfileServer",
           "filename": "src/lib/actions/profile.ts"
         },
         "app/admin/profile/page": {
-          "moduleId": 34291,
+          "moduleId": 22551,
+          "async": false,
+          "exportedName": "getProfileServer",
+          "filename": "src/lib/actions/profile.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
           "async": false,
           "exportedName": "getProfileServer",
           "filename": "src/lib/actions/profile.ts"
@@ -636,21 +2091,35 @@
       },
       "layer": {
         "app/about/page": "rsc",
-        "app/admin/profile/page": "action-browser"
+        "app/admin/lenses/page": "action-browser",
+        "app/admin/profile/page": "action-browser",
+        "app/portfolio/page": "rsc"
       },
       "filename": "src/lib/actions/profile.ts",
       "exportedName": "getProfileServer"
     },
-    "60875d7e243213cf90cb961ac1ff6d405e5d17bb76": {
+    "60204308dd82ac82e7164fc2d06b22d2a5dd351f55": {
       "workers": {
         "app/about/page": {
-          "moduleId": 29865,
+          "moduleId": 33071,
+          "async": false,
+          "exportedName": "updateProfile",
+          "filename": "src/lib/actions/profile.ts"
+        },
+        "app/admin/lenses/page": {
+          "moduleId": 48600,
           "async": false,
           "exportedName": "updateProfile",
           "filename": "src/lib/actions/profile.ts"
         },
         "app/admin/profile/page": {
-          "moduleId": 34291,
+          "moduleId": 22551,
+          "async": false,
+          "exportedName": "updateProfile",
+          "filename": "src/lib/actions/profile.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
           "async": false,
           "exportedName": "updateProfile",
           "filename": "src/lib/actions/profile.ts"
@@ -658,15 +2127,17 @@
       },
       "layer": {
         "app/about/page": "rsc",
-        "app/admin/profile/page": "action-browser"
+        "app/admin/lenses/page": "action-browser",
+        "app/admin/profile/page": "action-browser",
+        "app/portfolio/page": "rsc"
       },
       "filename": "src/lib/actions/profile.ts",
       "exportedName": "updateProfile"
     },
-    "4091e8339b7b10cdaf134f860e829debbc1e2617a8": {
+    "40bfbcb9d96f0846c79f8ef612e626666aecc6ec28": {
       "workers": {
         "app/admin/page": {
-          "moduleId": 62447,
+          "moduleId": 13920,
           "async": false,
           "exportedName": "sendBackupEmail",
           "filename": "src/lib/actions/email.ts"
@@ -678,10 +2149,85 @@
       "filename": "src/lib/actions/email.ts",
       "exportedName": "sendBackupEmail"
     },
-    "403982c667edf6a7a630e0fad351e1499595b81c56": {
+    "40db46627e7f41228b73b6ad777bac55380c9bd728": {
+      "workers": {
+        "app/admin/ai-lab/page": {
+          "moduleId": 65900,
+          "async": false,
+          "exportedName": "askLocalAiLab",
+          "filename": "src/lib/actions/aiLab.ts"
+        }
+      },
+      "layer": {
+        "app/admin/ai-lab/page": "action-browser"
+      },
+      "filename": "src/lib/actions/aiLab.ts",
+      "exportedName": "askLocalAiLab"
+    },
+    "4050bf619ea95518873cc5e9c72b07b8b6ebb13533": {
+      "workers": {
+        "app/admin/ai-lab/page": {
+          "moduleId": 65900,
+          "async": false,
+          "exportedName": "deleteAiMemory",
+          "filename": "src/lib/actions/aiLab.ts"
+        }
+      },
+      "layer": {
+        "app/admin/ai-lab/page": "action-browser"
+      },
+      "filename": "src/lib/actions/aiLab.ts",
+      "exportedName": "deleteAiMemory"
+    },
+    "0035c24578857f8e29ddd60aa845552176175c714b": {
+      "workers": {
+        "app/admin/ai-lab/page": {
+          "moduleId": 65900,
+          "async": false,
+          "exportedName": "getAiMemories",
+          "filename": "src/lib/actions/aiLab.ts"
+        }
+      },
+      "layer": {
+        "app/admin/ai-lab/page": "action-browser"
+      },
+      "filename": "src/lib/actions/aiLab.ts",
+      "exportedName": "getAiMemories"
+    },
+    "402b711270fe3a19d7ce5675ad4ddabb538146021a": {
+      "workers": {
+        "app/admin/ai-lab/page": {
+          "moduleId": 65900,
+          "async": false,
+          "exportedName": "saveAiMemory",
+          "filename": "src/lib/actions/aiLab.ts"
+        }
+      },
+      "layer": {
+        "app/admin/ai-lab/page": "action-browser"
+      },
+      "filename": "src/lib/actions/aiLab.ts",
+      "exportedName": "saveAiMemory"
+    },
+    "600d7a13d0e75827c432baae7263879d9f7bfee719": {
+      "workers": {
+        "app/admin/ai-lab/page": {
+          "moduleId": 65900,
+          "async": false,
+          "exportedName": "updateAiMemory",
+          "filename": "src/lib/actions/aiLab.ts"
+        }
+      },
+      "layer": {
+        "app/admin/ai-lab/page": "action-browser"
+      },
+      "filename": "src/lib/actions/aiLab.ts",
+      "exportedName": "updateAiMemory"
+    },
+    "400786b4be35a8f5c5f11d1f783012f0307c225903": {
       "workers": {
         "app/admin/blog/page": {
-          "moduleId": 25963,
+          "moduleId": 77414,
           "async": false,
           "exportedName": "deleteBlog",
           "filename": "src/lib/actions/blog.ts"
@@ -693,16 +2239,16 @@
       "filename": "src/lib/actions/blog.ts",
       "exportedName": "deleteBlog"
     },
-    "40da5a5f082523ae4fed3ff453fb4916567cd2c235": {
+    "40331a1c4dd6bdb0de5da9ae8fd43eed653b1f7b90": {
       "workers": {
         "app/admin/blog/[id]/page": {
-          "moduleId": 72923,
+          "moduleId": 87574,
           "async": false,
           "exportedName": "createBlog",
           "filename": "src/lib/actions/blog.ts"
         },
         "app/admin/blog/new/page": {
-          "moduleId": 51086,
+          "moduleId": 6224,
           "async": false,
           "exportedName": "createBlog",
           "filename": "src/lib/actions/blog.ts"
@@ -715,16 +2261,16 @@
       "filename": "src/lib/actions/blog.ts",
       "exportedName": "createBlog"
     },
-    "60c061e9519d56932840ebd2e2bb7d44efaed15ee1": {
+    "60569ebba5b9d7927012a34543106c95d88cab70ba": {
       "workers": {
         "app/admin/blog/[id]/page": {
-          "moduleId": 72923,
+          "moduleId": 87574,
           "async": false,
           "exportedName": "updateBlog",
           "filename": "src/lib/actions/blog.ts"
         },
         "app/admin/blog/new/page": {
-          "moduleId": 51086,
+          "moduleId": 6224,
           "async": false,
           "exportedName": "updateBlog",
           "filename": "src/lib/actions/blog.ts"
@@ -737,16 +2283,16 @@
       "filename": "src/lib/actions/blog.ts",
       "exportedName": "updateBlog"
     },
-    "00d52c1f8399be42bb446488684e13e608db9901f0": {
+    "00ae69f43bf9fc5e79ee757131c91b7398b9f60395": {
       "workers": {
         "app/admin/blog/[id]/page": {
-          "moduleId": 72923,
+          "moduleId": 87574,
           "async": false,
           "exportedName": "getCategories",
           "filename": "src/lib/actions/blog.ts"
         },
         "app/admin/blog/new/page": {
-          "moduleId": 51086,
+          "moduleId": 6224,
           "async": false,
           "exportedName": "getCategories",
           "filename": "src/lib/actions/blog.ts"
@@ -759,52 +2305,169 @@
       "filename": "src/lib/actions/blog.ts",
       "exportedName": "getCategories"
     },
-    "003ea4f49c26b3cc21dd6bc95a68fa07d5ef37171a": {
+    "40ccf54c91657099aabf4126ebf007d0fa448652fd": {
+      "workers": {
+        "app/admin/help/page": {
+          "moduleId": 88423,
+          "async": false,
+          "exportedName": "getEmailHint",
+          "filename": "src/lib/actions/auth-recovery.ts"
+        },
+        "app/admin/login/page": {
+          "moduleId": 54336,
+          "async": false,
+          "exportedName": "getEmailHint",
+          "filename": "src/lib/actions/auth-recovery.ts"
+        }
+      },
+      "layer": {
+        "app/admin/help/page": "action-browser",
+        "app/admin/login/page": "action-browser"
+      },
+      "filename": "src/lib/actions/auth-recovery.ts",
+      "exportedName": "getEmailHint"
+    },
+    "40df2872a044ee74c1f6293432b461a342fe9f6e33": {
+      "workers": {
+        "app/admin/help/page": {
+          "moduleId": 88423,
+          "async": false,
+          "exportedName": "requestPasswordResetServer",
+          "filename": "src/lib/actions/auth-recovery.ts"
+        },
+        "app/admin/login/page": {
+          "moduleId": 54336,
+          "async": false,
+          "exportedName": "requestPasswordResetServer",
+          "filename": "src/lib/actions/auth-recovery.ts"
+        }
+      },
+      "layer": {
+        "app/admin/help/page": "action-browser",
+        "app/admin/login/page": "action-browser"
+      },
+      "filename": "src/lib/actions/auth-recovery.ts",
+      "exportedName": "requestPasswordResetServer"
+    },
+    "00c6c906243ebc72e46843c374711e25db29fe2043": {
       "workers": {
         "app/admin/invite/page": {
-          "moduleId": 26475,
+          "moduleId": 69596,
+          "async": false,
+          "exportedName": "createInvitationCode",
+          "filename": "src/lib/actions/invitation.ts"
+        },
+        "app/admin/profile/page": {
+          "moduleId": 22551,
           "async": false,
           "exportedName": "createInvitationCode",
           "filename": "src/lib/actions/invitation.ts"
         }
       },
       "layer": {
-        "app/admin/invite/page": "action-browser"
+        "app/admin/invite/page": "action-browser",
+        "app/admin/profile/page": "action-browser"
       },
       "filename": "src/lib/actions/invitation.ts",
       "exportedName": "createInvitationCode"
     },
-    "0062902c5add56748976251a576b0ac2570851e1b5": {
+    "001f1dc7e94fdab975d0775985e1499d30df1aca8d": {
       "workers": {
         "app/admin/invite/page": {
-          "moduleId": 26475,
+          "moduleId": 69596,
+          "async": false,
+          "exportedName": "getInvitationCodes",
+          "filename": "src/lib/actions/invitation.ts"
+        },
+        "app/admin/profile/page": {
+          "moduleId": 22551,
           "async": false,
           "exportedName": "getInvitationCodes",
           "filename": "src/lib/actions/invitation.ts"
         }
       },
       "layer": {
-        "app/admin/invite/page": "action-browser"
+        "app/admin/invite/page": "action-browser",
+        "app/admin/profile/page": "action-browser"
       },
       "filename": "src/lib/actions/invitation.ts",
       "exportedName": "getInvitationCodes"
     },
-    "00fd411efbbd8c772f70586e1d67c8b6988d713782": {
+    "60c5b9383a768c44ca30a4f459fc3de77c49ea3969": {
+      "workers": {
+        "app/admin/invite/page": {
+          "moduleId": 69596,
+          "async": false,
+          "exportedName": "deleteInvitationCode",
+          "filename": "src/lib/actions/invitation.ts"
+        },
+        "app/admin/profile/page": {
+          "moduleId": 22551,
+          "async": false,
+          "exportedName": "deleteInvitationCode",
+          "filename": "src/lib/actions/invitation.ts"
+        }
+      },
+      "layer": {
+        "app/admin/invite/page": "action-browser",
+        "app/admin/profile/page": "action-browser"
+      },
+      "filename": "src/lib/actions/invitation.ts",
+      "exportedName": "deleteInvitationCode"
+    },
+    "4011d3cc6024d56e1bc1679fe6a63baf5066d8f6cd": {
+      "workers": {
+        "app/admin/invite/page": {
+          "moduleId": 69596,
+          "async": false,
+          "exportedName": "deleteUsedInvitationCodes",
+          "filename": "src/lib/actions/invitation.ts"
+        },
+        "app/admin/profile/page": {
+          "moduleId": 22551,
+          "async": false,
+          "exportedName": "deleteUsedInvitationCodes",
+          "filename": "src/lib/actions/invitation.ts"
+        }
+      },
+      "layer": {
+        "app/admin/invite/page": "action-browser",
+        "app/admin/profile/page": "action-browser"
+      },
+      "filename": "src/lib/actions/invitation.ts",
+      "exportedName": "deleteUsedInvitationCodes"
+    },
+    "606530632583d1ed28093f1b6cfc751cef85e212e4": {
+      "workers": {
+        "app/admin/login/page": {
+          "moduleId": 54336,
+          "async": false,
+          "exportedName": "emergencySignIn",
+          "filename": "src/lib/actions/auth-recovery.ts"
+        }
+      },
+      "layer": {
+        "app/admin/login/page": "action-browser"
+      },
+      "filename": "src/lib/actions/auth-recovery.ts",
+      "exportedName": "emergencySignIn"
+    },
+    "0061ed3ba4114142de94f0da35c18c939031342c01": {
       "workers": {
         "app/admin/photos/[id]/page": {
-          "moduleId": 32862,
+          "moduleId": 75275,
           "async": false,
           "exportedName": "getCategories",
           "filename": "src/lib/actions/categories.ts"
         },
         "app/admin/photos/new/page": {
-          "moduleId": 10752,
+          "moduleId": 85654,
           "async": false,
           "exportedName": "getCategories",
           "filename": "src/lib/actions/categories.ts"
         },
         "app/admin/photos/page": {
-          "moduleId": 21547,
+          "moduleId": 431,
           "async": false,
           "exportedName": "getCategories",
           "filename": "src/lib/actions/categories.ts"
@@ -818,28 +2481,28 @@
       "filename": "src/lib/actions/categories.ts",
       "exportedName": "getCategories"
     },
-    "0085c195c2aaa421024d55ba4fdc1875f30440d671": {
+    "00a95336f242fb7b0a68c950058e2e6f712b327371": {
       "workers": {
         "app/admin/photos/[id]/page": {
-          "moduleId": 32862,
+          "moduleId": 75275,
           "async": false,
           "exportedName": "getSubjects",
           "filename": "src/lib/actions/subjects.ts"
         },
         "app/admin/photos/new/page": {
-          "moduleId": 10752,
+          "moduleId": 85654,
           "async": false,
           "exportedName": "getSubjects",
           "filename": "src/lib/actions/subjects.ts"
         },
         "app/admin/subjects/page": {
-          "moduleId": 46215,
+          "moduleId": 83259,
           "async": false,
           "exportedName": "getSubjects",
           "filename": "src/lib/actions/subjects.ts"
         },
         "app/dashboard/photos/new/page": {
-          "moduleId": 39353,
+          "moduleId": 72774,
           "async": false,
           "exportedName": "getSubjects",
           "filename": "src/lib/actions/subjects.ts"
@@ -854,22 +2517,34 @@
       "filename": "src/lib/actions/subjects.ts",
       "exportedName": "getSubjects"
     },
-    "0009849ed6a6a3c4eb625129a7603b08d00c9e9e28": {
+    "001d9c326b9306797dad308f9cdaf8e5e36596eebb": {
       "workers": {
         "app/admin/photos/new/page": {
-          "moduleId": 10752,
+          "moduleId": 85654,
           "async": false,
           "exportedName": "getUsers",
           "filename": "src/lib/actions/users.ts"
         },
-        "app/admin/users/page": {
-          "moduleId": 69012,
+        "app/admin/subjects/page": {
+          "moduleId": 83259,
           "async": false,
           "exportedName": "getUsers",
           "filename": "src/lib/actions/users.ts"
         },
         "app/dashboard/photos/new/page": {
-          "moduleId": 39353,
+          "moduleId": 72774,
+          "async": false,
+          "exportedName": "getUsers",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "getUsers",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
           "async": false,
           "exportedName": "getUsers",
           "filename": "src/lib/actions/users.ts"
@@ -877,34 +2552,42 @@
       },
       "layer": {
         "app/admin/photos/new/page": "action-browser",
-        "app/admin/users/page": "rsc",
-        "app/dashboard/photos/new/page": "action-browser"
+        "app/admin/subjects/page": "action-browser",
+        "app/dashboard/photos/new/page": "action-browser",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
       },
       "filename": "src/lib/actions/users.ts",
       "exportedName": "getUsers"
     },
-    "402fafbeebeff6ff7d18acfc060a86540388b9bdf0": {
+    "406272e9d331e5f218e0d37898696b4bec88634239": {
       "workers": {
         "app/admin/photos/new/page": {
-          "moduleId": 10752,
+          "moduleId": 85654,
           "async": false,
           "exportedName": "getMyProfile",
           "filename": "src/lib/actions/users.ts"
         },
         "app/admin/profile/page": {
-          "moduleId": 34291,
-          "async": false,
-          "exportedName": "getMyProfile",
-          "filename": "src/lib/actions/users.ts"
-        },
-        "app/admin/users/page": {
-          "moduleId": 69012,
+          "moduleId": 22551,
           "async": false,
           "exportedName": "getMyProfile",
           "filename": "src/lib/actions/users.ts"
         },
         "app/dashboard/photos/new/page": {
-          "moduleId": 39353,
+          "moduleId": 72774,
+          "async": false,
+          "exportedName": "getMyProfile",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "getMyProfile",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
           "async": false,
           "exportedName": "getMyProfile",
           "filename": "src/lib/actions/users.ts"
@@ -913,34 +2596,41 @@
       "layer": {
         "app/admin/photos/new/page": "action-browser",
         "app/admin/profile/page": "action-browser",
-        "app/admin/users/page": "rsc",
-        "app/dashboard/photos/new/page": "action-browser"
+        "app/dashboard/photos/new/page": "action-browser",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
       },
       "filename": "src/lib/actions/users.ts",
       "exportedName": "getMyProfile"
     },
-    "60f39db4e54dd0b5d4359d4a15df771fc31a499972": {
+    "60f1bcf1c52dfc514d468335a50ccf519feb084c8d": {
       "workers": {
         "app/admin/photos/new/page": {
-          "moduleId": 10752,
+          "moduleId": 85654,
           "async": false,
           "exportedName": "updateMySnsLinks",
           "filename": "src/lib/actions/users.ts"
         },
         "app/admin/profile/page": {
-          "moduleId": 34291,
-          "async": false,
-          "exportedName": "updateMySnsLinks",
-          "filename": "src/lib/actions/users.ts"
-        },
-        "app/admin/users/page": {
-          "moduleId": 69012,
+          "moduleId": 22551,
           "async": false,
           "exportedName": "updateMySnsLinks",
           "filename": "src/lib/actions/users.ts"
         },
         "app/dashboard/photos/new/page": {
-          "moduleId": 39353,
+          "moduleId": 72774,
+          "async": false,
+          "exportedName": "updateMySnsLinks",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "updateMySnsLinks",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
           "async": false,
           "exportedName": "updateMySnsLinks",
           "filename": "src/lib/actions/users.ts"
@@ -949,28 +2639,35 @@
       "layer": {
         "app/admin/photos/new/page": "action-browser",
         "app/admin/profile/page": "action-browser",
-        "app/admin/users/page": "rsc",
-        "app/dashboard/photos/new/page": "action-browser"
+        "app/dashboard/photos/new/page": "action-browser",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
       },
       "filename": "src/lib/actions/users.ts",
       "exportedName": "updateMySnsLinks"
     },
-    "00e9cbe3ca980d9ce297493f0d2b6d1f5a68e3e429": {
+    "0080389feaac94cfb6e0db117109c7d82b2977076f": {
       "workers": {
         "app/admin/photos/new/page": {
-          "moduleId": 10752,
-          "async": false,
-          "exportedName": "getAllSnsCandidates",
-          "filename": "src/lib/actions/users.ts"
-        },
-        "app/admin/users/page": {
-          "moduleId": 69012,
+          "moduleId": 85654,
           "async": false,
           "exportedName": "getAllSnsCandidates",
           "filename": "src/lib/actions/users.ts"
         },
         "app/dashboard/photos/new/page": {
-          "moduleId": 39353,
+          "moduleId": 72774,
+          "async": false,
+          "exportedName": "getAllSnsCandidates",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "getAllSnsCandidates",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
           "async": false,
           "exportedName": "getAllSnsCandidates",
           "filename": "src/lib/actions/users.ts"
@@ -978,16 +2675,264 @@
       },
       "layer": {
         "app/admin/photos/new/page": "action-browser",
-        "app/admin/users/page": "rsc",
-        "app/dashboard/photos/new/page": "action-browser"
+        "app/dashboard/photos/new/page": "action-browser",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
       },
       "filename": "src/lib/actions/users.ts",
       "exportedName": "getAllSnsCandidates"
     },
-    "407ed01079c895054321e1b56d1f572d12e451f1db": {
+    "60e548aa9d112723a14ad4ad27df0f7eb44175e3c6": {
+      "workers": {
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "updateMyProfile",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/dashboard/photos/new/page": {
+          "moduleId": 72774,
+          "async": false,
+          "exportedName": "updateMyProfile",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "updateMyProfile",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "updateMyProfile",
+          "filename": "src/lib/actions/users.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/new/page": "action-browser",
+        "app/dashboard/photos/new/page": "action-browser",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/users.ts",
+      "exportedName": "updateMyProfile"
+    },
+    "60a4543c35cbcf185b9be64ca30cb1046f65908ec1": {
+      "workers": {
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "adminResetUserPassword",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/admin/subjects/page": {
+          "moduleId": 83259,
+          "async": false,
+          "exportedName": "adminResetUserPassword",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/dashboard/photos/new/page": {
+          "moduleId": 72774,
+          "async": false,
+          "exportedName": "adminResetUserPassword",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "adminResetUserPassword",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "adminResetUserPassword",
+          "filename": "src/lib/actions/users.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/subjects/page": "action-browser",
+        "app/dashboard/photos/new/page": "action-browser",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/users.ts",
+      "exportedName": "adminResetUserPassword"
+    },
+    "609f8ac44c21f30e512b21e9c321d5d7b2b2f9c3b4": {
+      "workers": {
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "adminUpdateUserProfile",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/admin/subjects/page": {
+          "moduleId": 83259,
+          "async": false,
+          "exportedName": "adminUpdateUserProfile",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/dashboard/photos/new/page": {
+          "moduleId": 72774,
+          "async": false,
+          "exportedName": "adminUpdateUserProfile",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "adminUpdateUserProfile",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "adminUpdateUserProfile",
+          "filename": "src/lib/actions/users.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/new/page": "action-browser",
+        "app/admin/subjects/page": "action-browser",
+        "app/dashboard/photos/new/page": "action-browser",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/users.ts",
+      "exportedName": "adminUpdateUserProfile"
+    },
+    "00293629ff931e0592063dfe12e9d569d7964a6e97": {
+      "workers": {
+        "app/admin/photos/new/page": {
+          "moduleId": 85654,
+          "async": false,
+          "exportedName": "getPublicModels",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/dashboard/photos/new/page": {
+          "moduleId": 72774,
+          "async": false,
+          "exportedName": "getPublicModels",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/photo/[id]/page": {
+          "moduleId": 48791,
+          "async": false,
+          "exportedName": "getPublicModels",
+          "filename": "src/lib/actions/users.ts"
+        },
+        "app/portfolio/page": {
+          "moduleId": 44327,
+          "async": false,
+          "exportedName": "getPublicModels",
+          "filename": "src/lib/actions/users.ts"
+        }
+      },
+      "layer": {
+        "app/admin/photos/new/page": "action-browser",
+        "app/dashboard/photos/new/page": "action-browser",
+        "app/photo/[id]/page": "rsc",
+        "app/portfolio/page": "rsc"
+      },
+      "filename": "src/lib/actions/users.ts",
+      "exportedName": "getPublicModels"
+    },
+    "40f4c0d4bd97d64f95dda117c81d0814425bdf9f50": {
+      "workers": {
+        "app/admin/profile/page": {
+          "moduleId": 22551,
+          "async": false,
+          "exportedName": "checkInvitationCode",
+          "filename": "src/lib/actions/invitation.ts"
+        },
+        "app/invite/claim/page": {
+          "moduleId": 25107,
+          "async": false,
+          "exportedName": "checkInvitationCode",
+          "filename": "src/lib/actions/invitation.ts"
+        }
+      },
+      "layer": {
+        "app/admin/profile/page": "action-browser",
+        "app/invite/claim/page": "action-browser"
+      },
+      "filename": "src/lib/actions/invitation.ts",
+      "exportedName": "checkInvitationCode"
+    },
+    "6094e9fd3a609b95b8af7a9878bf7ba4c4083f9df6": {
+      "workers": {
+        "app/admin/profile/page": {
+          "moduleId": 22551,
+          "async": false,
+          "exportedName": "removeUser",
+          "filename": "src/lib/actions/invitation.ts"
+        },
+        "app/admin/subjects/page": {
+          "moduleId": 83259,
+          "async": false,
+          "exportedName": "removeUser",
+          "filename": "src/lib/actions/invitation.ts"
+        }
+      },
+      "layer": {
+        "app/admin/profile/page": "action-browser",
+        "app/admin/subjects/page": "action-browser"
+      },
+      "filename": "src/lib/actions/invitation.ts",
+      "exportedName": "removeUser"
+    },
+    "40a1675ee3ff7229d1fc1e97a103190b82d0798768": {
+      "workers": {
+        "app/admin/profile/page": {
+          "moduleId": 22551,
+          "async": false,
+          "exportedName": "deleteMyAccount",
+          "filename": "src/lib/actions/invitation.ts"
+        }
+      },
+      "layer": {
+        "app/admin/profile/page": "action-browser"
+      },
+      "filename": "src/lib/actions/invitation.ts",
+      "exportedName": "deleteMyAccount"
+    },
+    "003c65508517794bf21a078056be082bc9d262fc6a": {
+      "workers": {
+        "app/admin/settings/page": {
+          "moduleId": 75719,
+          "async": false,
+          "exportedName": "default",
+          "filename": "src/app/admin/settings/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/settings/page": "rsc"
+      },
+      "filename": "src/app/admin/settings/page.tsx",
+      "exportedName": "default"
+    },
+    "0076ffc89b8198b64fd7085df0e4dabfc24c6fa582": {
+      "workers": {
+        "app/admin/settings/covers/page": {
+          "moduleId": 26244,
+          "async": false,
+          "exportedName": "rebuildAlgoliaIndex",
+          "filename": "src/lib/actions/algolia.ts"
+        }
+      },
+      "layer": {
+        "app/admin/settings/covers/page": "action-browser"
+      },
+      "filename": "src/lib/actions/algolia.ts",
+      "exportedName": "rebuildAlgoliaIndex"
+    },
+    "40d6c75f50200505ef1514c0a6b6b2de669bcb5872": {
       "workers": {
         "app/admin/subjects/page": {
-          "moduleId": 46215,
+          "moduleId": 83259,
           "async": false,
           "exportedName": "saveSubject",
           "filename": "src/lib/actions/subjects.ts"
@@ -999,10 +2944,10 @@
       "filename": "src/lib/actions/subjects.ts",
       "exportedName": "saveSubject"
     },
-    "6093e9ca77be7067fd459e7bf523b9b6b20c616502": {
+    "6058c0d74f7c22ae4871bf2e0dd05c76972266c7a0": {
       "workers": {
         "app/admin/subjects/page": {
-          "moduleId": 46215,
+          "moduleId": 83259,
           "async": false,
           "exportedName": "updateSubject",
           "filename": "src/lib/actions/subjects.ts"
@@ -1014,10 +2959,10 @@
       "filename": "src/lib/actions/subjects.ts",
       "exportedName": "updateSubject"
     },
-    "4009e0e17746cdba7f00e1ce96ba969470563e5b57": {
+    "404b634894afd5065252121e03c6e0ff4e20bbcc11": {
       "workers": {
         "app/admin/subjects/page": {
-          "moduleId": 46215,
+          "moduleId": 83259,
           "async": false,
           "exportedName": "deleteSubject",
           "filename": "src/lib/actions/subjects.ts"
@@ -1029,10 +2974,10 @@
       "filename": "src/lib/actions/subjects.ts",
       "exportedName": "deleteSubject"
     },
-    "4089502ecb45a3862fcadde3f9485a18834379e761": {
+    "40649d9fcdf13194a3a7dcc0a744dd5a8cb2c98bc5": {
       "workers": {
         "app/register/form/page": {
-          "moduleId": 77547,
+          "moduleId": 57134,
           "async": false,
           "exportedName": "registerWithInvitation",
           "filename": "src/lib/actions/register.ts"
@@ -1043,8 +2988,38 @@
       },
       "filename": "src/lib/actions/register.ts",
       "exportedName": "registerWithInvitation"
+    },
+    "40e6ebe67ea0b2012c1511aaba7e24a185afb48a83": {
+      "workers": {
+        "app/register/form/page": {
+          "moduleId": 57134,
+          "async": false,
+          "exportedName": "checkInvitationCode",
+          "filename": "src/lib/actions/register.ts"
+        }
+      },
+      "layer": {
+        "app/register/form/page": "action-browser"
+      },
+      "filename": "src/lib/actions/register.ts",
+      "exportedName": "checkInvitationCode"
+    },
+    "40c504f3294668959ce75375faa54973b937d84180": {
+      "workers": {
+        "app/register/form/page": {
+          "moduleId": 57134,
+          "async": false,
+          "exportedName": "registerSocialUser",
+          "filename": "src/lib/actions/register.ts"
+        }
+      },
+      "layer": {
+        "app/register/form/page": "action-browser"
+      },
+      "filename": "src/lib/actions/register.ts",
+      "exportedName": "registerSocialUser"
     }
   },
   "edge": {},
-  "encryptionKey": "11VpYjk2BRCGW/8IB46ksi1QNw9tP4fTFFXEybomKHc="
+  "encryptionKey": "8aAZ0I+DD/GR5ndMMdaKKysTMpd5wDdSePaXNtImpsE="
 }

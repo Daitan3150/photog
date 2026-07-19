@@ -8,6 +8,10 @@
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
       "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
     ],
+    "[project]/src/app/admin/ai-lab/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
+      "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
+    ],
     "[project]/src/app/admin/blog/[id]/page": [
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
       "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
@@ -20,7 +24,19 @@
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
       "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
     ],
+    "[project]/src/app/admin/help/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
+      "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
+    ],
     "[project]/src/app/admin/invite/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
+      "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
+    ],
+    "[project]/src/app/admin/lenses/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
+      "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
+    ],
+    "[project]/src/app/admin/locations/page": [
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
       "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
     ],
@@ -56,19 +72,23 @@
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
       "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
     ],
+    "[project]/src/app/admin/settings/covers/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
+      "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
+    ],
+    "[project]/src/app/admin/settings/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
+      "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
+    ],
+    "[project]/src/app/admin/studios/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
+      "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
+    ],
     "[project]/src/app/admin/subjects/page": [
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
       "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
     ],
     "[project]/src/app/admin/users/page": [
-      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
-      "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
-    ],
-    "[project]/src/app/blog/[id]/page": [
-      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
-      "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
-    ],
-    "[project]/src/app/blog/page": [
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
       "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
     ],
@@ -89,6 +109,10 @@
       "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
     ],
     "[project]/src/app/dashboard/photos/page": [
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
+      "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
+    ],
+    "[project]/src/app/invite/claim/page": [
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2",
       "static/media/68d0ad77fd2c49e3-s.p.25e41569.woff2"
     ],

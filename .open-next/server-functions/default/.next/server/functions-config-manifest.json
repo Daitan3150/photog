@@ -10,7 +10,6 @@
     "/api/upload/resize-remote": {
       "maxDuration": 60
     },
-    "/opengraph-image": {},
     "/photo/[id]/opengraph-image": {}
   }
 }

@@ -130,12 +130,12 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
     }
 
     return (
-        <main className="min-h-screen pt-32 pb-20 bg-white">
-            <div className="max-w-7xl mx-auto px-4 md:px-8">
+        <main className="min-h-screen pt-24 pb-16 bg-white">
+            <div className="max-w-7xl mx-auto px-3 md:px-6">
                 <PortfolioHeader />
 
-                <div className="flex flex-col gap-5">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                         <PortfolioViewModeToggle currentView={currentView} />
                         <div className="text-sm text-gray-600">
                             {currentView === 'lens'
@@ -161,12 +161,12 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
                     />
                 )}
 
-                <div className="mt-6">
+                <div className="mt-4">
                 </div>
 
                 {displayPhotos.length > 0 ? (
                     <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gray-200 border-t-black rounded-full animate-spin" /></div>}>
-                        <div className="mt-12">
+                        <div className="mt-8">
                             {(() => {
                                 if (currentView === 'lens') {
                                     return null;

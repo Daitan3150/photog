@@ -20,7 +20,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://res.cloudinary.com blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.algolia.net https://*.algolianet.com https://worker.daitan-portfolio.workers.dev; frame-ancestors 'none';"
+          "value": "default-src 'self' https://*.sentry.io; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://*.sentry.io https://apis.google.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https://res.cloudinary.com blob: https://*.sentry.io https://*.googleusercontent.com https://*.google.com https://*.openstreetmap.org https://unpkg.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.cloudinary.com https://*.algolia.net https://*.algolianet.com https://*.firebaseio.com https://*.googleapis.com https://*.firebase.com https://*.sentry.io; frame-src 'self' https://www.google.com https://www.openstreetmap.org; frame-ancestors 'none';"
         },
         {
           "key": "X-Content-Type-Options",
@@ -63,14 +63,6 @@
         "nxtPid": "nxtPid"
       },
       "namedRegex": "^/admin/photos/(?<nxtPid>[^/]+?)(?:/)?$"
-    },
-    {
-      "page": "/blog/[id]",
-      "regex": "^/blog/([^/]+?)(?:/)?$",
-      "routeKeys": {
-        "nxtPid": "nxtPid"
-      },
-      "namedRegex": "^/blog/(?<nxtPid>[^/]+?)(?:/)?$"
     },
     {
       "page": "/dashboard/photos/[id]",
@@ -129,6 +121,12 @@
       "namedRegex": "^/admin(?:/)?$"
     },
     {
+      "page": "/admin/ai-lab",
+      "regex": "^/admin/ai\\-lab(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/ai\\-lab(?:/)?$"
+    },
+    {
       "page": "/admin/blog",
       "regex": "^/admin/blog(?:/)?$",
       "routeKeys": {},
@@ -141,10 +139,28 @@
       "namedRegex": "^/admin/blog/new(?:/)?$"
     },
     {
+      "page": "/admin/help",
+      "regex": "^/admin/help(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/help(?:/)?$"
+    },
+    {
       "page": "/admin/invite",
       "regex": "^/admin/invite(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admin/invite(?:/)?$"
+    },
+    {
+      "page": "/admin/lenses",
+      "regex": "^/admin/lenses(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/lenses(?:/)?$"
+    },
+    {
+      "page": "/admin/locations",
+      "regex": "^/admin/locations(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/locations(?:/)?$"
     },
     {
       "page": "/admin/login",
@@ -183,6 +199,24 @@
       "namedRegex": "^/admin/reset\\-password(?:/)?$"
     },
     {
+      "page": "/admin/settings",
+      "regex": "^/admin/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/settings(?:/)?$"
+    },
+    {
+      "page": "/admin/settings/covers",
+      "regex": "^/admin/settings/covers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/settings/covers(?:/)?$"
+    },
+    {
+      "page": "/admin/studios",
+      "regex": "^/admin/studios(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/studios(?:/)?$"
+    },
+    {
       "page": "/admin/subjects",
       "regex": "^/admin/subjects(?:/)?$",
       "routeKeys": {},
@@ -193,6 +227,36 @@
       "regex": "^/admin/users(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admin/users(?:/)?$"
+    },
+    {
+      "page": "/api/exif-suggestions",
+      "regex": "^/api/exif\\-suggestions(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/exif\\-suggestions(?:/)?$"
+    },
+    {
+      "page": "/api/fix",
+      "regex": "^/api/fix(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/fix(?:/)?$"
+    },
+    {
+      "page": "/api/lens-models",
+      "regex": "^/api/lens\\-models(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/lens\\-models(?:/)?$"
+    },
+    {
+      "page": "/api/photo-stats",
+      "regex": "^/api/photo\\-stats(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/photo\\-stats(?:/)?$"
+    },
+    {
+      "page": "/api/photos/bulk-lens-model",
+      "regex": "^/api/photos/bulk\\-lens\\-model(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/photos/bulk\\-lens\\-model(?:/)?$"
     },
     {
       "page": "/api/upload/r2-presigned",
@@ -225,12 +289,6 @@
       "namedRegex": "^/api/upload/sign(?:/)?$"
     },
     {
-      "page": "/blog",
-      "regex": "^/blog(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/blog(?:/)?$"
-    },
-    {
       "page": "/contact",
       "regex": "^/contact(?:/)?$",
       "routeKeys": {},
@@ -261,10 +319,10 @@
       "namedRegex": "^/favicon\\.ico(?:/)?$"
     },
     {
-      "page": "/opengraph-image",
-      "regex": "^/opengraph\\-image(?:/)?$",
+      "page": "/invite/claim",
+      "regex": "^/invite/claim(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/opengraph\\-image(?:/)?$"
+      "namedRegex": "^/invite/claim(?:/)?$"
     },
     {
       "page": "/portfolio",

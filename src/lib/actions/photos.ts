@@ -21,6 +21,7 @@ import { appendToMetadataRegistry } from './metadata';
 import { ensureLocationExists } from './locations';
 import { ensureStudioExists } from './studios';
 import { revalidatePath } from 'next/cache';
+import { buildFullAddress } from '../utils/address';
 
 const CATEGORIES = ['all', 'portrait', 'snapshot', 'cosplay', 'landscape', 'animal', 'other', 'archived'];
 
@@ -208,7 +209,12 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             seriesName: data.seriesName || null,
             event: data.event || null,
             location: data.location || null,
-            address: (data as any).address || null,
+            address: buildFullAddress({
+                address: (data as any).address,
+                addressZip: data.addressZip,
+                addressPref: data.addressPref,
+                addressCity: data.addressCity,
+            }) || null,
             addressZip: data.addressZip || null,
             addressPref: data.addressPref || null,
             addressCity: data.addressCity || null,
@@ -1301,7 +1307,14 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         if (data.categoryId !== undefined) updates.categoryId = data.categoryId;
         if (data.displayMode !== undefined) updates.displayMode = data.displayMode;
         if (data.event !== undefined) updates.event = data.event;
-        if (data.address !== undefined) updates.address = data.address;
+        if (data.address !== undefined || (data as any).addressZip !== undefined || (data as any).addressPref !== undefined || (data as any).addressCity !== undefined) {
+            updates.address = buildFullAddress({
+                address: data.address,
+                addressZip: (data as any).addressZip,
+                addressPref: (data as any).addressPref,
+                addressCity: (data as any).addressCity,
+            });
+        }
         if (data.shotAt !== undefined) {
             if (data.shotAt && String(data.shotAt).length > 0) {
                 const parsed = new Date(data.shotAt);
@@ -1319,6 +1332,9 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         if (data.focalPoint !== undefined) updates.focalPoint = data.focalPoint;
         if (data.shareOgImageUrl !== undefined) updates.shareOgImageUrl = data.shareOgImageUrl || null;
 
+        if ((data as any).addressZip !== undefined) updates.addressZip = (data as any).addressZip;
+        if ((data as any).addressPref !== undefined) updates.addressPref = (data as any).addressPref;
+        if ((data as any).addressCity !== undefined) updates.addressCity = (data as any).addressCity;
         if (data.latitude !== undefined) updates.latitude = data.latitude;
         if (data.longitude !== undefined) updates.longitude = data.longitude;
         if (data.shootLocationType !== undefined) updates.shootLocationType = data.shootLocationType;

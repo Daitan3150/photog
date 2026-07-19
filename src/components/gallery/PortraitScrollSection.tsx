@@ -78,9 +78,9 @@ export default function PortraitScrollSection({
     };
 
     return (
-        <section className="mb-32 last:mb-0 overflow-hidden">
+        <section className="mb-20 last:mb-0 overflow-hidden">
             {/* Model Header - Elegant and Premium */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 px-6 md:px-0 gap-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 px-4 md:px-0 gap-3">
                 <div className="relative">
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
@@ -221,7 +221,7 @@ export default function PortraitScrollSection({
                             }
                             return null;
                         })()}
-                        <div className="w-12 h-[1px] bg-neutral-900 mt-4 opacity-20" />
+                        <div className="w-12 h-[1px] bg-neutral-900 mt-3 opacity-20" />
                     </motion.div>
                 </div>
 
@@ -250,11 +250,11 @@ export default function PortraitScrollSection({
                     ))}
 
                     {/* End Spacer to allow final photo to be centered or well-aligned */}
-                    <div className="flex-shrink-0 w-20 md:w-32" />
+                    <div className="flex-shrink-0 w-16 md:w-24" />
                 </div>
 
                 {/* Scroll Indicator line at bottom */}
-                <div className="absolute bottom-4 left-6 md:left-0 right-6 md:right-0 h-[1px] bg-neutral-100 overflow-hidden">
+                <div className="absolute bottom-3 left-4 md:left-0 right-4 md:right-0 h-[1px] bg-neutral-100 overflow-hidden">
                     <motion.div
                         className="h-full bg-neutral-400 w-full origin-left"
                         initial={{ scaleX: 0 }}
@@ -304,8 +304,9 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
         >
             <Link
                 href={`/portfolio?${new URLSearchParams({ ...Object.fromEntries(searchParams.entries()), img: photo.id }).toString()}`}
-                className="block relative aspect-[2/3] md:aspect-[4/5] overflow-hidden rounded-sm shadow-[0_20px_50px_rgba(0,0,0,0.1)] group/item bg-neutral-50"
+                className="block group/item"
             >
+                <div className="relative aspect-[2/3] md:aspect-[4/5] overflow-hidden rounded-sm shadow-[0_20px_50px_rgba(0,0,0,0.1)] bg-neutral-50">
                 <Image
                     loader={cloudinaryLoader}
                     src={photo.url}
@@ -335,9 +336,6 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
 
                         <div className="flex items-end justify-between">
                             <div className="flex flex-col">
-                                <p className="text-white text-[11px] md:text-sm font-serif tracking-[0.2em] uppercase drop-shadow-md">
-                                    {photo.title}
-                                </p>
                                 {photo.location && (
                                     <p className="text-white/40 text-[8px] md:text-[9px] uppercase tracking-widest mt-1">
                                         Near {photo.location}
@@ -369,6 +367,13 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
 
                 {/* Aesthetic Corner Border on Hover */}
                 <div className="absolute top-6 right-6 w-8 h-8 border-t border-r border-white/40 opacity-0 group-hover/item:opacity-100 transition-all duration-700 scale-90 group-hover/item:scale-100" />
+                </div>
+
+                <div className="mt-3 px-2 flex justify-center">
+                    <p className="text-center text-[11px] sm:text-[12px] md:text-[13px] font-serif tracking-[0.2em] uppercase text-neutral-800 line-clamp-2 leading-relaxed">
+                        {photo.title}
+                    </p>
+                </div>
             </Link>
         </motion.div>
     );

@@ -80,9 +80,9 @@ export default function CosplayScrollSection({
     const eventNames = [...new Set(photos.map(p => p.event).filter(Boolean))];
 
     return (
-        <section className="mb-28 last:mb-0 overflow-hidden">
+        <section className="mb-20 last:mb-0 overflow-hidden">
             {/* Cosplay Header - Purple/Pink Gradient Theme */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 px-6 md:px-0 gap-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 px-4 md:px-0 gap-3">
                 <div className="relative">
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
@@ -229,7 +229,7 @@ export default function CosplayScrollSection({
                         })()}
 
                         {/* Character / Series Tags */}
-                        <div className="flex flex-wrap gap-2 mt-4">
+                        <div className="flex flex-wrap gap-2 mt-3">
                             {characterNames.map(name => (
                                 <span
                                     key={name}
@@ -257,7 +257,7 @@ export default function CosplayScrollSection({
                             ))}
                         </div>
 
-                        <div className="w-12 h-[2px] bg-gradient-to-r from-purple-500 to-pink-500 mt-4 rounded-full" />
+                        <div className="w-12 h-[2px] bg-gradient-to-r from-purple-500 to-pink-500 mt-3 rounded-full" />
                     </motion.div>
                 </div>
 
@@ -286,11 +286,11 @@ export default function CosplayScrollSection({
                     ))}
 
                     {/* End Spacer */}
-                    <div className="flex-shrink-0 w-20 md:w-32" />
+                    <div className="flex-shrink-0 w-16 md:w-24" />
                 </div>
 
                 {/* Scroll Indicator line - Gradient */}
-                <div className="absolute bottom-4 left-6 md:left-0 right-6 md:right-0 h-[2px] bg-purple-50 overflow-hidden rounded-full">
+                <div className="absolute bottom-3 left-4 md:left-0 right-4 md:right-0 h-[2px] bg-purple-50 overflow-hidden rounded-full">
                     <motion.div
                         className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-amber-400 w-full origin-left rounded-full"
                         initial={{ scaleX: 0 }}
@@ -424,6 +424,12 @@ function CosplayPhotoItem({ photo, index, searchParams, modelName }: {
                     <div className="absolute top-5 right-5 w-8 h-8 border-t-2 border-r-2 border-amber-400/60 opacity-0 group-hover/item:opacity-100 transition-all duration-700 scale-90 group-hover/item:scale-100" />
                     <div className="absolute bottom-5 left-5 w-8 h-8 border-b-2 border-l-2 border-purple-400/60 opacity-0 group-hover/item:opacity-100 transition-all duration-700 scale-90 group-hover/item:scale-100" />
                 </Link>
+
+                <div className="mt-3 flex justify-center px-2">
+                    <p className="text-center text-[11px] sm:text-[12px] md:text-[13px] font-serif tracking-[0.2em] uppercase text-neutral-800 line-clamp-2 leading-relaxed">
+                        {photo.title}
+                    </p>
+                </div>
             </div>
         </motion.div>
     );

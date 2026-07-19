@@ -7,6 +7,7 @@ export interface Location {
     addressZip?: string;
     addressPref?: string;
     addressCity?: string;
+    url?: string;
     latitude?: number | null;
     longitude?: number | null;
     createdAt?: Date;

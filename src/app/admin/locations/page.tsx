@@ -21,6 +21,7 @@ export default function LocationsPage() {
         addressZip: '',
         addressPref: '',
         addressCity: '',
+        url: '',
         latitude: null,
         longitude: null
     });
@@ -70,6 +71,7 @@ export default function LocationsPage() {
                 addressZip: location.addressZip || '',
                 addressPref: location.addressPref || '',
                 addressCity: location.addressCity || '',
+                url: location.url || '',
                 latitude: location.latitude ?? null,
                 longitude: location.longitude ?? null,
             });
@@ -83,6 +85,7 @@ export default function LocationsPage() {
                 addressZip: '',
                 addressPref: '',
                 addressCity: '',
+                url: '',
                 latitude: null,
                 longitude: null,
             });
@@ -301,7 +304,9 @@ export default function LocationsPage() {
                             )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* 左列 */}
                                 <div className="space-y-6">
+                                    {/* ロケーション名 */}
                                     <div className="space-y-2">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
                                             ロケーション名 (必須)
@@ -316,6 +321,7 @@ export default function LocationsPage() {
                                         />
                                     </div>
 
+                                    {/* 住所一括入力 */}
                                     <div className="space-y-1">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-sky-500 ml-1 flex items-center gap-2">
                                             <Search size={12} />
@@ -355,19 +361,17 @@ export default function LocationsPage() {
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
                                             郵便番号
                                         </label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={formData.addressZip || ''}
-                                                onChange={e => setFormData(prev => ({ ...prev, addressZip: e.target.value }))}
-                                                className="flex-1 px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                                placeholder="123-4567"
-                                                maxLength={8}
-                                            />
-                                        </div>
+                                        <input
+                                            type="text"
+                                            value={formData.addressZip || ''}
+                                            onChange={e => setFormData(prev => ({ ...prev, addressZip: e.target.value }))}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            placeholder="123-4567"
+                                            maxLength={8}
+                                        />
                                     </div>
 
-                                    {/* 都道府県 & 市区町村 */}
+                                    {/* 都道府県 & 市区町村・番地 */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
@@ -394,32 +398,21 @@ export default function LocationsPage() {
                                             />
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                            タイプ (必須)
-                                        </label>
-                                        <select
-                                            value={formData.type}
-                                            onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as 'outdoor' | 'indoor' | 'other' }))}
-                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                        >
-                                            <option value="outdoor">屋外</option>
-                                            <option value="indoor">室内</option>
-                                            <option value="other">その他</option>
-                                        </select>
-                                    </div>
+                                </div>
 
-                                    {/* フル住所 */}
+                                {/* 右列 */}
+                                <div className="space-y-6">
+                                    {/* URL */}
                                     <div className="space-y-2">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                            住所 (任意)
+                                            WEBサイトなどのURL (任意)
                                         </label>
                                         <input
-                                            type="text"
-                                            value={formData.address}
-                                            onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                                            type="url"
+                                            value={formData.url || ''}
+                                            onChange={e => setFormData(prev => ({ ...prev, url: e.target.value }))}
                                             className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                            placeholder="東京都渋谷区代々木"
+                                            placeholder="https://example.com"
                                         />
                                     </div>
 
@@ -446,20 +439,6 @@ export default function LocationsPage() {
                                         />
                                     </div>
 
-                                    {/* 地図プレビュー */}
-                                    <div className="w-full aspect-video rounded-2xl overflow-hidden border border-gray-100 shadow-inner bg-gray-50 relative">
-                                        <LeafletMap
-                                            lat={formData.latitude || 35.6895}
-                                            lng={formData.longitude || 139.6917}
-                                            height="100%"
-                                        />
-                                        {!formData.latitude && (
-                                            <div className="absolute inset-0 bg-black/5 flex items-center justify-center p-4 text-center">
-                                                <p className="text-[10px] text-gray-400 font-bold">有効な座標が入力されると<br />ここに地図が表示されます</p>
-                                            </div>
-                                        )}
-                                    </div>
-
                                     {/* メモ */}
                                     <div className="space-y-2">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
@@ -468,7 +447,7 @@ export default function LocationsPage() {
                                         <textarea
                                             value={formData.note || ''}
                                             onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))}
-                                            rows={3}
+                                            rows={5}
                                             className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
                                             placeholder="例: 公園中央広場、イベント開催時に使用"
                                         />

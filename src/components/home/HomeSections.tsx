@@ -16,17 +16,17 @@ export default function HomeFeaturedSection({ portraitCoverUrl, snapshotCoverUrl
     return (
         <>
             {/* Featured Genres Section */}
-            <section className="py-16 md:py-24 bg-transparent px-4 md:px-12">
+            <section className="py-12 md:py-16 bg-transparent px-4 md:px-8">
                 <div className="max-w-6xl mx-auto">
-                    <div className="text-center mb-12 border-b border-black/10 pb-8">
-                        <h2 className="text-2xl md:text-3xl font-serif mb-3 tracking-wide">{t.home.featuredGenres}</h2>
+                    <div className="text-center mb-8 border-b border-black/10 pb-6">
+                        <h2 className="text-2xl md:text-3xl font-serif mb-2 tracking-wide">{t.home.featuredGenres}</h2>
                         <p className="text-gray-500 tracking-[0.2em] text-xs uppercase">{t.home.featuredGenresSub}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-10">
                         {/* Genre 1: Portrait */}
                         <div className="group cursor-pointer">
-                            <div className="overflow-hidden relative aspect-[4/5] bg-gray-200 mb-6">
+                            <div className="overflow-hidden relative aspect-[4/5] bg-gray-200 mb-4 sm:mb-6">
                                 <Image
                                     loader={cloudinaryLoader}
                                     src={portraitCoverUrl || "/images/portrait.jpg"}
@@ -37,15 +37,15 @@ export default function HomeFeaturedSection({ portraitCoverUrl, snapshotCoverUrl
                                 />
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
                             </div>
-                            <h3 className="text-2xl font-serif mb-2">{t.home.portraitTitle}</h3>
-                            <p className="text-gray-600 font-light leading-relaxed text-sm md:text-base">
+                            <h3 className="text-lg sm:text-xl font-serif mb-1 sm:mb-1.5">{t.home.portraitTitle}</h3>
+                            <p className="text-gray-600 font-light leading-relaxed text-xs sm:text-sm md:text-base">
                                 {t.home.portraitDesc}
                             </p>
                         </div>
 
                         {/* Genre 2: Snapshot */}
                         <div className="group cursor-pointer md:mt-16">
-                            <div className="overflow-hidden relative aspect-[4/5] bg-gray-200 mb-6">
+                            <div className="overflow-hidden relative aspect-[4/5] bg-gray-200 mb-4 sm:mb-6">
                                 <Image
                                     loader={cloudinaryLoader}
                                     src={snapshotCoverUrl || "/images/snapshot.jpg"}
@@ -56,8 +56,8 @@ export default function HomeFeaturedSection({ portraitCoverUrl, snapshotCoverUrl
                                 />
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
                             </div>
-                            <h3 className="text-2xl font-serif mb-2">{t.home.snapshotTitle}</h3>
-                            <p className="text-gray-600 font-light leading-relaxed text-sm md:text-base">
+                            <h3 className="text-lg sm:text-xl font-serif mb-1 sm:mb-1.5">{t.home.snapshotTitle}</h3>
+                            <p className="text-gray-600 font-light leading-relaxed text-xs sm:text-sm md:text-base">
                                 {t.home.snapshotDesc}
                             </p>
                         </div>
