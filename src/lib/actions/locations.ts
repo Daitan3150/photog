@@ -1,7 +1,7 @@
 'use server';
 
 import { Location, LocationFormData } from '@/types/location';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, unstable_noStore } from 'next/cache';
 import { serializeData } from '../utils/serialization';
 
 /**
@@ -9,6 +9,7 @@ import { serializeData } from '../utils/serialization';
  */
 export async function getLocations(idToken?: string): Promise<Location[]> {
     try {
+        unstable_noStore();
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
 
@@ -67,6 +68,7 @@ export async function ensureLocationExists(locationName: string, data: Partial<L
 
         revalidatePath('/admin/locations');
         revalidatePath('/admin/studios');
+        revalidatePath('/admin/photos/new');
         return { success: true, exists: false, id: ref.id };
     } catch (error: any) {
         console.error('Error ensuring location exists:', error);
@@ -96,6 +98,7 @@ export async function saveLocation(data: LocationFormData, idToken: string) {
 
         revalidatePath('/admin/locations');
         revalidatePath('/admin/studios');
+        revalidatePath('/admin/photos/new');
         return { success: true, id: ref.id };
     } catch (error: any) {
         console.error('Error saving location:', error);
@@ -121,6 +124,8 @@ export async function updateLocation(id: string, data: Partial<LocationFormData>
         });
 
         revalidatePath('/admin/locations');
+        revalidatePath('/admin/studios');
+        revalidatePath('/admin/photos/new');
         return { success: true };
     } catch (error: any) {
         console.error('Error updating location:', error);
@@ -141,6 +146,8 @@ export async function deleteLocation(id: string, idToken: string) {
         await db.collection('locations').doc(id).delete();
 
         revalidatePath('/admin/locations');
+        revalidatePath('/admin/studios');
+        revalidatePath('/admin/photos/new');
         return { success: true };
     } catch (error: any) {
         console.error('Error deleting location:', error);
