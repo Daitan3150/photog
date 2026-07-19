@@ -38,7 +38,7 @@ export default function StudiosPage() {
     const [activeLocationTypeFilter, setActiveLocationTypeFilter] = useState<'all' | Location['type']>('all');
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
-    const [locationFormData, setLocationFormData] = useState<LocationFormData>({
+    const [locationFormData, setLocationFormData] = useState<LocationFormData & { coordsInput?: string }>({
         name: '',
         type: 'outdoor',
         note: '',
@@ -48,9 +48,11 @@ export default function StudiosPage() {
         addressCity: '',
         latitude: null,
         longitude: null,
+        coordsInput: '',
     });
     const [locationError, setLocationError] = useState('');
     const [locationSaving, setLocationSaving] = useState(false);
+    const [isLocationLookingUpZip, setIsLocationLookingUpZip] = useState(false);
 
     const LOCATION_TYPE_LABELS = {
         outdoor: '屋外',
@@ -150,6 +152,7 @@ export default function StudiosPage() {
                 addressCity: location.addressCity || '',
                 latitude: location.latitude ?? null,
                 longitude: location.longitude ?? null,
+                coordsInput: (location.latitude != null && location.longitude != null) ? `${location.latitude}, ${location.longitude}` : '',
             });
         } else {
             setEditingLocation(null);
@@ -163,6 +166,7 @@ export default function StudiosPage() {
                 addressCity: '',
                 latitude: null,
                 longitude: null,
+                coordsInput: '',
             });
         }
         setLocationError('');
@@ -172,6 +176,107 @@ export default function StudiosPage() {
     const handleCloseLocationModal = () => {
         setIsLocationModalOpen(false);
         setEditingLocation(null);
+    };
+
+    const handleLocationZipLookup = async () => {
+        const zip = locationFormData.addressZip?.replace(/[^0-9]/g, '');
+        if (!zip || zip.length !== 7) {
+            setLocationError('郵便番号は7桁で入力してください。');
+            return;
+        }
+
+        setIsLocationLookingUpZip(true);
+        setLocationError('');
+        try {
+            const data = await getZipAddressAction(zip) as any;
+
+            if (data && data.results && data.results.length > 0) {
+                const result = data.results[0];
+                const pref = result.address1 || '';
+                const city = (result.address2 || '') + (result.address3 || '');
+                setLocationFormData(prev => ({
+                    ...prev,
+                    addressPref: pref,
+                    addressCity: city,
+                }));
+                // Auto Search Coords with the fresh values
+                handleLocationCoordinateSearch(`${pref} ${city}`);
+            } else {
+                setLocationError('該当する住所が見つかりませんでした。');
+            }
+        } catch (err) {
+            setLocationError('住所の検索中にエラーが発生しました。');
+        } finally {
+            setIsLocationLookingUpZip(false);
+        }
+    };
+
+    const handleLocationCoordinateSearch = async (forcedQuery?: string) => {
+        const query = forcedQuery || [locationFormData.addressPref, locationFormData.addressCity, locationFormData.address].filter(Boolean).join(' ');
+        if (!query) {
+            setLocationError('住所情報を入力してから検索してください。');
+            return;
+        }
+
+        setIsLocationLookingUpZip(true);
+        setLocationError('');
+        try {
+            const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+            let results = await searchCoordinatesAction(query);
+
+            // Fallback: If not found, try without the detailed address
+            if ((!results || results.length === 0) && !forcedQuery && locationFormData.address) {
+                const secondaryQuery = [locationFormData.addressPref, locationFormData.addressCity].filter(Boolean).join(' ');
+                results = await searchCoordinatesAction(secondaryQuery);
+            }
+
+            if (results && results.length > 0) {
+                setLocationFormData(prev => ({
+                    ...prev,
+                    latitude: results[0].lat,
+                    longitude: results[0].lng,
+                    coordsInput: `${results[0].lat}, ${results[0].lng}`
+                }));
+            } else {
+                setLocationError('座標が見つかりませんでした。住所を詳しく入力してください。');
+            }
+        } catch (err) {
+            setLocationError('座標の検索中にエラーが発生しました。');
+        } finally {
+            setIsLocationLookingUpZip(false);
+        }
+    };
+
+    const handleLocationCoordsInputChange = (val: string) => {
+        // Parse "lat, lng" - handle both half-width and full-width commas, and spaces
+        const parts = val.split(/[,，\s/]+/).map(p => p.trim()).filter(Boolean);
+        let lat = locationFormData.latitude;
+        let lng = locationFormData.longitude;
+
+        if (parts.length >= 2) {
+            const parseCoord = (s: string, negChars: string[]) => {
+                const match = s.match(/[-]?\d+(\.\d+)?/);
+                if (!match) return NaN;
+                let num = parseFloat(match[0]);
+                if (negChars.some(c => s.includes(c))) num = -Math.abs(num);
+                return num;
+            };
+
+            const parsedLat = parseCoord(parts[0], ['南', 'S', 's']);
+            const parsedLng = parseCoord(parts[1], ['西', 'W', 'w']);
+
+            if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+                lat = parsedLat;
+                lng = parsedLng;
+            }
+        }
+
+        setLocationFormData(prev => ({
+            ...prev,
+            coordsInput: val,
+            latitude: lat,
+            longitude: lng
+        }));
     };
 
     const handleLocationSubmit = async (e: React.FormEvent) => {
@@ -192,9 +297,12 @@ export default function StudiosPage() {
                 return;
             }
 
+            // Remove coordsInput helper from data to save
+            const { coordsInput, ...dataToSave } = locationFormData;
+
             const result = editingLocation?.id
-                ? await updateLocation(editingLocation.id, locationFormData, token)
-                : await saveLocation(locationFormData, token);
+                ? await updateLocation(editingLocation.id, dataToSave, token)
+                : await saveLocation(dataToSave, token);
 
             if (result.success) {
                 await fetchLocations();
@@ -912,11 +1020,11 @@ export default function StudiosPage() {
 
             {isLocationModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
                         <header className="px-8 py-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900">
-                                    {editingLocation ? 'ロケーションを編集' : '新しいロケーションを追加'}
+                                    {editingLocation ? 'ロケーション情報の編集' : '新しいロケーションを追加'}
                                 </h2>
                                 <p className="text-sm text-gray-500 mt-1">屋外・室内・その他の撮影場所を事前登録し、アップロード時に選択できます。</p>
                             </div>
@@ -933,7 +1041,9 @@ export default function StudiosPage() {
                             )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-4">
+                                {/* 左カラム */}
+                                <div className="space-y-6">
+                                    {/* ロケーション名 */}
                                     <div className="space-y-2">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">ロケーション名 (必須)</label>
                                         <input
@@ -941,11 +1051,12 @@ export default function StudiosPage() {
                                             value={locationFormData.name}
                                             onChange={(e) => setLocationFormData(prev => ({ ...prev, name: e.target.value }))}
                                             className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                            placeholder="代々木公園"
+                                            placeholder="例: 代々木公園"
                                             required
                                         />
                                     </div>
 
+                                    {/* タイプ */}
                                     <div className="space-y-2">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">タイプ</label>
                                         <select
@@ -959,40 +1070,58 @@ export default function StudiosPage() {
                                         </select>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">メモ</label>
+                                    {/* 住所一括入力 (Smart Parse) */}
+                                    <div className="space-y-1">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-sky-500 ml-1 flex items-center gap-2">
+                                            <Search size={12} />
+                                            住所一括入力 (Smart Parse)
+                                        </label>
                                         <textarea
-                                            value={locationFormData.note || ''}
-                                            onChange={(e) => setLocationFormData(prev => ({ ...prev, note: e.target.value }))}
-                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium h-28 resize-none"
-                                            placeholder="例えば、最寄り駅や特徴を入力してください。"
-                                        />
-                                    </div>
-                                </div>
+                                            value={locationFormData.address || ''}
+                                            onChange={(e) => {
+                                                const input = e.target.value;
+                                                const zipMatch = input.match(/(?:〒?\s?)(\d{3}-\d{4}|\d{7})/);
+                                                const zip = zipMatch ? (zipMatch[1].includes('-') ? zipMatch[1] : `${zipMatch[1].slice(0, 3)}-${zipMatch[1].slice(3)}`) : '';
 
-                                <div className="space-y-4">
+                                                const prefMatch = input.match(/(北海道|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|東京都|神奈川県|新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|京都府|大阪府|兵庫県|奈良県|和求山県|鳥取県|島根県|岡山県|広島県|山口県|徳島県|香川県|愛媛県|高知県|福岡県|佐賀県|長崎県|熊本県|大分県|宮崎県|鹿児島県|沖縄県)/);
+                                                const pref = prefMatch ? prefMatch[1] : '';
+
+                                                let addr = input;
+                                                if (zipMatch) addr = addr.replace(zipMatch[0], '');
+                                                if (prefMatch) addr = addr.replace(prefMatch[0], '');
+                                                addr = addr.replace(/^[\s　,]+|[\s　,]+$/g, '');
+
+                                                setLocationFormData(prev => ({
+                                                    ...prev,
+                                                    address: input,
+                                                    addressZip: zip || prev.addressZip,
+                                                    addressPref: pref || prev.addressPref,
+                                                    addressCity: addr || prev.addressCity,
+                                                }));
+                                            }}
+                                            className="w-full px-5 py-3.5 bg-sky-50/30 border border-sky-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-xs h-24 resize-none"
+                                            placeholder="例: 〒 123-4567 東京都墨田区立川4-11-20"
+                                        />
+                                        <p className="text-[9px] text-amber-600 font-medium ml-1">※ 住所を貼り付けると自動抽出されます</p>
+                                    </div>
+
+                                    {/* 郵便番号 */}
                                     <div className="space-y-2">
-                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">住所</label>
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                            郵便番号
+                                        </label>
                                         <input
                                             type="text"
-                                            value={locationFormData.address || ''}
-                                            onChange={(e) => setLocationFormData(prev => ({ ...prev, address: e.target.value }))}
+                                            value={locationFormData.addressZip || ''}
+                                            onChange={(e) => setLocationFormData(prev => ({ ...prev, addressZip: e.target.value }))}
                                             className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                            placeholder="東京都千代田区..."
+                                            placeholder="123-4567"
+                                            maxLength={8}
                                         />
                                     </div>
 
+                                    {/* 都道府県 & 市区町村 */}
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">郵便番号</label>
-                                            <input
-                                                type="text"
-                                                value={locationFormData.addressZip || ''}
-                                                onChange={(e) => setLocationFormData(prev => ({ ...prev, addressZip: e.target.value }))}
-                                                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                                placeholder="123-4567"
-                                            />
-                                        </div>
                                         <div className="space-y-2">
                                             <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">都道府県</label>
                                             <input
@@ -1003,16 +1132,82 @@ export default function StudiosPage() {
                                                 placeholder="東京都"
                                             />
                                         </div>
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">市区町村・番地</label>
+                                            <input
+                                                type="text"
+                                                value={locationFormData.addressCity || ''}
+                                                onChange={(e) => setLocationFormData(prev => ({ ...prev, addressCity: e.target.value }))}
+                                                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                                placeholder="墨田区立川..."
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 右カラム */}
+                                <div className="space-y-6">
+                                    {/* WEBサイトURL */}
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                            WEBサイトなどのURL (任意)
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={locationFormData.url || ''}
+                                            onChange={(e) => setLocationFormData(prev => ({ ...prev, url: e.target.value }))}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            placeholder="https://example.com"
+                                        />
                                     </div>
 
+                                    {/* GPS座標 */}
                                     <div className="space-y-2">
-                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">市区町村・番地</label>
+                                        <div className="flex justify-between items-center">
+                                            <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                                GPS座標 (緯度, 経度)
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleLocationCoordinateSearch()}
+                                                className="text-[9px] text-sky-600 font-bold hover:underline"
+                                            >
+                                                住所から取得
+                                            </button>
+                                        </div>
                                         <input
                                             type="text"
-                                            value={locationFormData.addressCity || ''}
-                                            onChange={(e) => setLocationFormData(prev => ({ ...prev, addressCity: e.target.value }))}
+                                            value={locationFormData.coordsInput}
+                                            onChange={(e) => handleLocationCoordsInputChange(e.target.value)}
                                             className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                            placeholder="千代田区丸の内..."
+                                            placeholder="35.6895, 139.6917"
+                                        />
+                                    </div>
+
+                                    {/* 地図プレビュー */}
+                                    <div className="w-full aspect-video rounded-2xl overflow-hidden border border-gray-100 shadow-inner bg-gray-50 relative">
+                                        <LeafletMap
+                                            lat={locationFormData.latitude || 35.6895}
+                                            lng={locationFormData.longitude || 139.6917}
+                                            height="100%"
+                                        />
+                                        {!locationFormData.latitude && (
+                                            <div className="absolute inset-0 bg-black/5 flex items-center justify-center p-4 text-center">
+                                                <p className="text-[10px] text-gray-400 font-bold">有効な座標が入力されると<br />ここに地図が表示されます</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* メモ */}
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                            メモ (任意)
+                                        </label>
+                                        <textarea
+                                            value={locationFormData.note || ''}
+                                            onChange={(e) => setLocationFormData(prev => ({ ...prev, note: e.target.value }))}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium h-24 resize-none"
+                                            placeholder="例えば、最寄り駅や特徴を入力してください。"
                                         />
                                     </div>
                                 </div>

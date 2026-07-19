@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { getLocations, saveLocation, updateLocation, deleteLocation } from '@/lib/actions/locations';
+import { getZipAddressAction } from '@/lib/actions/studios';
 import { Location, LocationFormData } from '@/types/location';
 import { Plus, Edit2, Trash2, X, MapPin, Search } from 'lucide-react';
 import LeafletMap from '@/components/common/LeafletMap';
@@ -13,7 +14,7 @@ export default function LocationsPage() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
-    const [formData, setFormData] = useState<LocationFormData>({
+    const [formData, setFormData] = useState<LocationFormData & { coordsInput?: string }>({
         name: '',
         type: 'outdoor',
         note: '',
@@ -23,7 +24,8 @@ export default function LocationsPage() {
         addressCity: '',
         url: '',
         latitude: null,
-        longitude: null
+        longitude: null,
+        coordsInput: '',
     });
 
     const LOCATION_TYPE_LABELS = {
@@ -44,6 +46,7 @@ export default function LocationsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTypeFilter, setActiveTypeFilter] = useState<'all' | Location['type']>('all');
+    const [isLookingUpZip, setIsLookingUpZip] = useState(false);
 
     useEffect(() => {
         fetchLocations();
@@ -74,6 +77,7 @@ export default function LocationsPage() {
                 url: location.url || '',
                 latitude: location.latitude ?? null,
                 longitude: location.longitude ?? null,
+                coordsInput: (location.latitude != null && location.longitude != null) ? `${location.latitude}, ${location.longitude}` : '',
             });
         } else {
             setEditingLocation(null);
@@ -88,6 +92,7 @@ export default function LocationsPage() {
                 url: '',
                 latitude: null,
                 longitude: null,
+                coordsInput: '',
             });
         }
         setError('');
@@ -97,6 +102,109 @@ export default function LocationsPage() {
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingLocation(null);
+    };
+
+    // 郵便番号から住所を自動取得
+    const handleZipLookup = async () => {
+        const zip = formData.addressZip?.replace(/[^0-9]/g, '');
+        if (!zip || zip.length !== 7) {
+            setError('郵便番号は7桁で入力してください。');
+            return;
+        }
+
+        setIsLookingUpZip(true);
+        setError('');
+        try {
+            const data = await getZipAddressAction(zip) as any;
+
+            if (data && data.results && data.results.length > 0) {
+                const result = data.results[0];
+                const pref = result.address1 || '';
+                const city = (result.address2 || '') + (result.address3 || '');
+                setFormData(prev => ({
+                    ...prev,
+                    addressPref: pref,
+                    addressCity: city,
+                }));
+                // 住所取得後に座標も自動検索
+                handleCoordinateSearch(`${pref} ${city}`);
+            } else {
+                setError('該当する住所が見つかりませんでした。');
+            }
+        } catch (err) {
+            setError('住所の検索中にエラーが発生しました。');
+        } finally {
+            setIsLookingUpZip(false);
+        }
+    };
+
+    // 住所からGPS座標を検索
+    const handleCoordinateSearch = async (forcedQuery?: string) => {
+        const query = forcedQuery || [formData.addressPref, formData.addressCity, formData.address].filter(Boolean).join(' ');
+        if (!query) {
+            setError('住所情報を入力してから検索してください。');
+            return;
+        }
+
+        setIsLookingUpZip(true);
+        setError('');
+        try {
+            const { searchCoordinatesAction } = await import('@/lib/actions/photos');
+            let results = await searchCoordinatesAction(query);
+
+            // Fallback: 詳細住所で見つからない場合、都道府県+市区町村で再検索
+            if ((!results || results.length === 0) && !forcedQuery && formData.address) {
+                const secondaryQuery = [formData.addressPref, formData.addressCity].filter(Boolean).join(' ');
+                results = await searchCoordinatesAction(secondaryQuery);
+            }
+
+            if (results && results.length > 0) {
+                setFormData(prev => ({
+                    ...prev,
+                    latitude: results[0].lat,
+                    longitude: results[0].lng,
+                    coordsInput: `${results[0].lat}, ${results[0].lng}`
+                }));
+            } else {
+                setError('座標が見つかりませんでした。住所を詳しく入力してください。');
+            }
+        } catch (err) {
+            setError('座標の検索中にエラーが発生しました。');
+        } finally {
+            setIsLookingUpZip(false);
+        }
+    };
+
+    // GPS座標入力のパース（半角/全角コンマ、スペース対応）
+    const handleCoordsInputChange = (val: string) => {
+        const parts = val.split(/[,，\s/]+/).map(p => p.trim()).filter(Boolean);
+        let lat = formData.latitude;
+        let lng = formData.longitude;
+
+        if (parts.length >= 2) {
+            const parseCoord = (s: string, negChars: string[]) => {
+                const match = s.match(/[-]?\d+(\.\d+)?/);
+                if (!match) return NaN;
+                let num = parseFloat(match[0]);
+                if (negChars.some(c => s.includes(c))) num = -Math.abs(num);
+                return num;
+            };
+
+            const parsedLat = parseCoord(parts[0], ['南', 'S', 's']);
+            const parsedLng = parseCoord(parts[1], ['西', 'W', 'w']);
+
+            if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+                lat = parsedLat;
+                lng = parsedLng;
+            }
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            coordsInput: val,
+            latitude: lat,
+            longitude: lng
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -111,17 +219,8 @@ export default function LocationsPage() {
             const token = await user?.getIdToken();
             if (!token) throw new Error('Authentication required');
 
-            const dataToSave = {
-                name: formData.name,
-                type: formData.type,
-                note: formData.note || '',
-                address: formData.address || '',
-                addressZip: formData.addressZip || '',
-                addressPref: formData.addressPref || '',
-                addressCity: formData.addressCity || '',
-                latitude: formData.latitude ?? null,
-                longitude: formData.longitude ?? null,
-            };
+            // coordsInput ヘルパーを除外して保存
+            const { coordsInput, ...dataToSave } = formData;
 
             const result = editingLocation ? await updateLocation(editingLocation.id as string, dataToSave, token) : await saveLocation(dataToSave, token);
             if (result.success) {
@@ -304,7 +403,7 @@ export default function LocationsPage() {
                             )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* 左列 */}
+                                {/* 左カラム */}
                                 <div className="space-y-6">
                                     {/* ロケーション名 */}
                                     <div className="space-y-2">
@@ -321,7 +420,23 @@ export default function LocationsPage() {
                                         />
                                     </div>
 
-                                    {/* 住所一括入力 */}
+                                    {/* タイプ */}
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                            タイプ
+                                        </label>
+                                        <select
+                                            value={formData.type}
+                                            onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as 'outdoor' | 'indoor' | 'other' }))}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                        >
+                                            <option value="outdoor">屋外</option>
+                                            <option value="indoor">室内</option>
+                                            <option value="other">その他</option>
+                                        </select>
+                                    </div>
+
+                                    {/* 住所一括入力 (Smart Parse) */}
                                     <div className="space-y-1">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-sky-500 ml-1 flex items-center gap-2">
                                             <Search size={12} />
@@ -371,7 +486,7 @@ export default function LocationsPage() {
                                         />
                                     </div>
 
-                                    {/* 都道府県 & 市区町村・番地 */}
+                                    {/* 都道府県 & 市区町村 */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
@@ -400,9 +515,9 @@ export default function LocationsPage() {
                                     </div>
                                 </div>
 
-                                {/* 右列 */}
+                                {/* 右カラム */}
                                 <div className="space-y-6">
-                                    {/* URL */}
+                                    {/* WEBサイトURL */}
                                     <div className="space-y-2">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
                                             WEBサイトなどのURL (任意)
@@ -418,25 +533,39 @@ export default function LocationsPage() {
 
                                     {/* GPS座標 */}
                                     <div className="space-y-2">
-                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                            GPS座標 (緯度, 経度)
-                                        </label>
+                                        <div className="flex justify-between items-center">
+                                            <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                                GPS座標 (緯度, 経度)
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleCoordinateSearch()}
+                                                className="text-[9px] text-sky-600 font-bold hover:underline"
+                                            >
+                                                住所から取得
+                                            </button>
+                                        </div>
                                         <input
                                             type="text"
-                                            value={formData.latitude !== null && formData.longitude !== null ? `${formData.latitude}, ${formData.longitude}` : ''}
-                                            onChange={e => {
-                                                const parts = e.target.value.split(',');
-                                                if (parts.length === 2) {
-                                                    const lat = parseFloat(parts[0]);
-                                                    const lng = parseFloat(parts[1]);
-                                                    if (!isNaN(lat) && !isNaN(lng)) {
-                                                        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
-                                                    }
-                                                }
-                                            }}
+                                            value={formData.coordsInput}
+                                            onChange={(e) => handleCoordsInputChange(e.target.value)}
                                             className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
                                             placeholder="35.6895, 139.6917"
                                         />
+                                    </div>
+
+                                    {/* 地図プレビュー */}
+                                    <div className="w-full aspect-video rounded-2xl overflow-hidden border border-gray-100 shadow-inner bg-gray-50 relative">
+                                        <LeafletMap
+                                            lat={formData.latitude || 35.6895}
+                                            lng={formData.longitude || 139.6917}
+                                            height="100%"
+                                        />
+                                        {!formData.latitude && (
+                                            <div className="absolute inset-0 bg-black/5 flex items-center justify-center p-4 text-center">
+                                                <p className="text-[10px] text-gray-400 font-bold">有効な座標が入力されると<br />ここに地図が表示されます</p>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* メモ */}
@@ -447,8 +576,8 @@ export default function LocationsPage() {
                                         <textarea
                                             value={formData.note || ''}
                                             onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))}
-                                            rows={5}
-                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            rows={3}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium resize-none"
                                             placeholder="例: 公園中央広場、イベント開催時に使用"
                                         />
                                     </div>
@@ -471,7 +600,11 @@ export default function LocationsPage() {
                                     disabled={isSaving}
                                     className="flex-[2] bg-sky-600 text-white py-4 rounded-2xl hover:bg-sky-700 transition-all font-bold shadow-xl shadow-sky-100 active:scale-95 disabled:opacity-50 h-14"
                                 >
-                                    {editingLocation ? '更新する' : '保存する'}
+                                    {isSaving ? (
+                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                                    ) : (
+                                        editingLocation ? '変更を保存する' : 'ロケーションを追加'
+                                    )}
                                 </button>
                             </div>
                         </form>
