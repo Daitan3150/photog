@@ -5,6 +5,7 @@ import { useAuth } from '@/components/admin/AuthProvider';
 import { getLocations, saveLocation, updateLocation, deleteLocation } from '@/lib/actions/locations';
 import { Location, LocationFormData } from '@/types/location';
 import { Plus, Edit2, Trash2, X, MapPin, Search } from 'lucide-react';
+import LeafletMap from '@/components/common/LeafletMap';
 
 export default function LocationsPage() {
     const { user } = useAuth();
@@ -282,18 +283,17 @@ export default function LocationsPage() {
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                    <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden">
-                        <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
-                            <div>
-                                <h2 className="text-xl font-bold text-gray-900">{editingLocation ? 'ロケーション情報の編集' : '新規ロケーションの登録'}</h2>
-                                <p className="text-sm text-gray-500 mt-1">屋外・室内・その他の撮影地を事前登録してください。</p>
-                            </div>
-                            <button onClick={closeModal} className="p-2 text-gray-500 hover:text-gray-900 transition-colors">
-                                <X size={20} />
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+                        <header className="px-8 py-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
+                            <h2 className="text-xl font-bold text-gray-900">
+                                {editingLocation ? 'ロケーション情報の編集' : '新規ロケーションの登録'}
+                            </h2>
+                            <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                <X size={24} />
                             </button>
-                        </div>
+                        </header>
 
-                        <form onSubmit={handleSubmit} className="px-8 py-8 space-y-6 overflow-y-auto max-h-[80vh]">
+                        <form onSubmit={handleSubmit} className="px-8 py-8 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
                             {error && (
                                 <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl text-xs font-bold border border-rose-100">
                                     {error}
@@ -350,45 +350,32 @@ export default function LocationsPage() {
                                         <p className="text-[9px] text-amber-600 font-medium ml-1">※ 住所を貼り付けると自動抽出されます</p>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                            タイプ
-                                        </label>
-                                        <select
-                                            value={formData.type}
-                                            onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as 'outdoor' | 'indoor' | 'other' }))}
-                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                        >
-                                            <option value="outdoor">屋外</option>
-                                            <option value="indoor">室内</option>
-                                            <option value="other">その他</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
+                                    {/* 郵便番号 */}
                                     <div className="space-y-2">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
                                             郵便番号
                                         </label>
-                                        <input
-                                            type="text"
-                                            value={formData.addressZip}
-                                            onChange={e => setFormData(prev => ({ ...prev, addressZip: e.target.value }))}
-                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                            placeholder="123-4567"
-                                            maxLength={8}
-                                        />
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={formData.addressZip || ''}
+                                                onChange={e => setFormData(prev => ({ ...prev, addressZip: e.target.value }))}
+                                                className="flex-1 px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                                placeholder="123-4567"
+                                                maxLength={8}
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 gap-4">
+                                    {/* 都道府県 & 市区町村 */}
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
                                                 都道府県
                                             </label>
                                             <input
                                                 type="text"
-                                                value={formData.addressPref}
+                                                value={formData.addressPref || ''}
                                                 onChange={e => setFormData(prev => ({ ...prev, addressPref: e.target.value }))}
                                                 className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
                                                 placeholder="東京都"
@@ -400,14 +387,29 @@ export default function LocationsPage() {
                                             </label>
                                             <input
                                                 type="text"
-                                                value={formData.addressCity}
+                                                value={formData.addressCity || ''}
                                                 onChange={e => setFormData(prev => ({ ...prev, addressCity: e.target.value }))}
-                                                placeholder="渋谷区代々木"
                                                 className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                                placeholder="墨田区立川..."
                                             />
                                         </div>
                                     </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                            タイプ (必須)
+                                        </label>
+                                        <select
+                                            value={formData.type}
+                                            onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as 'outdoor' | 'indoor' | 'other' }))}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                        >
+                                            <option value="outdoor">屋外</option>
+                                            <option value="indoor">室内</option>
+                                            <option value="other">その他</option>
+                                        </select>
+                                    </div>
 
+                                    {/* フル住所 */}
                                     <div className="space-y-2">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
                                             住所 (任意)
@@ -421,36 +423,47 @@ export default function LocationsPage() {
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                                緯度
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={formData.latitude ?? ''}
-                                                onChange={e => setFormData(prev => ({ ...prev, latitude: e.target.value ? parseFloat(e.target.value) : null }))}
-                                                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                                placeholder="35.6895"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                                経度
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={formData.longitude ?? ''}
-                                                onChange={e => setFormData(prev => ({ ...prev, longitude: e.target.value ? parseFloat(e.target.value) : null }))}
-                                                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                                                placeholder="139.6917"
-                                            />
-                                        </div>
-                                    </div>
-
+                                    {/* GPS座標 */}
                                     <div className="space-y-2">
                                         <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
-                                            メモ
+                                            GPS座標 (緯度, 経度)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.latitude !== null && formData.longitude !== null ? `${formData.latitude}, ${formData.longitude}` : ''}
+                                            onChange={e => {
+                                                const parts = e.target.value.split(',');
+                                                if (parts.length === 2) {
+                                                    const lat = parseFloat(parts[0]);
+                                                    const lng = parseFloat(parts[1]);
+                                                    if (!isNaN(lat) && !isNaN(lng)) {
+                                                        setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+                                                    }
+                                                }
+                                            }}
+                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:bg-white outline-none transition-all text-sm font-medium"
+                                            placeholder="35.6895, 139.6917"
+                                        />
+                                    </div>
+
+                                    {/* 地図プレビュー */}
+                                    <div className="w-full aspect-video rounded-2xl overflow-hidden border border-gray-100 shadow-inner bg-gray-50 relative">
+                                        <LeafletMap
+                                            lat={formData.latitude || 35.6895}
+                                            lng={formData.longitude || 139.6917}
+                                            height="100%"
+                                        />
+                                        {!formData.latitude && (
+                                            <div className="absolute inset-0 bg-black/5 flex items-center justify-center p-4 text-center">
+                                                <p className="text-[10px] text-gray-400 font-bold">有効な座標が入力されると<br />ここに地図が表示されます</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* メモ */}
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                            メモ (任意)
                                         </label>
                                         <textarea
                                             value={formData.note || ''}
@@ -463,20 +476,21 @@ export default function LocationsPage() {
                                 </div>
                             </div>
 
-                            {error && <p className="text-sm text-rose-600">{error}</p>}
-
-                            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
-                                <button
-                                    type="button"
-                                    onClick={closeModal}
-                                    className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100"
-                                >
-                                    キャンセル
-                                </button>
+                            <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                                {editingLocation && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDelete(editingLocation)}
+                                        className="flex-[1] flex items-center justify-center gap-2 py-4 rounded-2xl text-red-500 font-bold border-2 border-red-50 hover:bg-red-50 transition-all active:scale-95 text-xs"
+                                    >
+                                        <Trash2 size={16} />
+                                        ロケーションを削除
+                                    </button>
+                                )}
                                 <button
                                     type="submit"
                                     disabled={isSaving}
-                                    className="flex-1 py-3 rounded-2xl bg-sky-600 text-white text-sm font-bold hover:bg-sky-700 disabled:opacity-50"
+                                    className="flex-[2] bg-sky-600 text-white py-4 rounded-2xl hover:bg-sky-700 transition-all font-bold shadow-xl shadow-sky-100 active:scale-95 disabled:opacity-50 h-14"
                                 >
                                     {editingLocation ? '更新する' : '保存する'}
                                 </button>
