@@ -26,6 +26,7 @@ export interface Photo {
     shareOgImageUrl?: string | null; // [NEW] Dedicated share OGP image
     shootLocationType?: 'studio' | 'location' | 'other';
     shootLocationId?: string | null;
+    cameraType?: 'mirrorless' | 'dslr' | 'compact' | 'film' | 'other' | null; // [NEW]
     createdAt: Date;
     updatedAt: Date;
 }
@@ -45,4 +46,5 @@ export type PhotoFormData = Omit<Photo, 'id' | 'uploaderId' | 'createdAt' | 'upd
     shareOgImageUrl?: string | null;
     shootLocationType?: 'studio' | 'location' | 'other';
     shootLocationId?: string | null;
+    cameraType?: 'mirrorless' | 'dslr' | 'compact' | 'film' | 'other' | null; // [NEW]
 };

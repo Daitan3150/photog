@@ -20,6 +20,7 @@ import { syncPhotoToAlgolia } from '../algolia';
 import { appendToMetadataRegistry } from './metadata';
 import { ensureLocationExists } from './locations';
 import { ensureStudioExists } from './studios';
+import { ensureCameraExists } from './cameras'; // [NEW]
 import { revalidatePath } from 'next/cache';
 import { buildFullAddress } from '../utils/address';
 
@@ -351,6 +352,16 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 }
             }
 
+            let cameraType = data.cameraType || null;
+            if (data.exif && data.exif.Model) {
+                const model = String(data.exif.Model);
+                const make = String(data.exif.Make || '');
+                const cameraRes = await ensureCameraExists(model, make);
+                if (cameraRes.success && cameraRes.camera) {
+                    cameraType = cameraRes.camera.type;
+                }
+            }
+
             const photoRef = db.collection('photos').doc();
             photoIds.push(photoRef.id);
             const shotAtDate = (data.shotAt && !isNaN(new Date(String(data.shotAt).replace(/:/g, '-')).getTime()))
@@ -384,6 +395,7 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 tags: data.tags || [],
                 shootLocationType,
                 shootLocationId,
+                cameraType, // [NEW]
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
@@ -1341,6 +1353,15 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         if (data.shootLocationId !== undefined) updates.shootLocationId = data.shootLocationId;
         if (resolvedShootLocationId !== undefined && resolvedShootLocationId !== null) updates.shootLocationId = resolvedShootLocationId;
         if (shootLocationType !== undefined) updates.shootLocationType = shootLocationType;
+
+        if (data.cameraType !== undefined) {
+            updates.cameraType = data.cameraType;
+        } else if (data.exif !== undefined && data.exif.Model) {
+            const cameraRes = await ensureCameraExists(data.exif.Model, data.exif.Make || '');
+            if (cameraRes.success && cameraRes.camera) {
+                updates.cameraType = cameraRes.camera.type;
+            }
+        }
 
         // [GEOCODING] re-fetch if location changed AND manual coordinates not provided
         if (data.location !== undefined && data.location !== photoData?.location &&

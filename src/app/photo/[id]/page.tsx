@@ -353,9 +353,26 @@ export default async function PhotoPage({ params }: Props) {
                                 <div className="space-y-6">
                                     <div className="flex flex-col gap-1 items-center md:items-start text-center md:text-left">
                                         <p className="text-[9px] text-black/30 uppercase tracking-widest font-bold">Camera & Lens</p>
-                                        <p className="text-sm font-bold text-black/90">
-                                            {photo.exif.Model || 'Generic Camera'}
-                                        </p>
+                                        <div className="flex items-center gap-2 flex-wrap justify-center md:justify-start">
+                                            <p className="text-sm font-bold text-black/90">
+                                                {photo.exif.Model || 'Generic Camera'}
+                                            </p>
+                                            {photo.cameraType && (
+                                                <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                                    photo.cameraType === 'mirrorless' ? 'bg-blue-100 text-blue-700' :
+                                                    photo.cameraType === 'compact' ? 'bg-emerald-100 text-emerald-700' :
+                                                    photo.cameraType === 'dslr' ? 'bg-amber-100 text-amber-700' :
+                                                    photo.cameraType === 'film' ? 'bg-rose-100 text-rose-700' :
+                                                    'bg-gray-100 text-gray-600'
+                                                }`}>
+                                                    {photo.cameraType === 'mirrorless' ? 'ミラーレス一眼' :
+                                                     photo.cameraType === 'compact' ? 'コンパクトカメラ' :
+                                                     photo.cameraType === 'dslr' ? 'デジタル一眼レフ' :
+                                                     photo.cameraType === 'film' ? 'フィルムカメラ' :
+                                                     'その他'}
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className="text-[11px] text-black/60 font-medium leading-relaxed">
                                             {photo.exif.LensModel || 'Prime Lens'}
                                         </p>

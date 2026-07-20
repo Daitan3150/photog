@@ -6,6 +6,7 @@ import { savePhotosBulk, getExifSuggestions } from '@/lib/actions/photos';
 import { getCategories, Category } from '@/lib/actions/categories';
 import { getSubjects, Subject } from '@/lib/actions/subjects';
 import { inferPhotoCategory } from '@/lib/photos/inferPhotoCategory';
+import { inferCameraType } from '@/lib/photos/inferCameraType';
 import CloudinaryScript from '@/components/admin/CloudinaryScript';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -216,6 +217,7 @@ export default function NewPhotoPage() {
     const dropZoneRef = useRef<HTMLLabelElement>(null);
     const [categories, setCategories] = useState<Category[]>([]);
     const [camera, setCamera] = useState('');
+    const [cameraType, setCameraType] = useState<'mirrorless' | 'dslr' | 'compact' | 'film' | 'other' | ''>('');
     const [lens, setLens] = useState('');
     const [exifSuggestions, setExifSuggestions] = useState<{ models: string[], lensModels: string[] }>({ models: [], lensModels: [] });
     // ✅ 撮影データ（分数シャッタースピード対応）
@@ -403,6 +405,11 @@ export default function NewPhotoPage() {
 
         // We ONLY update the Lens History for convenience, but do NOT set the 'lens' or 'camera' state
         // unless you want to enforce it for ALL photos.
+
+        if (mergedExif.Model) {
+            const inferred = inferCameraType(mergedExif.Model, mergedExif.Make || '');
+            setCameraType(inferred);
+        }
 
         if (mergedExif.LensModel) {
             let newLens = mergedExif.LensModel as string;
@@ -862,6 +869,7 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                     categoryId,
                     event: event || '',
                     displayMode,
+                    cameraType: cameraType || null, // [NEW]
 
                     exif: {
                         ...mergedExif,
@@ -1368,53 +1376,69 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                 </datalist>
                             </div>
                             <div className="space-y-2">
-                                <div className="flex gap-1.5">
-                                    <input
-                                        type="text"
-                                        list="lens-candidates"
-                                        value={lens}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            setLens(val);
-                                            // ✅ 入力完了時に履歴に保存
-                                            if (val.length > 3) {
-                                                setLensHistory(prev => {
-                                                    const updated = [val, ...prev.filter(l => l !== val)].slice(0, 30);
-                                                    try { localStorage.setItem(LENS_HISTORY_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
-                                                    return updated;
-                                                });
-                                            }
-                                        }}
-                                        className="flex-1 border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                        placeholder="例: FE 35mm F1.4 GM"
-                                    />
-                                    <button
-                                        type="button"
-                                        title="Webで正式名称を検索"
-                                        onClick={() => {
-                                            const query = lens || 'カメラ レンズ';
-                                            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-                                        }}
-                                        className="px-2 bg-gray-50 border border-gray-200 rounded text-gray-400 hover:text-blue-500 hover:border-blue-200 transition-colors"
-                                    >
-                                        🌐
-                                    </button>
-                                </div>
-                                <datalist id="lens-candidates">
-                                    {(() => {
-                                        const combined = [...(exifSuggestions.lensModels || []), ...lensHistory];
-                                        return combined.filter((value, index, self) => {
-                                            const normalized = value.toLowerCase();
-                                            return self.findIndex(item => item.toLowerCase() === normalized) === index;
-                                        });
-                                    })().map((l, i) => <option key={i} value={l} />)}
-                                </datalist>
-                                <div className="flex justify-between items-center mt-1">
-                                    {lensHistory.length > 0 && (
-                                        <p className="text-[10px] text-gray-400">💾 {lensHistory.length}件の履歴から候補選択可能</p>
-                                    )}
-                                    <p className="text-[10px] text-blue-500 font-bold ml-auto cursor-pointer hover:underline" onClick={() => window.open('/admin/profile', '_blank')}>📋 マスターを編集</p>
-                                </div>
+                                <label className="block text-sm font-bold text-gray-700">カメラの種類</label>
+                                <select
+                                    value={cameraType}
+                                    onChange={(e) => setCameraType(e.target.value as any)}
+                                    className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                                >
+                                    <option value="">自動判定 (または選択)</option>
+                                    <option value="mirrorless">ミラーレス一眼</option>
+                                    <option value="compact">コンパクトカメラ</option>
+                                    <option value="dslr">デジタル一眼レフ</option>
+                                    <option value="film">フィルムカメラ</option>
+                                    <option value="other">その他</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex gap-1.5">
+                                <input
+                                    type="text"
+                                    list="lens-candidates"
+                                    value={lens}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setLens(val);
+                                        // ✅ 入力完了時に履歴に保存
+                                        if (val.length > 3) {
+                                            setLensHistory(prev => {
+                                                const updated = [val, ...prev.filter(l => l !== val)].slice(0, 30);
+                                                try { localStorage.setItem(LENS_HISTORY_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+                                                return updated;
+                                            });
+                                        }
+                                    }}
+                                    className="flex-1 border p-2 rounded outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                    placeholder="例: FE 35mm F1.4 GM"
+                                />
+                                <button
+                                    type="button"
+                                    title="Webで正式名称を検索"
+                                    onClick={() => {
+                                        const query = lens || 'カメラ レンズ';
+                                        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                                    }}
+                                    className="px-2 bg-gray-50 border border-gray-200 rounded text-gray-400 hover:text-blue-500 hover:border-blue-200 transition-colors"
+                                >
+                                    🌐
+                                </button>
+                            </div>
+                            <datalist id="lens-candidates">
+                                {(() => {
+                                    const combined = [...(exifSuggestions.lensModels || []), ...lensHistory];
+                                    return combined.filter((value, index, self) => {
+                                        const normalized = value.toLowerCase();
+                                        return self.findIndex(item => item.toLowerCase() === normalized) === index;
+                                    });
+                                })().map((l, i) => <option key={i} value={l} />)}
+                            </datalist>
+                            <div className="flex justify-between items-center mt-1">
+                                {lensHistory.length > 0 && (
+                                    <p className="text-[10px] text-gray-400">💾 {lensHistory.length}件の履歴から候補選択可能</p>
+                                )}
+                                <p className="text-[10px] text-blue-500 font-bold ml-auto cursor-pointer hover:underline" onClick={() => window.open('/admin/profile', '_blank')}>📋 マスターを編集</p>
                             </div>
                         </div>
 

@@ -20,6 +20,7 @@ import SmartDatePicker from '@/components/admin/SmartDatePicker';
 import LeafletMap from '@/components/common/LeafletMap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { buildFullAddress } from '@/lib/utils/address';
+import { inferCameraType } from '@/lib/photos/inferCameraType';
 
 // ✅ 署名取得
 const fetchSignature = async (paramsToSign: Record<string, any>, token: string) => {
@@ -105,6 +106,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
         locationType: undefined as 'outdoor' | 'indoor' | 'other' | undefined,
         shootLocationType: 'location' as 'studio' | 'location' | 'other',
         shootLocationId: null as string | null,
+        cameraType: '' as 'mirrorless' | 'dslr' | 'compact' | 'film' | 'other' | '', // [NEW]
     });
     const [categories, setCategories] = useState<Category[]>([]);
     const [originalPhoto, setOriginalPhoto] = useState<any>(null);
@@ -240,6 +242,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                 shootLocationType: data.shootLocationType || 'location',
                 shootLocationId: data.shootLocationId || null,
                 locationType: data.locationType || undefined,
+                cameraType: data.cameraType || '',
             });
             setSelectedLocationType(data.locationType || null);
         }
@@ -478,6 +481,7 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
             address: fullAddress,
             shotAt: shotAtEnabled ? formData.shotAt : '', // 撮影日なしの場合は空文字列
             event: formData.event || '', // すべてのカテゴリーでイベント名を保存
+            cameraType: formData.cameraType ? formData.cameraType : null,
         }, token);
 
         if (result.success) {
@@ -1240,6 +1244,21 @@ export default function AdminEditPhotoPage({ params }: { params: Promise<{ id: s
                                         <datalist id="camera-candidates">
                                             {exifSuggestions.models.map((m, i) => <option key={i} value={m} />)}
                                         </datalist>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <p className="text-[10px] text-gray-400 mb-1">カメラの種類</p>
+                                        <select
+                                            value={formData.cameraType || ''}
+                                            onChange={(e) => setFormData({ ...formData, cameraType: e.target.value as any })}
+                                            className="w-full border-gray-100 border bg-gray-50/50 rounded-lg p-2 text-xs outline-none focus:ring-1 focus:ring-blue-300"
+                                        >
+                                            <option value="">自動判定 (または選択)</option>
+                                            <option value="mirrorless">ミラーレス一眼</option>
+                                            <option value="compact">コンパクトカメラ</option>
+                                            <option value="dslr">デジタル一眼レフ</option>
+                                            <option value="film">フィルムカメラ</option>
+                                            <option value="other">その他</option>
+                                        </select>
                                     </div>
                                     <div className="col-span-2">
                                         <p className="text-[10px] text-gray-400 mb-1">レンズ</p>

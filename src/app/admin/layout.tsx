@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { Brain, ChevronLeft, ChevronRight, Menu, Home, Globe, LogOut, Settings, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert, Star, Aperture } from 'lucide-react';
+import { Brain, ChevronLeft, ChevronRight, Menu, Home, Globe, LogOut, Settings, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert, Star, Aperture, Camera, Layers3 } from 'lucide-react';
 
 
 function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; toggleSidebar: () => void }) {
@@ -79,17 +79,6 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                 <nav className="space-y-2 flex-grow mb-8">
                     {!isCollapsed && <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6 transition-opacity duration-300">Main Menu</div>}
 
-                    <Link
-                        href="/admin"
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname === '/admin'
-                            ? `${accentColor} text-white ${glowClass}`
-                            : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
-                            } ${isCollapsed ? 'justify-center' : ''}`}
-                    >
-                        <LayoutDashboard size={20} className={pathname === '/admin' ? '' : 'text-slate-400 group-hover:text-white'} />
-                        {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">ダッシュボード</span>}
-                    </Link>
-
                     {isAdmin && (
                         <Link
                             href="/admin/studios"
@@ -115,39 +104,28 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                     </Link>
 
                     <Link
-                        href="/admin/lenses"
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/lenses')
+                        href="/admin/management/gear"
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/management/gear')
                             ? `${accentColor} text-white ${glowClass}`
                             : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                             } ${isCollapsed ? 'justify-center' : ''}`}
                     >
-                        <Aperture size={20} className={pathname.startsWith('/admin/lenses') ? '' : 'text-slate-400 group-hover:text-white'} />
-                        {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">レンズ管理</span>}
+                        <Aperture size={20} className={pathname.startsWith('/admin/management/gear') ? '' : 'text-slate-400 group-hover:text-white'} />
+                        {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">レンズ・カメラ管理</span>}
                     </Link>
 
                     {/* Admin Only Menus */}
                     {isAdmin && (
                         <>
                             <Link
-                                href="/admin/invite"
-                                className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/invite')
+                                href="/admin/management/access"
+                                className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/management/access')
                                     ? `${accentColor} text-white ${glowClass}`
                                     : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
                                     } ${isCollapsed ? 'justify-center' : ''}`}
                             >
-                                <UserPlus size={20} className={pathname.startsWith('/admin/invite') ? '' : 'text-slate-400 group-hover:text-white'} />
-                                {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">招待管理</span>}
-                            </Link>
-
-                            <Link
-                                href="/admin/subjects"
-                                className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/subjects')
-                                    ? `${accentColor} text-white ${glowClass}`
-                                    : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
-                                    } ${isCollapsed ? 'justify-center' : ''}`}
-                            >
-                                <Star size={20} className={pathname.startsWith('/admin/subjects') ? '' : 'text-slate-400 group-hover:text-white'} />
-                                {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">モデル管理</span>}
+                                <UserPlus size={20} className={pathname.startsWith('/admin/management/access') ? '' : 'text-slate-400 group-hover:text-white'} />
+                                {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">招待・モデル管理</span>}
                             </Link>
 
                             <Link
