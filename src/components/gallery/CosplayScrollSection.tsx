@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import cloudinaryLoader from "@/lib/cloudinary-loader";
-import { User, ChevronRight, Sparkles, Calendar } from "lucide-react";
+import { User, ChevronRight, Sparkles, Calendar, Camera } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Lightbox from "./Lightbox";
 import type { Photo as GalleryPhoto } from "./PhotoGrid";
@@ -324,12 +324,29 @@ export default function CosplayScrollSection({
     );
 }
 
+const getCameraBadgeMeta = (cameraType?: string | null) => {
+    switch (cameraType) {
+        case 'mirrorless':
+            return { label: 'ミラーレス', className: 'border-sky-200/80 bg-sky-100/90 text-sky-700' };
+        case 'compact':
+            return { label: 'コンパクト', className: 'border-emerald-200/80 bg-emerald-100/90 text-emerald-700' };
+        case 'dslr':
+            return { label: '一眼', className: 'border-amber-200/80 bg-amber-100/90 text-amber-700' };
+        case 'film':
+            return { label: 'フィルム', className: 'border-rose-200/80 bg-rose-100/90 text-rose-700' };
+        default:
+            return null;
+    }
+};
+
 function CosplayPhotoItem({ photo, index, searchParams, modelName }: {
     photo: Photo,
     index: number,
     searchParams: any,
     modelName: string
 }) {
+    const cameraBadge = getCameraBadgeMeta(photo.cameraType);
+
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -353,6 +370,17 @@ function CosplayPhotoItem({ photo, index, searchParams, modelName }: {
                         sizes="(max-width: 768px) 50vw, 420px"
                         priority={index < 2}
                     />
+
+                    {cameraBadge && (
+                        <div className="absolute top-4 left-4 z-30 pointer-events-none">
+                            <div className={`rounded-full border px-2.5 py-1 text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] backdrop-blur-md ${cameraBadge.className}`}>
+                                <span className="flex items-center gap-1">
+                                    <Camera size={9} />
+                                    {cameraBadge.label}
+                                </span>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Cosplay Sparkle Badge */}
                     <div className="absolute top-4 right-4 z-30 pointer-events-none">

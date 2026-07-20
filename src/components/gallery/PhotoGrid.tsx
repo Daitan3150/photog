@@ -49,6 +49,7 @@ export interface Photo {
         ISO?: number;
         FocalLength?: number;
     };
+    cameraType?: 'mirrorless' | 'dslr' | 'compact' | 'film' | 'other' | null;
     nextPhotoUrl?: string | null;
     prevPhotoUrl?: string | null;
 }
@@ -80,6 +81,21 @@ const getPhotoDisplayTitle = (photo: Photo) => {
         return photo.characterName;
     }
     return photo.title;
+};
+
+const getCameraBadgeMeta = (cameraType?: string | null) => {
+    switch (cameraType) {
+        case 'mirrorless':
+            return { label: 'ミラーレス', className: 'border-sky-200/80 bg-sky-100/90 text-sky-700' };
+        case 'compact':
+            return { label: 'コンパクト', className: 'border-emerald-200/80 bg-emerald-100/90 text-emerald-700' };
+        case 'dslr':
+            return { label: '一眼', className: 'border-amber-200/80 bg-amber-100/90 text-amber-700' };
+        case 'film':
+            return { label: 'フィルム', className: 'border-rose-200/80 bg-rose-100/90 text-rose-700' };
+        default:
+            return null;
+    }
 };
 
 export default function PhotoGrid({ photos, overlayVariant = "metadata", variant = "default" }: PhotoGridProps) {
@@ -156,6 +172,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata", variant
                     const shouldShowTitle = !!normalizedTitle && !isUntitledText(normalizedTitle);
                     const camera = normalizeDisplayText(photo.exif?.Model || photo.exif?.Make);
                     const lens = normalizeDisplayText(photo.exif?.LensModel);
+                    const cameraBadge = getCameraBadgeMeta(photo.cameraType);
                     const location = normalizeDisplayText(photo.location);
                     const address = normalizeAddressText(photo.address);
                     const hasMetadata = Boolean(camera || lens || location || address);
@@ -195,6 +212,17 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata", variant
                                     <div className="absolute top-3 right-3 z-30 pointer-events-none">
                                         <div className="bg-white/10 backdrop-blur-md p-1.5 rounded-full border border-white/20">
                                             <Sparkles className="w-3.5 h-3.5 text-white fill-amber-300" />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {cameraBadge && (
+                                    <div className="absolute top-3 left-3 z-30 pointer-events-none">
+                                        <div className={`rounded-full border px-2.5 py-1 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] backdrop-blur-md ${cameraBadge.className}`}>
+                                            <span className="flex items-center gap-1">
+                                                <Camera size={9} />
+                                                {cameraBadge.label}
+                                            </span>
                                         </div>
                                     </div>
                                 )}

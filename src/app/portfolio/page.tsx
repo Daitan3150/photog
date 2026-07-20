@@ -17,7 +17,7 @@ import { getProfileServer } from '@/lib/actions/profile';
 export const revalidate = 3600;
 
 interface PageProps {
-    searchParams: Promise<{ category?: string; img?: string; lens?: string; view?: string; cameraType?: string }>;
+    searchParams: Promise<{ category?: string; img?: string; lens?: string; view?: string }>;
 }
 
 export const metadata: Metadata = {
@@ -39,24 +39,18 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
     });
     const filteredPhotos = allPhotos as Photo[];
 
-    // カメラ種類フィルター
-    const currentCameraType = params.cameraType || '';
-    const cameraTypeFilteredPhotos = currentCameraType
-        ? filteredPhotos.filter((photo: Photo) => (photo as any).cameraType === currentCameraType)
-        : filteredPhotos;
-
     const availableLensModels = Array.from(new Set(
-        cameraTypeFilteredPhotos.flatMap((photo: Photo) => photo.exif?.LensModel ? [photo.exif.LensModel] : [])
+        filteredPhotos.flatMap((photo: Photo) => photo.exif?.LensModel ? [photo.exif.LensModel] : [])
     )).sort().filter(Boolean);
     const currentLens = currentView === 'lens'
         ? (params.lens || availableLensModels[0] || '')
         : '';
 
     const lensFilteredPhotos = currentLens
-        ? cameraTypeFilteredPhotos.filter((photo: Photo) => photo.exif?.LensModel === currentLens)
-        : cameraTypeFilteredPhotos;
+        ? filteredPhotos.filter((photo: Photo) => photo.exif?.LensModel === currentLens)
+        : filteredPhotos;
 
-    const displayPhotos = currentView === 'lens' ? lensFilteredPhotos : cameraTypeFilteredPhotos;
+    const displayPhotos = currentView === 'lens' ? lensFilteredPhotos : filteredPhotos;
     const portraitCategories = ['portrait'];
     const isPortraitStyle = currentView === 'category' && portraitCategories.includes(currentCategory);
     const isCosplay = currentView === 'category' && currentCategory === 'cosplay';
@@ -157,41 +151,6 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
                         )
                     )}
 
-                    {/* カメラ種類フィルター */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Camera:</span>
-                        {[
-                            { value: '', label: 'すべて' },
-                            { value: 'mirrorless', label: 'ミラーレス一眼' },
-                            { value: 'compact', label: 'コンパクト' },
-                            { value: 'dslr', label: '一眼レフ' },
-                            { value: 'film', label: 'フィルム' },
-                        ].map(opt => {
-                            const isActive = currentCameraType === opt.value;
-                            const href = (() => {
-                                const p = new URLSearchParams();
-                                if (currentView === 'lens') p.set('view', 'lens');
-                                if (currentView === 'category' && currentCategory !== 'cosplay') p.set('category', currentCategory);
-                                if (currentLens) p.set('lens', currentLens);
-                                if (opt.value) p.set('cameraType', opt.value);
-                                const qs = p.toString();
-                                return `/portfolio${qs ? `?${qs}` : ''}`;
-                            })();
-                            return (
-                                <a
-                                    key={opt.value}
-                                    href={href}
-                                    className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all ${
-                                        isActive
-                                            ? 'bg-black text-white shadow-sm'
-                                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                                    }`}
-                                >
-                                    {opt.label}
-                                </a>
-                            );
-                        })}
-                    </div>
                 </div>
 
                 {currentView === 'lens' && currentLens && (

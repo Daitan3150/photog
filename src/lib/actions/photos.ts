@@ -195,6 +195,18 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             }
         }
 
+        let cameraId: string | null = null;
+        let cameraType = data.cameraType || null;
+        if (data.exif && data.exif.Model) {
+            const model = String(data.exif.Model);
+            const make = String(data.exif.Make || '');
+            const cameraRes = await ensureCameraExists(model, make);
+            if (cameraRes.success && cameraRes.camera) {
+                cameraId = cameraRes.camera.id || null;
+                cameraType = cameraRes.camera.type;
+            }
+        }
+
         const photoRef = db.collection('photos').doc();
         const photoId = photoRef.id;
         const photoDataToSave = {
@@ -233,6 +245,8 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             tags: data.tags || [],
             shootLocationType: data.shootLocationType || 'location',
             shootLocationId,
+            cameraId,
+            cameraType,
             createdAt: new Date(),
             updatedAt: new Date(),
         };
@@ -352,12 +366,14 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 }
             }
 
+            let cameraId: string | null = null;
             let cameraType = data.cameraType || null;
             if (data.exif && data.exif.Model) {
                 const model = String(data.exif.Model);
                 const make = String(data.exif.Make || '');
                 const cameraRes = await ensureCameraExists(model, make);
                 if (cameraRes.success && cameraRes.camera) {
+                    cameraId = cameraRes.camera.id || null;
                     cameraType = cameraRes.camera.type;
                 }
             }
@@ -395,7 +411,8 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 tags: data.tags || [],
                 shootLocationType,
                 shootLocationId,
-                cameraType, // [NEW]
+                cameraId,
+                cameraType,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
@@ -1359,6 +1376,15 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
         } else if (data.exif !== undefined && data.exif.Model) {
             const cameraRes = await ensureCameraExists(data.exif.Model, data.exif.Make || '');
             if (cameraRes.success && cameraRes.camera) {
+                updates.cameraId = cameraRes.camera.id || null;
+                updates.cameraType = cameraRes.camera.type;
+            }
+        }
+
+        if (data.exif !== undefined && data.exif.Model) {
+            const cameraRes = await ensureCameraExists(data.exif.Model, data.exif.Make || '');
+            if (cameraRes.success && cameraRes.camera) {
+                updates.cameraId = cameraRes.camera.id || null;
                 updates.cameraType = cameraRes.camera.type;
             }
         }

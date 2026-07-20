@@ -288,12 +288,29 @@ export default function PortraitScrollSection({
     );
 }
 
+const getCameraBadgeMeta = (cameraType?: string | null) => {
+    switch (cameraType) {
+        case 'mirrorless':
+            return { label: 'ミラーレス', className: 'border-sky-200/80 bg-sky-100/90 text-sky-700' };
+        case 'compact':
+            return { label: 'コンパクト', className: 'border-emerald-200/80 bg-emerald-100/90 text-emerald-700' };
+        case 'dslr':
+            return { label: '一眼', className: 'border-amber-200/80 bg-amber-100/90 text-amber-700' };
+        case 'film':
+            return { label: 'フィルム', className: 'border-rose-200/80 bg-rose-100/90 text-rose-700' };
+        default:
+            return null;
+    }
+};
+
 function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
     photo: Photo,
     index: number,
     searchParams: any,
     modelName: string
 }) {
+    const cameraBadge = getCameraBadgeMeta(photo.cameraType);
+
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -315,6 +332,16 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
                     className="object-cover transition-transform duration-[2s] ease-out group-hover/item:scale-105"
                     sizes="(max-width: 768px) 54vw, 480px"
                 />
+                {cameraBadge && (
+                    <div className="absolute top-4 left-4 z-30 pointer-events-none">
+                        <div className={`rounded-full border px-2.5 py-1 text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] backdrop-blur-md ${cameraBadge.className}`}>
+                            <span className="flex items-center gap-1">
+                                <Camera size={9} />
+                                {cameraBadge.label}
+                            </span>
+                        </div>
+                    </div>
+                )}
                 {/* Uploader Mini-icon & Name at Bottom-Right on Hover (Desktop) / Constant (Mobile) */}
                 <div className="absolute bottom-0 right-0 left-0 p-6 md:p-8 flex flex-col gap-4 transition-all duration-500 md:translate-y-4 md:opacity-0 group-hover/item:translate-y-0 group-hover/item:opacity-100 z-10">
                     <div className="flex flex-col gap-1.5 flex-1">
