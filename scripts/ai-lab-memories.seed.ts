@@ -1,4 +1,4 @@
-import type { AiMemoryCategory } from '../src/lib/actions/aiLab';
+export type AiMemoryCategory = string
 
 export interface SeedAiMemory {
     title: string;
