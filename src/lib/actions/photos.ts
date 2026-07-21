@@ -1800,7 +1800,8 @@ export async function getExifSuggestions() {
             }
         });
 
-        const lensModels = buildLensDatalistOptions(masterLenses, additionalLenses);
+        // レンズ候補はレンズ管理の登録済みリストのみを候補とする
+        const lensModels = buildLensDatalistOptions(masterLenses, [], []);
 
         return {
             success: true,

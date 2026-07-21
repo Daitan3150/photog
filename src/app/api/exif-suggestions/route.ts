@@ -35,7 +35,8 @@ export async function GET() {
       }
     });
 
-    const lensModels = buildLensDatalistOptions(masterLenses, additionalLenses);
+    // 候補は「レンズ管理（profile.lenses）」で明示的に登録されている値のみを使用する
+    const lensModels = buildLensDatalistOptions(masterLenses, [], []);
 
     return NextResponse.json({
       success: true,
