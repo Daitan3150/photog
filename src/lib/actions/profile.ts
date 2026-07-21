@@ -1,5 +1,6 @@
 'use server';
 
+import { getCachedData, setCachedData } from '@/lib/worker-cache';
 // Removed top-level imports to prevent client-side leak
 // Removed redundant types or top-level leaks
 import { Profile } from '../firebase/profile';
@@ -46,6 +47,11 @@ export async function updateProfile(data: Profile, idToken: string): Promise<Sav
 
 export async function getProfileServer() {
     try {
+        const cached = await getCachedData<Profile>('site_profile');
+        if (cached) {
+            return { success: true, data: cached };
+        }
+
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
         const profileDoc = await db.collection('settings').doc('profile').get();
@@ -54,7 +60,9 @@ export async function getProfileServer() {
             return { success: false, error: 'Profile not found', data: null };
         }
 
-        return { success: true, data: profileDoc.data() as Profile };
+        const data = profileDoc.data() as Profile;
+        await setCachedData('site_profile', data, 3600);
+        return { success: true, data };
     } catch (error: any) {
         console.error('Error fetching profile:', error);
         return { success: false, error: error.message, data: null };

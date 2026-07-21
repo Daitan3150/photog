@@ -1,6 +1,8 @@
 export interface Photo {
     id?: string;
     uploaderId: string;
+    uploaderName?: string;
+    uploaderPhotoURL?: string;
     url: string;
     publicId: string;
     title: string;
@@ -13,7 +15,7 @@ export interface Photo {
     characterName?: string; // [NEW] For cosplayers
     seriesName?: string; // [NEW] Series/Anime name
     event?: string; // [NEW] Event name (especially for cosplay)
-    shotAt: Date; // Will be stored as Timestamp in Firestore
+    shotAt: Date | string; // Will be stored as Timestamp in Firestore
     snsUrl?: string; // Link to Instagram/X
     categoryId?: string; // Category ID
     displayMode: 'title' | 'character'; // [NEW] Choice A or B
@@ -28,8 +30,9 @@ export interface Photo {
     shootLocationId?: string | null;
     cameraId?: string | null; // [NEW] Reference to the camera master document
     cameraType?: 'mirrorless' | 'dslr' | 'compact' | 'film' | 'other' | null; // [NEW]
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+    deletedUserName?: string;
 }
 
 export type PhotoFormData = Omit<Photo, 'id' | 'uploaderId' | 'createdAt' | 'updatedAt' | 'shotAt' | 'addressZip' | 'addressPref' | 'addressCity'> & {

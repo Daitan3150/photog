@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { getCachedData, setCachedData, clearCachedData } from '@/lib/worker-cache';
 
 export interface Subject {
     id: string;
@@ -50,39 +51,45 @@ const COLLECTION_NAME = 'subjects';
 
 export async function getSubjects() {
     try {
+        const cacheKey = 'subjects_list';
+        const cached = await getCachedData<any>(cacheKey);
+        if (cached) {
+            return { success: true, data: cached };
+        }
+
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
         const snapshot = await db.collection(COLLECTION_NAME).orderBy('name', 'asc').get();
 
-        return {
-            success: true,
-            data: snapshot.docs.map(doc => {
-                const d = doc.data();
-                return {
-                    id: doc.id,
-                    name: d.name || '',
-                    snsUrl: d.snsUrl || '',
-                    notes: d.notes || '',
-                    realName: d.realName || '',
-                    showRealName: d.showRealName === true,
-                    birthday: d.birthday || '',
-                    birthYear: d.birthYear || '',
-                    birthMonth: d.birthMonth || '',
-                    birthDay: d.birthDay || '',
-                    modelId: d.modelId || '',
-                    approximateAge: d.approximateAge || '',
-                    showBirthYear: d.showBirthYear === true,
-                    showAge: d.showAge !== false,
-                    ageDisplayMode: d.ageDisplayMode || 'blurred',
-                    deceasedDate: d.deceasedDate || '',
-                    deceasedYear: d.deceasedYear || '',
-                    deceasedMonth: d.deceasedMonth || '',
-                    deceasedDay: d.deceasedDay || '',
-                    createdAt: d.createdAt?.toDate?.()?.toISOString() ?? d.createdAt ?? '',
-                    updatedAt: d.updatedAt?.toDate?.()?.toISOString() ?? d.updatedAt ?? '',
-                };
-            }) as Subject[]
-        };
+        const subjects = snapshot.docs.map(doc => {
+            const d = doc.data();
+            return {
+                id: doc.id,
+                name: d.name || '',
+                snsUrl: d.snsUrl || '',
+                notes: d.notes || '',
+                realName: d.realName || '',
+                showRealName: d.showRealName === true,
+                birthday: d.birthday || '',
+                birthYear: d.birthYear || '',
+                birthMonth: d.birthMonth || '',
+                birthDay: d.birthDay || '',
+                modelId: d.modelId || '',
+                approximateAge: d.approximateAge || '',
+                showBirthYear: d.showBirthYear === true,
+                showAge: d.showAge !== false,
+                ageDisplayMode: d.ageDisplayMode || 'blurred',
+                deceasedDate: d.deceasedDate || '',
+                deceasedYear: d.deceasedYear || '',
+                deceasedMonth: d.deceasedMonth || '',
+                deceasedDay: d.deceasedDay || '',
+                createdAt: d.createdAt?.toDate?.()?.toISOString() ?? d.createdAt ?? '',
+                updatedAt: d.updatedAt?.toDate?.()?.toISOString() ?? d.updatedAt ?? '',
+            };
+        }) as Subject[];
+
+        await setCachedData(cacheKey, subjects, 3600);
+        return { success: true, data: subjects };
     } catch (error: any) {
         console.error('Error fetching subjects:', error);
         return { success: false, data: [], error: error.message };
@@ -107,6 +114,10 @@ export async function saveSubject(data: SubjectFormData) {
             createdAt: new Date(),
         });
 
+        await Promise.all([
+            clearCachedData('subjects_list'),
+            clearCachedData('public_models'),
+        ]);
         revalidatePath('/admin/subjects');
         return { success: true, id: docRef.id };
     } catch (error: any) {
@@ -126,6 +137,10 @@ export async function updateSubject(id: string, data: Partial<SubjectFormData>) 
             updatedAt: new Date(),
         });
 
+        await Promise.all([
+            clearCachedData('subjects_list'),
+            clearCachedData('public_models'),
+        ]);
         revalidatePath('/admin/subjects');
         return { success: true };
     } catch (error: any) {
@@ -141,6 +156,10 @@ export async function deleteSubject(id: string) {
 
         await db.collection(COLLECTION_NAME).doc(id).delete();
 
+        await Promise.all([
+            clearCachedData('subjects_list'),
+            clearCachedData('public_models'),
+        ]);
         revalidatePath('/admin/subjects');
         return { success: true };
     } catch (error: any) {

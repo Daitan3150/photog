@@ -1,5 +1,7 @@
 'use server';
 
+import { getCachedData, setCachedData, clearCachedData } from '@/lib/worker-cache';
+
 // Removed top-level import to prevent client-side leak
 // Removed top-level firebase-admin imports to fix client-side leaks
 
@@ -36,6 +38,12 @@ export type UserData = {
 };
 
 export async function getUsers(): Promise<{ success: boolean; users?: UserData[]; error?: string }> {
+    const cacheKey = 'users_list';
+    const cached = await getCachedData<UserData[]>(cacheKey);
+    if (cached) {
+        return { success: true, users: cached };
+    }
+
     try {
         const { getAdminAuth, getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const adminAuth = getAdminAuth();
@@ -54,22 +62,9 @@ export async function getUsers(): Promise<{ success: boolean; users?: UserData[]
             firestoreDataMap.set(doc.id, doc.data());
         });
 
-        // 3. Aggregate photo counts (This might be expensive, optimize later if needed)
-        // For now, simple count query for each user or fetch all photos and aggregate?
-        // Better: Fetch all photos once and aggregate in memory if dataset is small, 
-        // or execute separate count queries (N+1 problem risk).
-        // Let's use a count query for each user for accuracy for now, assuming low user count.
-        // Actually, listing all photos and counting by uploaderId is better if we have index.
-        // Actually, listing all photos and counting by uploaderId is better if we have index.
-        const photosSnapshot = await adminDb.collection('photos').get(); // Get ALL photos (careful with size)
+        // 3. Avoid scanning the entire photos collection.
+        //    If photoCount is tracked on the user document, use it; otherwise default to 0.
         const photoCounts = new Map<string, number>();
-
-        photosSnapshot.docs.forEach((doc: any) => {
-            const data = doc.data();
-            if (data.uploaderId) {
-                photoCounts.set(data.uploaderId, (photoCounts.get(data.uploaderId) || 0) + 1);
-            }
-        });
 
         // 4. Merge data
         const users: UserData[] = authUsers.map((user: any) => {
@@ -83,7 +78,7 @@ export async function getUsers(): Promise<{ success: boolean; users?: UserData[]
                 photoURL: firestoreData.photoURL || user.photoURL || '',
                 description: firestoreData.description || '',
                 snsLinks: firestoreData.snsLinks || [],
-                photoCount: photoCounts.get(user.uid) || 0,
+                photoCount: Number(firestoreData.photoCount || photoCounts.get(user.uid) || 0),
                 createdAt: user.metadata.creationTime,
                 lastLoginAt: user.metadata.lastSignInTime,
                 realName: firestoreData.realName || '',
@@ -103,6 +98,7 @@ export async function getUsers(): Promise<{ success: boolean; users?: UserData[]
             };
         });
 
+        await setCachedData(cacheKey, users, 900);
         return { success: true, users };
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -115,6 +111,12 @@ export async function getMyProfile(idToken: string): Promise<{ success: boolean;
         const { getAdminAuth, getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const auth = getAdminAuth();
         const decodedToken = await auth.verifyIdToken(idToken);
+        const cacheKey = `my_profile_${decodedToken.uid}`;
+        const cached = await getCachedData<any>(cacheKey);
+        if (cached) {
+            return { success: true, data: cached };
+        }
+
         const db = getAdminFirestore();
 
         const userDoc = await db.collection('users').doc(decodedToken.uid).get();
@@ -122,7 +124,9 @@ export async function getMyProfile(idToken: string): Promise<{ success: boolean;
             return { success: false, error: 'User not found' };
         }
 
-        return { success: true, data: userDoc.data() };
+        const data = userDoc.data();
+        await setCachedData(cacheKey, data, 300);
+        return { success: true, data };
     } catch (error: any) {
         console.error('Error fetching my profile:', error);
         return { success: false, error: error.message };
@@ -140,6 +144,11 @@ export async function updateMySnsLinks(snsLinks: SnsLink[], idToken: string): Pr
             snsLinks,
             updatedAt: new Date().toISOString()
         });
+        await Promise.all([
+            clearCachedData(`my_profile_${decodedToken.uid}`),
+            clearCachedData('users_list'),
+            clearCachedData('public_models'),
+        ]);
 
         return { success: true };
     } catch (error: any) {
@@ -149,22 +158,28 @@ export async function updateMySnsLinks(snsLinks: SnsLink[], idToken: string): Pr
 }
 
 export async function getAllSnsCandidates(): Promise<{ success: boolean; candidates: string[] }> {
+    const cacheKey = 'sns_candidates';
+    const cached = await getCachedData<string[]>(cacheKey);
+    if (cached) {
+        return { success: true, candidates: cached };
+    }
+
     try {
-        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
-        const db = getAdminFirestore();
-        const snapshot = await db.collection('users').get();
+        const cachedUsers = await getCachedData<UserData[]>('users_list');
+        const users = cachedUsers ?? (await getUsers()).users ?? [];
 
         const candidates = new Set<string>();
-        snapshot.docs.forEach((doc: any) => {
-            const data = doc.data();
-            if (data.snsLinks && Array.isArray(data.snsLinks)) {
-                data.snsLinks.forEach((link: SnsLink) => {
+        users.forEach((user: any) => {
+            if (user.snsLinks && Array.isArray(user.snsLinks)) {
+                user.snsLinks.forEach((link: SnsLink) => {
                     if (link.value) candidates.add(link.value);
                 });
             }
         });
 
-        return { success: true, candidates: Array.from(candidates) };
+        const candidateList = Array.from(candidates);
+        await setCachedData(cacheKey, candidateList, 3600);
+        return { success: true, candidates: candidateList };
     } catch (error) {
         console.error('Error fetching SNS candidates:', error);
         return { success: false, candidates: [] };
@@ -183,6 +198,11 @@ export async function updateMyProfile(data: { displayName?: string; photoURL?: s
             ...(data.photoURL ? { photoURL: data.photoURL } : {}),
             updatedAt: new Date().toISOString()
         });
+        await Promise.all([
+            clearCachedData(`my_profile_${decodedToken.uid}`),
+            clearCachedData('users_list'),
+            clearCachedData('public_models'),
+        ]);
 
         // Also update Firebase Auth profile for consistency
         await auth.updateUser(decodedToken.uid, {
@@ -281,6 +301,10 @@ export async function adminUpdateUserProfile(
         updateData.updatedAt = new Date().toISOString();
 
         await db.collection('users').doc(uid).set(updateData, { merge: true });
+        await Promise.all([
+            clearCachedData('users_list'),
+            clearCachedData('public_models'),
+        ]);
 
         // 表示名が更新された場合、Auth側も同期する
         if (data.displayName) {
@@ -324,58 +348,72 @@ export async function getPublicModels(): Promise<{
     }[]; 
     error?: string 
 }> {
+    const cacheKey = 'public_models';
+    const cached = await getCachedData<{ displayName: string; name?: string; showRealName?: boolean;
+        birthday?: string; birthYear?: string; birthMonth?: string; birthDay?: string; approximateAge?: string;
+        showBirthYear?: boolean; showAge?: boolean; ageDisplayMode?: 'blurred' | 'formal'; deceasedDate?: string;
+        deceasedYear?: string; deceasedMonth?: string; deceasedDay?: string; }[]>(cacheKey);
+    if (cached) {
+        return { success: true, models: cached };
+    }
+
     try {
-        const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
-        const db = getAdminFirestore();
+        const cachedUsers = await getCachedData<UserData[]>('users_list');
+        const cachedSubjects = await getCachedData<any[]>('subjects_list');
 
-        const [usersSnapshot, subjectsSnapshot] = await Promise.all([
-            db.collection('users').get(),
-            db.collection('subjects').get()
-        ]);
+        let usersData: UserData[] = cachedUsers ?? [];
+        let subjectsData: any[] = cachedSubjects ?? [];
 
-        const userModels = usersSnapshot.docs.map((doc: any) => {
-            const data = doc.data();
-            return {
-                displayName: data.displayName || 'No Name',
-                name: data.showRealName === true ? (data.realName || '') : '',
-                showRealName: data.showRealName === true,
-                birthday: data.birthday || '',
-                birthYear: data.birthYear || '',
-                birthMonth: data.birthMonth || '',
-                birthDay: data.birthDay || '',
-                approximateAge: data.approximateAge || '',
-                showBirthYear: data.showBirthYear === true,
-                showAge: data.showAge !== false,
-                ageDisplayMode: data.ageDisplayMode || 'blurred',
-                deceasedDate: data.deceasedDate || '',
-                deceasedYear: data.deceasedYear || '',
-                deceasedMonth: data.deceasedMonth || '',
-                deceasedDay: data.deceasedDay || '',
-            };
-        });
+        if (usersData.length === 0) {
+            const usersResult = await getUsers();
+            usersData = usersResult.users || [];
+        }
 
-        const subjectModels = subjectsSnapshot.docs.map((doc: any) => {
-            const data = doc.data();
-            return {
-                displayName: data.name || 'No Name',
-                name: data.showRealName === true ? (data.realName || '') : '',
-                showRealName: data.showRealName === true,
-                birthday: data.birthday || '',
-                birthYear: data.birthYear || '',
-                birthMonth: data.birthMonth || '',
-                birthDay: data.birthDay || '',
-                approximateAge: data.approximateAge || '',
-                showBirthYear: data.showBirthYear === true,
-                showAge: data.showAge !== false,
-                ageDisplayMode: data.ageDisplayMode || 'blurred',
-                deceasedDate: data.deceasedDate || '',
-                deceasedYear: data.deceasedYear || '',
-                deceasedMonth: data.deceasedMonth || '',
-                deceasedDay: data.deceasedDay || '',
-            };
-        });
+        if (subjectsData.length === 0) {
+            const { getSubjects } = await import('@/lib/actions/subjects');
+            const subjectsResult = await getSubjects();
+            subjectsData = subjectsResult.success ? subjectsResult.data : [];
+        }
 
-        return { success: true, models: [...userModels, ...subjectModels] };
+        const userModels = usersData.map((data: any) => ({
+            displayName: data.displayName || 'No Name',
+            name: data.showRealName === true ? (data.realName || '') : '',
+            showRealName: data.showRealName === true,
+            birthday: data.birthday || '',
+            birthYear: data.birthYear || '',
+            birthMonth: data.birthMonth || '',
+            birthDay: data.birthDay || '',
+            approximateAge: data.approximateAge || '',
+            showBirthYear: data.showBirthYear === true,
+            showAge: data.showAge !== false,
+            ageDisplayMode: data.ageDisplayMode || 'blurred',
+            deceasedDate: data.deceasedDate || '',
+            deceasedYear: data.deceasedYear || '',
+            deceasedMonth: data.deceasedMonth || '',
+            deceasedDay: data.deceasedDay || '',
+        }));
+
+        const subjectModels = subjectsData.map((data: any) => ({
+            displayName: data.name || 'No Name',
+            name: data.showRealName === true ? (data.realName || '') : '',
+            showRealName: data.showRealName === true,
+            birthday: data.birthday || '',
+            birthYear: data.birthYear || '',
+            birthMonth: data.birthMonth || '',
+            birthDay: data.birthDay || '',
+            approximateAge: data.approximateAge || '',
+            showBirthYear: data.showBirthYear === true,
+            showAge: data.showAge !== false,
+            ageDisplayMode: data.ageDisplayMode || 'blurred',
+            deceasedDate: data.deceasedDate || '',
+            deceasedYear: data.deceasedYear || '',
+            deceasedMonth: data.deceasedMonth || '',
+            deceasedDay: data.deceasedDay || '',
+        }));
+
+        const models = [...userModels, ...subjectModels];
+        await setCachedData(cacheKey, models, 3600);
+        return { success: true, models };
     } catch (error: any) {
         console.error('Error fetching public models:', error);
         return { 

@@ -1,5 +1,7 @@
 'use server';
 
+import { getCachedData, setCachedData } from '@/lib/worker-cache';
+
 // Removed top-level import to prevent client-side leak
 
 export type Category = {
@@ -24,6 +26,12 @@ export async function getCategories(): Promise<GetCategoriesResult> {
     if (!process.env.FIREBASE_PRIVATE_KEY) console.error('MISSING: FIREBASE_PRIVATE_KEY');
 
     try {
+        const cached = await getCachedData<GetCategoriesResult>('categories_list');
+        if (cached?.success && cached.data?.length) {
+            console.log('[getCategories] Returning cached categories.');
+            return cached;
+        }
+
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         let db;
         try {
@@ -47,6 +55,7 @@ export async function getCategories(): Promise<GetCategoriesResult> {
             };
         }) as Category[];
 
+        await setCachedData('categories_list', { success: true, data: categories }, 3600);
         return { success: true, data: categories };
     } catch (error: any) {
         console.error('Error fetching categories:', error);

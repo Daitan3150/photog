@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { Brain, ChevronLeft, ChevronRight, Menu, Home, Globe, LogOut, Settings, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert, Star, Aperture, Camera, Layers3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, Home, Globe, LogOut, Settings, UserCircle, LayoutDashboard, Images, UserPlus, ShieldAlert, Star, Aperture, Camera, Layers3 } from 'lucide-react';
 
 
 function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; toggleSidebar: () => void }) {
@@ -137,17 +137,6 @@ function AdminSidebar({ isCollapsed, toggleSidebar }: { isCollapsed: boolean; to
                             >
                                 <ShieldAlert size={20} className={pathname.startsWith('/admin/requests') ? '' : 'text-slate-400 group-hover:text-white'} />
                                 {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">削除依頼</span>}
-                            </Link>
-
-                            <Link
-                                href="/admin/ai-lab"
-                                className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${pathname.startsWith('/admin/ai-lab')
-                                    ? `${accentColor} text-white ${glowClass}`
-                                    : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
-                                    } ${isCollapsed ? 'justify-center' : ''}`}
-                            >
-                                <Brain size={20} className={pathname.startsWith('/admin/ai-lab') ? '' : 'text-slate-400 group-hover:text-white'} />
-                                {!isCollapsed && <span className="font-medium whitespace-nowrap overflow-hidden">AI Lab</span>}
                             </Link>
 
                             <Link

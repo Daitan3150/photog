@@ -4,6 +4,7 @@ import { Camera, CameraFormData } from '@/types/camera';
 import { revalidatePath, unstable_noStore } from 'next/cache';
 import { serializeData } from '../utils/serialization';
 import { inferCameraType } from '../photos/inferCameraType';
+import { getCachedData, setCachedData, clearCachedData } from '@/lib/worker-cache';
 
 /**
  * すべてのカメラデータを取得する（未登録のものも含む）
@@ -11,6 +12,12 @@ import { inferCameraType } from '../photos/inferCameraType';
 export async function getCameras(): Promise<Camera[]> {
     try {
         unstable_noStore();
+        const cacheKey = 'cameras_list';
+        const cached = await getCachedData<Camera[]>(cacheKey);
+        if (cached) {
+            return cached;
+        }
+
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
 
@@ -24,6 +31,7 @@ export async function getCameras(): Promise<Camera[]> {
             updatedAt: doc.data().updatedAt?.toDate() || null,
         })) as Camera[];
 
+        await setCachedData('cameras_list', cameras, 3600);
         return serializeData(cameras);
     } catch (error) {
         console.error('Error getting cameras:', error);
@@ -50,6 +58,7 @@ export async function saveCamera(data: CameraFormData, idToken: string): Promise
         };
 
         await cameraRef.set(newCamera);
+        await clearCachedData('cameras_list');
 
         revalidatePath('/admin/cameras');
         revalidatePath('/admin/photos/new');
@@ -100,6 +109,7 @@ export async function deleteCamera(id: string, idToken: string): Promise<{ succe
 
         const db = getAdminFirestore();
         await db.collection('cameras').doc(id).delete();
+        await clearCachedData('cameras_list');
 
         revalidatePath('/admin/cameras');
         revalidatePath('/admin/photos/new');

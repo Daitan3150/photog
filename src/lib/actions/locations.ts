@@ -3,6 +3,7 @@
 import { Location, LocationFormData } from '@/types/location';
 import { revalidatePath, unstable_noStore } from 'next/cache';
 import { serializeData } from '../utils/serialization';
+import { getCachedData, setCachedData, clearCachedData } from '@/lib/worker-cache';
 
 /**
  * ロケーション一覧を取得する
@@ -10,6 +11,12 @@ import { serializeData } from '../utils/serialization';
 export async function getLocations(idToken?: string): Promise<Location[]> {
     try {
         unstable_noStore();
+        const cacheKey = 'locations_list';
+        const cached = await getCachedData<Location[]>(cacheKey);
+        if (cached) {
+            return cached;
+        }
+
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
 
@@ -22,6 +29,7 @@ export async function getLocations(idToken?: string): Promise<Location[]> {
             updatedAt: doc.data().updatedAt?.toDate() || null,
         })) as Location[];
 
+        await setCachedData('locations_list', locations, 3600);
         return serializeData(locations);
     } catch (error) {
         console.error('Error getting locations:', error);
@@ -43,8 +51,8 @@ export async function ensureLocationExists(locationName: string, data: Partial<L
         const db = getAdminFirestore();
 
         const normalizedName = trimmedName.toLowerCase();
-        const snapshot = await db.collection('locations').get();
-        const existingDoc = snapshot.docs.find(doc => String(doc.data().name || '').trim().toLowerCase() === normalizedName);
+        const querySnapshot = await db.collection('locations').where('name', '==', trimmedName).limit(1).get();
+        const existingDoc = !querySnapshot.empty ? querySnapshot.docs[0] : null;
 
         if (existingDoc) {
             return { success: true, exists: true, id: existingDoc.id };
@@ -66,6 +74,7 @@ export async function ensureLocationExists(locationName: string, data: Partial<L
 
         const ref = await db.collection('locations').add(newLocation);
 
+        await clearCachedData('locations_list');
         revalidatePath('/admin/locations');
         revalidatePath('/admin/studios');
         revalidatePath('/admin/photos/new');
@@ -95,6 +104,7 @@ export async function saveLocation(data: LocationFormData, idToken: string) {
         };
 
         await ref.set(newLocation);
+        await clearCachedData('locations_list');
 
         revalidatePath('/admin/locations');
         revalidatePath('/admin/studios');

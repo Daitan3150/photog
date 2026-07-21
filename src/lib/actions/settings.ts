@@ -3,6 +3,7 @@
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { revalidatePath } from "next/cache";
+import { getCachedData, setCachedData, clearCachedData } from '@/lib/worker-cache';
 
 export interface SiteSettings {
     covers: {
@@ -18,12 +19,20 @@ export interface SiteSettings {
 const SETTINGS_DOC_ID = "site_settings";
 
 export async function getSiteSettings(): Promise<SiteSettings> {
+    const cacheKey = 'site_settings';
+    const cached = await getCachedData<SiteSettings>(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
     try {
         const docRef = doc(db, "settings", SETTINGS_DOC_ID);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-            return docSnap.data() as SiteSettings;
+            const data = docSnap.data() as SiteSettings;
+            await setCachedData(cacheKey, data, 3600);
+            return data;
         }
 
         // Return default settings if doc doesn't exist
@@ -62,6 +71,7 @@ export async function updateSiteSettings(settings: Partial<SiteSettings>) {
         const updated = { ...current, ...settings };
 
         await docRef.set(updated, { merge: true });
+        await clearCachedData('site_settings');
 
         revalidatePath("/");
         revalidatePath("/admin");

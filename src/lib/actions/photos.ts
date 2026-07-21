@@ -574,7 +574,13 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
         });
 
         // 🔄 Enrich with uploader profiles
-        const photosWithUploader = await enrichPhotosWithUploader(photos, db);
+        let photosWithUploader = photos;
+        try {
+            photosWithUploader = await enrichPhotosWithUploader(photos, db);
+        } catch (enrichError: any) {
+            console.error('[getPhotos] Uploader enrichment failed:', enrichError);
+            photosWithUploader = photos;
+        }
 
         const cursorValue = options.cursor ? String(options.cursor) : null;
         let startIndex = 0;
@@ -1016,76 +1022,44 @@ const userProfileCache = new Map<string, { displayName: string, photoURL: string
  * This ensures consistent branding and uploader icons across the entire app.
  */
 async function enrichPhotosWithUploader(photos: any[], db: any) {
-    if (!photos || photos.length === 0) return [];
+    if (!photos || photos.length === 0) return photos;
 
     // 1. Fetch Admin Profile for override (Daitan's custom name and icon)
     let adminName = 'Daitan';
     let adminPhotoURL = '/images/portrait.png';
     try {
-        const profileDoc = await db.collection('settings').doc('profile').get();
-        if (profileDoc.exists) {
-            const pData = profileDoc.data();
-            adminName = pData?.name || 'Daitan';
-            adminPhotoURL = pData?.imageUrl || '/images/portrait.png';
+        const cachedProfile = await getCachedData<any>('site_profile');
+        if (cachedProfile) {
+            adminName = cachedProfile.name || adminName;
+            adminPhotoURL = cachedProfile.imageUrl || adminPhotoURL;
+        } else {
+            const profileDoc = await db.collection('settings').doc('profile').get();
+            if (profileDoc.exists) {
+                const pData = profileDoc.data();
+                adminName = pData?.name || 'Daitan';
+                adminPhotoURL = pData?.imageUrl || '/images/portrait.png';
+                await setCachedData('site_profile', pData, 3600);
+            }
         }
     } catch (e) {
         console.error('[enrichPhotos] Admin profile fetch error:', e);
     }
 
-    // 2. Fetch missing uploader profiles from 'users' collection
-    const uploaderIds = Array.from(new Set(
-        photos.map(p => p.uploaderId).filter(id => id && typeof id === 'string' && !userProfileCache.has(id))
-    )) as string[];
+    // 2. Map uploader attribution without extra Firestore reads
+    return photos.map(photo => {
+        const uploaderEmail = photo.uploaderEmail || '';
+        const is_admin = SUPER_ADMIN_EMAILS.includes(uploaderEmail || '');
 
-    if (uploaderIds.length > 0) {
-        try {
-            for (let i = 0; i < uploaderIds.length; i += 10) {
-                const chunk = uploaderIds.slice(i, i + 10);
-                const userDocs = await db.collection('users').where('__name__', 'in', chunk).get();
-                userDocs.forEach((doc: any) => {
-                    const d = doc.data();
-                    const is_admin = SUPER_ADMIN_EMAILS.includes(d.email || d.uploaderEmail || '');
-                    userProfileCache.set(doc.id, {
-                        displayName: is_admin ? adminName : (d.displayName || d.email?.split('@')[0] || 'Anonymous'),
-                        photoURL: is_admin ? adminPhotoURL : (d.photoURL || '')
-                    });
-                });
-            }
-        } catch (e) {
-            console.error('[enrichPhotos] User fetch error:', e);
-        }
-    }
+        const finalName = is_admin
+            ? adminName
+            : photo.uploaderName || uploaderEmail?.split('@')[0] || 'Anonymous';
 
-    // 3. Map and Apply Override Logic
-    return photos.map(data => {
-        const uploaderId = data.uploaderId;
-        const uploaderEmail = data.uploaderEmail;
-
-        // Is this an admin photo? Check by Email directly OR by ID already in cache
-        const cachedUploader = uploaderId ? userProfileCache.get(uploaderId) : null;
-        const is_admin = SUPER_ADMIN_EMAILS.includes(uploaderEmail || '') ||
-            (cachedUploader && SUPER_ADMIN_EMAILS.includes(cachedUploader.displayName)); // Catch cases where email was used as name
-
-        // Final attribution
-        let finalName = '';
-        let finalPhotoURL = '';
-
-        if (is_admin) {
-            finalName = adminName;
-            finalPhotoURL = adminPhotoURL;
-        } else if (cachedUploader) {
-            finalName = cachedUploader.displayName;
-            finalPhotoURL = cachedUploader.photoURL;
-        } else {
-            // Fallback: If it's an email, we show the part before @ if admin, but here it's already checked.
-            // For regular users, we show their stored name or split email if allowed.
-            const uName = data.uploaderName || uploaderEmail?.split('@')[0] || 'Anonymous';
-            finalName = uName;
-            finalPhotoURL = '';
-        }
+        const finalPhotoURL = is_admin
+            ? adminPhotoURL
+            : (photo.uploaderPhotoURL || '');
 
         return {
-            ...data,
+            ...photo,
             uploaderName: finalName,
             uploaderPhotoURL: finalPhotoURL
         };
@@ -1608,6 +1582,12 @@ export async function getPhotoById(photoId: string, idToken: string): Promise<an
 }
 
 export async function getPublicPhotoById(photoId: string): Promise<any> {
+    const cacheKey = `photo_public_${photoId}`;
+    const cached = await getCachedData<any>(cacheKey);
+    if (cached !== null) {
+        return cached;
+    }
+
     try {
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
@@ -1630,7 +1610,9 @@ export async function getPublicPhotoById(photoId: string): Promise<any> {
             updatedAt: serializeData(data?.updatedAt),
         };
 
-        return serializeData(photo);
+        const serializedPhoto = serializeData(photo);
+        await setCachedData(cacheKey, serializedPhoto, 600);
+        return serializedPhoto;
     } catch (error) {
         console.error('Error fetching public photo by ID:', error);
         return null;
@@ -1638,6 +1620,12 @@ export async function getPublicPhotoById(photoId: string): Promise<any> {
 }
 
 export async function getRecentPhotos(limit: number = 6) {
+    const cacheKey = `recent_photos_${limit}`;
+    const cachedRecent = await getCachedData<any[]>(cacheKey);
+    if (cachedRecent !== null) {
+        return cachedRecent;
+    }
+
     try {
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
@@ -1684,7 +1672,9 @@ export async function getRecentPhotos(limit: number = 6) {
             return 0;
         });
 
-        return serializeData(photos.slice(0, limit));
+        const serialized = serializeData(photos.slice(0, limit));
+        await setCachedData(cacheKey, serialized, 600);
+        return serialized;
     } catch (error) {
         console.error('Error fetching recent photos:', error);
         return [];
@@ -1692,6 +1682,12 @@ export async function getRecentPhotos(limit: number = 6) {
 }
 
 export async function getPhotoPublic(photoId: string): Promise<any> {
+    const cacheKey = `photo_public_${photoId}`;
+    const cachedPhoto = await getCachedData<any>(cacheKey);
+    if (cachedPhoto !== null) {
+        return cachedPhoto;
+    }
+
     try {
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
@@ -1758,17 +1754,24 @@ export async function requestExifData(photoId: string, idToken: string) {
 }
 
 export async function getExifSuggestions() {
+    const cacheKey = 'exif_suggestions';
+    const cached = await getCachedData<{ models: string[]; lensModels: string[] }>(cacheKey);
+    if (cached) {
+        return { success: true, data: cached };
+    }
+
     try {
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
 
         // 1. プロフィールから「正解リスト」を取得
-        const profileDoc = await db.collection('settings').doc('profile').get();
-        const profileData = profileDoc.data();
+        const profileResult = await import('./profile').then(mod => mod.getProfileServer()).catch(() => null);
+        const profileData = profileResult?.success ? profileResult.data : null;
         const masterLenses: string[] = [];
 
         if (profileData?.lenses && Array.isArray(profileData.lenses)) {
-            profileData.lenses.forEach((line: string) => {
+            profileData.lenses.forEach((item: unknown) => {
+                const line = typeof item === 'string' ? item : String(item || '');
                 const clean = line.replace(/^[•\-\*\s]+/, '').trim();
                 if (clean && !clean.startsWith('---') && !clean.includes('Lenses')) {
                     masterLenses.push(clean);
@@ -1779,7 +1782,6 @@ export async function getExifSuggestions() {
         // 2. 既存の写真から実績リストを取得
         const snapshot = await db.collection('photos').select('exif').get();
         const models = new Set<string>();
-        const additionalLenses: string[] = [];
 
         const TARGET_LENS_PATTERN = /voigtlander|nokton|40mm/i;
         const CORRECT_LENS_NAME = 'voigtlander NOKTON classic 40mm F1.4 SC';
@@ -1795,21 +1797,19 @@ export async function getExifSuggestions() {
                     if (TARGET_LENS_PATTERN.test(lens) && lens.includes('40mm')) {
                         lens = CORRECT_LENS_NAME;
                     }
-                    additionalLenses.push(lens);
+                    if (lens) {
+                        masterLenses.push(lens);
+                    }
                 }
             }
         });
 
         // レンズ候補はレンズ管理の登録済みリストのみを候補とする
         const lensModels = buildLensDatalistOptions(masterLenses, [], []);
+        const responseData = { models: Array.from(models).sort(), lensModels };
+        await setCachedData(cacheKey, responseData, 3600);
 
-        return {
-            success: true,
-            data: {
-                models: Array.from(models).sort(),
-                lensModels
-            }
-        };
+        return { success: true, data: responseData };
     } catch (error: any) {
         console.error('Error fetching EXIF suggestions:', error);
         return { success: false, error: error.message, data: { models: [], lensModels: [] } };

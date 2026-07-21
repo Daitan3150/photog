@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Images, Aperture, Camera, UserPlus, Star, ShieldAlert, Brain, Settings, UserCircle, Globe, FileText } from 'lucide-react';
+import { Home, Images, Aperture, Camera, UserPlus, Star, ShieldAlert, Settings, UserCircle, Globe, FileText } from 'lucide-react';
 import { useAuth } from '@/components/admin/AuthProvider';
 
 export default function AdminDashboard() {
@@ -17,7 +17,6 @@ export default function AdminDashboard() {
         { href: '/admin/lenses', title: 'レンズ一覧', icon: Star },
         { href: '/admin/cameras', title: 'カメラ一覧', icon: Camera },
         { href: '/admin/requests', title: '削除依頼', icon: ShieldAlert, adminOnly: true },
-        { href: '/admin/ai-lab', title: 'AI Lab', icon: Brain, adminOnly: true },
         { href: '/admin/blog', title: 'ブログ管理', icon: FileText },
         { href: '/admin/settings/covers', title: 'サイト設定', icon: Settings, adminOnly: true },
         { href: '/admin/profile', title: 'プロフィール', icon: UserCircle },

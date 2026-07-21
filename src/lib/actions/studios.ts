@@ -3,12 +3,19 @@
 import { Studio, StudioFormData } from '@/types/studio';
 import { revalidatePath } from 'next/cache';
 import { serializeData } from '../utils/serialization';
+import { getCachedData, setCachedData, clearCachedData } from '@/lib/worker-cache';
 
 /**
  * スタジオ一覧を取得する
  */
 export async function getStudios(idToken?: string): Promise<Studio[]> {
     try {
+        const cacheKey = 'studios_list';
+        const cached = await getCachedData<Studio[]>(cacheKey);
+        if (cached) {
+            return cached;
+        }
+
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
 
@@ -21,6 +28,7 @@ export async function getStudios(idToken?: string): Promise<Studio[]> {
             updatedAt: doc.data().updatedAt?.toDate() || null,
         })) as Studio[];
 
+        await setCachedData('studios_list', studios, 3600);
         return serializeData(studios);
     } catch (error) {
         console.error('Error getting studios:', error);
@@ -47,6 +55,7 @@ export async function saveStudio(data: StudioFormData, idToken: string): Promise
         };
 
         await studioRef.set(newStudio);
+        await clearCachedData('studios_list');
 
         revalidatePath('/admin/studios');
         return { success: true, id: studioRef.id };

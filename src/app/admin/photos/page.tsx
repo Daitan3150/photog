@@ -13,7 +13,7 @@ import BulkEditModal from '@/components/admin/BulkEditModal';
 import cloudinaryLoader from '@/lib/cloudinary-loader';
 
 // 日付フォーマット（撮影日 or 追加日）
-const formatDate = (dateString: string | null | undefined, fallback = '') => {
+const formatDate = (dateString: string | Date | null | undefined, fallback = '') => {
     if (!dateString) return fallback;
     try {
         const date = new Date(dateString);
@@ -51,7 +51,7 @@ export default function PhotosPage() {
         return map;
     }, [categories]);
 
-    const getCategoryName = useCallback((categoryId: string | null) => {
+    const getCategoryName = useCallback((categoryId: string | null | undefined) => {
         if (!categoryId) return null;
         if (categoryId === 'archived') return '🗑️ 削除済みユーザーの投稿';
         return categoryLookup.get(categoryId) || categoryId;
@@ -62,7 +62,7 @@ export default function PhotosPage() {
         const categorized = photos.filter(p => p.categoryId && String(p.categoryId).trim() !== '');
         const groupedByCategory: Record<string, Photo[]> = {};
         categorized.forEach(p => {
-            const catName = getCategoryName(p.categoryId) || p.categoryId;
+            const catName = getCategoryName(p.categoryId) ?? p.categoryId ?? 'Unknown';
             if (!groupedByCategory[catName]) groupedByCategory[catName] = [];
             groupedByCategory[catName].push(p);
         });
@@ -244,7 +244,7 @@ export default function PhotosPage() {
         if (selectedIds.size === photos.length) {
             setSelectedIds(new Set());
         } else {
-            setSelectedIds(new Set(photos.map(p => p.id)));
+            setSelectedIds(new Set(photos.map(p => p.id).filter((id): id is string => !!id)));
         }
     };
 
@@ -327,16 +327,18 @@ export default function PhotosPage() {
     };
 
     const renderPhotoCard = useCallback((photo: Photo) => {
-        const isSelected = selectedIds.has(photo.id);
-        const catName = getCategoryName(photo.categoryId);
+        const photoId = photo.id || '';
+        const isSelected = photoId ? selectedIds.has(photoId) : false;
+        const catName = getCategoryName(photo.categoryId) ?? photo.categoryId ?? '';
         return (
             <div
-                key={photo.id}
+                key={photoId}
                 onClick={() => {
+                    if (!photoId) return;
                     if (isSelectionMode) {
-                        toggleSelection(photo.id);
+                        toggleSelection(photoId);
                     } else {
-                        router.push(`/admin/photos/${photo.id}`);
+                        router.push(`/admin/photos/${photoId}`);
                     }
                 }}
                 className={`bg-white rounded-xl shadow-sm overflow-hidden border transition-all cursor-pointer group relative ${isSelected ? 'ring-2 ring-blue-500 border-transparent' : 'border-gray-100 hover:shadow-md'
@@ -400,7 +402,7 @@ export default function PhotosPage() {
                                     {photo.uploaderPhotoURL ? (
                                         <img
                                             src={photo.uploaderPhotoURL}
-                                            alt={photo.uploaderName}
+                                            alt={photo.uploaderName || 'Uploader'}
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
@@ -437,7 +439,8 @@ export default function PhotosPage() {
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDelete(photo.id);
+                                    if (!photoId) return;
+                                    handleDelete(photoId);
                                 }}
                                 className="text-xs flex items-center gap-1.5 text-gray-400 hover:text-red-600 transition-colors px-2 py-1 rounded hover:bg-red-50"
                                 title="写真を削除"
