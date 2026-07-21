@@ -11,6 +11,10 @@ function shouldIgnoreLensText(value: string): boolean {
   if (normalized.includes('Lenses')) return true;
   if (/^(section|section title|old|manual|mf|current)$/i.test(normalized)) return true;
   if (/(^|\s)(section|old|manual|mf|current)(\s|$)/i.test(normalized)) return true;
+  // Exclude obvious section headers or category markers
+  if (normalized.includes('｜') || /\b(system|main system|sub system|adapters?|adapter)\b/i.test(normalized)) return true;
+  // Exclude simple labels like 'メイン機材' / 'サブ機材' / 'アダプター'
+  if (/メイン|サブ機材|アダプター|サブシステム|メインシステム/.test(normalized)) return true;
   return false;
 }
 
@@ -32,9 +36,9 @@ export function extractLensNamesFromProfileData(profileData: unknown): string[] 
   if (!profileData || typeof profileData !== 'object') return [];
 
   const lensSources = [
+    // Use only explicit lens lists to avoid picking up camera names from general gear
     (profileData as { lenses?: unknown }).lenses,
     (profileData as { lensDetails?: unknown }).lensDetails,
-    (profileData as { gear?: unknown }).gear,
   ];
 
   const lensNames = new Set<string>();
