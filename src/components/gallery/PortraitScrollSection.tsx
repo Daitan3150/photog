@@ -9,6 +9,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useRef } from "react";
 import Lightbox from "./Lightbox";
 import type { Photo as GalleryPhoto } from "./PhotoGrid";
+import { formatCameraDisplayLabel } from '@/lib/utils/cameraDisplay';
 
 type Photo = GalleryPhoto;
 
@@ -310,6 +311,10 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
     modelName: string
 }) {
     const cameraBadge = getCameraBadgeMeta(photo.cameraType);
+    const cameraSensorSize = photo.cameraSensorSize ? String(photo.cameraSensorSize).trim() : '';
+    const cameraMasterName = photo.cameraMasterName ? String(photo.cameraMasterName).trim() : '';
+    const cameraName = cameraMasterName || photo.exif?.Model || photo.exif?.Make || '';
+    const cameraLabel = formatCameraDisplayLabel(cameraName, cameraSensorSize);
 
     return (
         <motion.div
@@ -332,26 +337,20 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
                     className="object-cover transition-transform duration-[2s] ease-out group-hover/item:scale-105"
                     sizes="(max-width: 768px) 54vw, 480px"
                 />
-                {cameraBadge && (
-                    <div className="absolute top-4 left-4 z-30 pointer-events-none">
-                        <div className={`rounded-full border px-2.5 py-1 text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] backdrop-blur-md ${cameraBadge.className}`}>
-                            <span className="flex items-center gap-1">
-                                <Camera size={9} />
-                                {cameraBadge.label}
-                            </span>
-                        </div>
-                    </div>
-                )}
                 {/* Uploader Mini-icon & Name at Bottom-Right on Hover (Desktop) / Constant (Mobile) */}
                 <div className="absolute bottom-0 right-0 left-0 p-6 md:p-8 flex flex-col gap-4 transition-all duration-500 md:translate-y-4 md:opacity-0 group-hover/item:translate-y-0 group-hover/item:opacity-100 z-10">
                     <div className="flex flex-col gap-1.5 flex-1">
                         {/* Camera & Lens Details (EXIF) */}
                         {photo.exif && (
                             <div className="flex flex-wrap gap-x-4 gap-y-1 opacity-60 text-[8px] md:text-[9px] uppercase tracking-[0.2em] font-light text-white mb-1">
-                                <span className="flex items-center gap-1.5">
-                                    <Camera size={10} className="opacity-50" />
-                                    {photo.exif.Model}
-                                </span>
+                                {cameraLabel && (
+                                    <span className="flex items-center gap-1.5">
+                                        <Camera size={10} className="opacity-50" />
+                                        <span className="font-medium text-white/90 uppercase tracking-[0.2em] text-[8px] md:text-[9px]">
+                                            {cameraLabel}
+                                        </span>
+                                    </span>
+                                )}
                                 {photo.exif.LensModel && (
                                     <span className="flex items-center gap-1.5">
                                         <Sparkles size={10} className="opacity-50" />
@@ -370,23 +369,15 @@ function PortraitPhotoItem({ photo, index, searchParams, modelName }: {
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-2 rounded-full border border-white/20 shadow-lg">
-                                <span className="text-white text-[9px] md:text-[10px] font-bold tracking-wider leading-none text-white">
-                                    {photo.uploaderName || "Creator"}
-                                </span>
-                                <div className="relative w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden border border-white/40 bg-white/10 shrink-0">
-                                    {photo.uploaderPhotoURL ? (
-                                        <img
-                                            src={photo.uploaderPhotoURL}
-                                            alt={photo.uploaderName}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-[8px] text-white/50">
-                                            <User size={12} />
-                                        </div>
-                                    )}
-                                </div>
+                            <div className="relative flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-2 rounded-full border border-white/20 shadow-lg">
+                                {cameraBadge && (
+                                    <div className={`rounded-full border px-2 py-0.5 text-[8px] md:text-[9px] font-semibold uppercase tracking-[0.18em] backdrop-blur-md ${cameraBadge.className}`}>
+                                        <span className="flex items-center gap-1">
+                                            <Camera size={8} />
+                                            {cameraBadge.label}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

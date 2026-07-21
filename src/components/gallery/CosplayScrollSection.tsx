@@ -8,6 +8,7 @@ import { User, ChevronRight, Sparkles, Calendar, Camera } from "lucide-react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Lightbox from "./Lightbox";
 import type { Photo as GalleryPhoto } from "./PhotoGrid";
+import { formatCameraDisplayLabel } from '@/lib/utils/cameraDisplay';
 
 type Photo = GalleryPhoto;
 
@@ -346,6 +347,10 @@ function CosplayPhotoItem({ photo, index, searchParams, modelName }: {
     modelName: string
 }) {
     const cameraBadge = getCameraBadgeMeta(photo.cameraType);
+    const cameraSensorSize = photo.cameraSensorSize ? String(photo.cameraSensorSize).trim() : '';
+    const cameraMasterName = photo.cameraMasterName ? String(photo.cameraMasterName).trim() : '';
+    const cameraName = cameraMasterName || photo.exif?.Model || photo.exif?.Make || '';
+    const cameraLabel = formatCameraDisplayLabel(cameraName, cameraSensorSize);
 
     return (
         <motion.div
@@ -371,16 +376,7 @@ function CosplayPhotoItem({ photo, index, searchParams, modelName }: {
                         priority={index < 2}
                     />
 
-                    {cameraBadge && (
-                        <div className="absolute top-4 left-4 z-30 pointer-events-none">
-                            <div className={`rounded-full border px-2.5 py-1 text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] backdrop-blur-md ${cameraBadge.className}`}>
-                                <span className="flex items-center gap-1">
-                                    <Camera size={9} />
-                                    {cameraBadge.label}
-                                </span>
-                            </div>
-                        </div>
-                    )}
+                    {/* Camera type badge is now shown near the uploader icon */}
 
                     {/* Cosplay Sparkle Badge */}
                     <div className="absolute top-4 right-4 z-30 pointer-events-none">
@@ -417,6 +413,11 @@ function CosplayPhotoItem({ photo, index, searchParams, modelName }: {
                         {/* Title & Uploader */}
                         <div className="flex items-end justify-between mt-1">
                             <div className="flex flex-col">
+                                {cameraLabel && (
+                                    <p className="text-white/70 text-[8px] md:text-[9px] uppercase tracking-[0.24em] mb-1">
+                                        {cameraLabel}
+                                    </p>
+                                )}
                                 <p className="text-white text-[11px] md:text-sm font-serif tracking-[0.1em] drop-shadow-md">
                                     {photo.title}
                                 </p>
@@ -427,23 +428,15 @@ function CosplayPhotoItem({ photo, index, searchParams, modelName }: {
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-lg">
-                                <span className="text-white text-[8px] md:text-[9px] font-bold tracking-wider leading-none">
-                                    {photo.uploaderName || "Creator"}
-                                </span>
-                                <div className="relative w-5 h-5 rounded-full overflow-hidden border border-white/40 bg-white/10 shrink-0">
-                                    {photo.uploaderPhotoURL ? (
-                                        <img
-                                            src={photo.uploaderPhotoURL}
-                                            alt={photo.uploaderName}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-[8px] text-white/50">
-                                            <User size={12} />
-                                        </div>
-                                    )}
-                                </div>
+                            <div className="relative flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-lg">
+                                {cameraBadge && (
+                                    <div className={`rounded-full border px-2 py-0.5 text-[7px] md:text-[8px] font-semibold uppercase tracking-[0.16em] backdrop-blur-md ${cameraBadge.className}`}>
+                                        <span className="flex items-center gap-1">
+                                            <Camera size={8} />
+                                            {cameraBadge.label}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

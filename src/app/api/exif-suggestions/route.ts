@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebaseAdmin';
 import { buildLensDatalistOptions } from '@/lib/utils/lensSuggestions';
+import { extractLensNamesFromProfileData } from '@/lib/utils/exifSuggestions';
 
 export async function GET() {
   try {
@@ -8,16 +9,7 @@ export async function GET() {
 
     const profileDoc = await db.collection('settings').doc('profile').get();
     const profileData = profileDoc.data();
-    const masterLenses: string[] = [];
-
-    if (profileData?.lenses && Array.isArray(profileData.lenses)) {
-      profileData.lenses.forEach((line: string) => {
-        const clean = line.replace(/^[•\-*\s]+/, '').trim();
-        if (clean && !clean.startsWith('---') && !clean.includes('Lenses')) {
-          masterLenses.push(clean);
-        }
-      });
-    }
+    const masterLenses = extractLensNamesFromProfileData(profileData);
 
     const snapshot = await db.collection('photos').select('exif').get();
     const models = new Set<string>();

@@ -9,6 +9,7 @@ import { Sparkles, Calendar } from "lucide-react";
 import { clsx } from "clsx";
 import LeafletMap from "@/components/common/LeafletMap";
 import PhotoStatsActions from "./PhotoStatsActions";
+import { formatCameraDisplayLabel } from '@/lib/utils/cameraDisplay';
 
 interface LightboxProps {
     photo: LightboxPhoto;
@@ -36,6 +37,8 @@ interface LightboxPhoto {
     longitude?: number | null;
     nextPhotoUrl?: string | null;
     prevPhotoUrl?: string | null;
+    cameraMasterName?: string | null;
+    cameraSensorSize?: string | null;
     exif?: {
         Make?: string;
         Model?: string;
@@ -361,11 +364,14 @@ export default function Lightbox({ photo, onClose, onNext, onPrev }: LightboxPro
                                 <div className="pt-6 border-t border-gray-100 space-y-3">
                                     <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Shooting Data</p>
                                     <div className="grid grid-cols-2 gap-y-4 gap-x-2">
-                                        {(photo.exif.Model || photo.exif.Make) && (
+                                        {(photo.exif.Model || photo.exif.Make || photo.cameraSensorSize || photo.cameraMasterName) && (
                                             <div className="col-span-2">
                                                 <p className="text-[8px] text-gray-400 uppercase tracking-tighter">Camera</p>
                                                 <p className="text-[11px] font-medium leading-tight">
-                                                    {photo.exif.Model || photo.exif.Make}
+                                                    {formatCameraDisplayLabel(
+                                                        photo.cameraMasterName || photo.exif?.Model || photo.exif?.Make,
+                                                        photo.cameraSensorSize
+                                                    )}
                                                 </p>
                                             </div>
                                         )}

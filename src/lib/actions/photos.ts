@@ -23,6 +23,63 @@ import { ensureStudioExists } from './studios';
 import { ensureCameraExists } from './cameras'; // [NEW]
 import { revalidatePath } from 'next/cache';
 import { buildFullAddress } from '../utils/address';
+import { type CameraType } from '../photos/inferCameraType';
+
+export async function reconcilePhotoCameraMetadata(photoIds: string[], idToken: string): Promise<{ success: boolean; count?: number; error?: string }> {
+    if (photoIds.length === 0) return { success: true, count: 0 };
+
+    try {
+        const { getAdminAuth, getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const auth = getAdminAuth();
+        const decodedToken = await auth.verifyIdToken(idToken);
+        const uid = decodedToken.uid;
+        const db = getAdminFirestore();
+
+        const userDoc = await db.collection('users').doc(uid).get();
+        const userData = userDoc.data();
+        const isAdmin = userData?.role === 'admin';
+        if (!isAdmin) {
+            return { success: false, error: 'Authorization required' };
+        }
+
+        const batch = db.batch();
+        let updatedCount = 0;
+
+        for (const photoId of photoIds) {
+            const ref = db.collection('photos').doc(photoId);
+            const photoSnapshot = await ref.get();
+            const photoData = photoSnapshot.data();
+            const modelName = String(photoData?.exif?.Model || '').trim();
+            if (!modelName) continue;
+
+            const cameraRes = await ensureCameraExists(modelName, String(photoData?.exif?.Make || ''));
+            if (!cameraRes.success || !cameraRes.camera) continue;
+
+            const updates: any = {
+                cameraId: cameraRes.camera.id || null,
+                cameraType: cameraRes.camera.type || null,
+                updatedAt: new Date()
+            };
+
+            batch.update(ref, updates);
+            updatedCount += 1;
+        }
+
+        if (updatedCount > 0) {
+            await batch.commit();
+        }
+
+        revalidatePath('/');
+        revalidatePath('/portfolio');
+        revalidatePath('/search');
+        await purgePublicCache();
+
+        return { success: true, count: updatedCount };
+    } catch (error: any) {
+        console.error('Error reconciling photo camera metadata:', error);
+        return { success: false, error: error.message };
+    }
+}
 
 const CATEGORIES = ['all', 'portrait', 'snapshot', 'cosplay', 'landscape', 'animal', 'other', 'archived'];
 
@@ -500,6 +557,8 @@ export async function getPhotos(idToken: string, options: { limit?: number; curs
                 tags: data.tags || [],
                 latitude: data.latitude || null,
                 longitude: data.longitude || null,
+                cameraId: data.cameraId || null,
+                cameraType: data.cameraType || null,
                 exif: safeExif,
                 shotAt: serializeData(data.shotAt),
                 createdAt: serializeData(data.createdAt) || new Date().toISOString(),
@@ -681,6 +740,7 @@ export async function bulkUpdatePhotos(
         longitude?: number | null;
         zipCode?: string;
         prefecture?: string;
+        cameraType?: CameraType | null;
         exif?: {
             Model?: string;
             LensModel?: string;
@@ -743,6 +803,7 @@ export async function bulkUpdatePhotos(
         if (data.longitude !== undefined) updateData.longitude = data.longitude;
         if (data.zipCode !== undefined) updateData.zipCode = data.zipCode;
         if (data.prefecture !== undefined) updateData.prefecture = data.prefecture;
+        if (data.cameraType !== undefined) updateData.cameraType = data.cameraType;
         if (data.exif) {
             if (data.exif.Model !== undefined) updateData['exif.Model'] = data.exif.Model;
             if (data.exif.LensModel !== undefined) updateData['exif.LensModel'] = data.exif.LensModel;
@@ -754,6 +815,16 @@ export async function bulkUpdatePhotos(
 
         for (const photoId of photoIds) {
             const ref = db.collection('photos').doc(photoId);
+            const photoSnapshot = await ref.get();
+            const photoData = photoSnapshot.data();
+            const modelName = data.exif?.Model?.trim();
+            if (modelName) {
+                const cameraRes = await ensureCameraExists(modelName, String(photoData?.exif?.Make || ''));
+                if (cameraRes.success && cameraRes.camera) {
+                    updateData.cameraId = cameraRes.camera.id || null;
+                    updateData.cameraType = data.cameraType ?? cameraRes.camera.type ?? null;
+                }
+            }
             batch.update(ref, updateData);
         }
         await batch.commit();
@@ -810,14 +881,14 @@ export async function refreshPhotoMetadata(photoId: string, idToken: string): Pr
         if (!photoData?.publicId) return { success: false, error: 'No Public ID' };
 
         // Cloudinaryから情報を取得
-        const { v2: cloudinary } = require('cloudinary');
-        cloudinary.config({
+        const { v2: cloudinaryClient } = require('cloudinary');
+        cloudinaryClient.config({
             cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
             api_key: process.env.CLOUDINARY_API_KEY,
             api_secret: process.env.CLOUDINARY_API_SECRET,
         });
 
-        const resource = await cloudinary.api.resource(photoData.publicId, {
+        const resource = await cloudinaryClient.api.resource(photoData.publicId, {
             image_metadata: true,
             context: true // Contextも念のため取得
         });
@@ -1020,6 +1091,45 @@ async function enrichPhotosWithUploader(photos: any[], db: any) {
         };
     });
 }
+
+async function enrichPhotosWithCameraMaster(photos: any[], db: any) {
+    if (!photos || photos.length === 0) return photos;
+    const cameraIds = Array.from(new Set(
+        photos
+            .map(p => p.cameraId)
+            .filter((id: any) => id && typeof id === 'string')
+    ));
+
+    if (cameraIds.length === 0) return photos;
+
+    const cameraDocs = await Promise.all(
+        cameraIds.map((id: string) => db.collection('cameras').doc(id).get())
+    );
+
+    const cameraMap = new Map<string, any>();
+    cameraDocs.forEach(doc => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        if (!data) return;
+        cameraMap.set(doc.id, {
+            sensorSize: String(data.sensorSize || '').trim(),
+            name: String(data.name || '').trim(),
+            type: String(data.type || '').trim(),
+        });
+    });
+
+    return photos.map(photo => {
+        if (!photo.cameraId) return photo;
+        const camera = cameraMap.get(photo.cameraId);
+        if (!camera) return photo;
+        return {
+            ...photo,
+            cameraSensorSize: camera.sensorSize || null,
+            cameraMasterName: camera.name || null,
+        };
+    });
+}
+
 export async function searchPhotos(query: string, options: { category?: string; limit?: number } = {}) {
     const { category, limit = 50 } = options;
     try {
@@ -1094,7 +1204,8 @@ export async function searchPhotos(query: string, options: { category?: string; 
                 String(p.url).trim() !== ''
             );
 
-            const serialized = serializeData(results_data);
+            const enrichedResults = await enrichPhotosWithCameraMaster(results_data, db);
+            const serialized = serializeData(enrichedResults);
             await setCachedData(cacheKey, serialized, 3600);
             return serialized;
         }
@@ -1133,7 +1244,7 @@ export async function searchPhotos(query: string, options: { category?: string; 
         // 🔄 Enrich with uploader profiles
         const results_raw = await enrichPhotosWithUploader(photoDocs.filter(Boolean), db);
 
-        const results_data = results_raw
+        let results_data = results_raw
             .map((data: any) => {
                 const catId = String(data.categoryId || '');
                 return {
@@ -1144,6 +1255,7 @@ export async function searchPhotos(query: string, options: { category?: string; 
                 };
             });
 
+        results_data = await enrichPhotosWithCameraMaster(results_data, db);
         return serializeData(results_data);
 
     } catch (error) {

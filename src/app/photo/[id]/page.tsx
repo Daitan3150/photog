@@ -11,6 +11,7 @@ import { getRelatedPhotos } from '@/lib/algolia';
 import LikeButton from '@/components/gallery/LikeButton';
 import cloudinaryLoader from '@/lib/cloudinary-loader';
 import LeafletMap from '@/components/common/LeafletMap';
+import { formatCameraDisplayLabel } from '@/lib/utils/cameraDisplay';
 interface Props {
     params: Promise<{ id: string }>;
 }
@@ -355,7 +356,10 @@ export default async function PhotoPage({ params }: Props) {
                                         <p className="text-[9px] text-black/30 uppercase tracking-widest font-bold">Camera & Lens</p>
                                         <div className="flex items-center gap-2 flex-wrap justify-center md:justify-start">
                                             <p className="text-sm font-bold text-black/90">
-                                                {photo.exif.Model || 'Generic Camera'}
+                                                {formatCameraDisplayLabel(
+                                                    photo.cameraMasterName || photo.exif?.Model || photo.exif?.Make,
+                                                    photo.cameraSensorSize
+                                                ) || 'Generic Camera'}
                                             </p>
                                             {photo.cameraType && (
                                                 <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${

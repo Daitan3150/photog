@@ -10,6 +10,7 @@ import { Instagram, Twitter, ExternalLink, Globe, Share2, Calendar, Sparkles, Ca
 import Lightbox from "./Lightbox";
 import cloudinaryLoader from "@/lib/cloudinary-loader";
 import { clsx } from "clsx";
+import { formatCameraDisplayLabel } from '@/lib/utils/cameraDisplay';
 
 // SNS Service detection helper
 const getSnsIcon = (url: string) => {
@@ -50,6 +51,8 @@ export interface Photo {
         FocalLength?: number;
     };
     cameraType?: 'mirrorless' | 'dslr' | 'compact' | 'film' | 'other' | null;
+    cameraSensorSize?: string | null;
+    cameraMasterName?: string | null;
     nextPhotoUrl?: string | null;
     prevPhotoUrl?: string | null;
 }
@@ -170,7 +173,9 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata", variant
                     const displayTitle = getPhotoDisplayTitle(photo);
                     const normalizedTitle = normalizeDisplayText(displayTitle);
                     const shouldShowTitle = !!normalizedTitle && !isUntitledText(normalizedTitle);
-                    const camera = normalizeDisplayText(photo.exif?.Model || photo.exif?.Make);
+                    const cameraName = normalizeDisplayText(photo.cameraMasterName || photo.exif?.Model || photo.exif?.Make);
+                    const cameraSensorSize = normalizeDisplayText(photo.cameraSensorSize);
+                    const camera = formatCameraDisplayLabel(cameraName, cameraSensorSize);
                     const lens = normalizeDisplayText(photo.exif?.LensModel);
                     const cameraBadge = getCameraBadgeMeta(photo.cameraType);
                     const location = normalizeDisplayText(photo.location);
@@ -217,10 +222,10 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata", variant
                                 )}
 
                                 {cameraBadge && (
-                                    <div className="absolute top-3 left-3 z-30 pointer-events-none">
-                                        <div className={`rounded-full border px-2.5 py-1 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] backdrop-blur-md ${cameraBadge.className}`}>
+                                    <div className="absolute bottom-3 right-3 z-30 pointer-events-none">
+                                        <div className={`rounded-full border px-2 py-0.5 text-[7px] sm:text-[8px] font-semibold uppercase tracking-[0.18em] backdrop-blur-md ${cameraBadge.className}`}>
                                             <span className="flex items-center gap-1">
-                                                <Camera size={9} />
+                                                <Camera size={8} />
                                                 {cameraBadge.label}
                                             </span>
                                         </div>
@@ -262,10 +267,7 @@ export default function PhotoGrid({ photos, overlayVariant = "metadata", variant
                                                     {camera && (
                                                         <div className="flex items-center gap-1">
                                                             <Camera size={6} className="text-amber-300/90" />
-                                                            <span className="text-[6px] sm:text-[7px] uppercase tracking-[0.3em] text-white/70">
-                                                                Camera
-                                                            </span>
-                                                            <span className="text-[6px] sm:text-[7px] font-medium tracking-[0.3em] text-amber-300">
+                                                            <span className="text-[7px] sm:text-[8px] font-medium tracking-[0.18em] text-amber-300">
                                                                 {camera}
                                                             </span>
                                                         </div>
