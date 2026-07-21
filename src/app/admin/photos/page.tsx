@@ -114,6 +114,17 @@ export default function PhotosPage() {
         };
     }, [user]);
 
+    // 初期表示: どれも展開されていなければデフォルトで 'cosplay' カテゴリを開く
+    useEffect(() => {
+        if (categories.length === 0) return;
+        if (Object.keys(expandedCategories).length > 0) return; // 既に操作済みなら変更しない
+
+        const defaultCatId = 'cosplay';
+        const matched = categories.find(c => c.id === defaultCatId);
+        const displayName = matched ? matched.name : defaultCatId;
+        setExpandedCategories(prev => ({ ...prev, [displayName]: true }));
+    }, [categories, expandedCategories]);
+
     // 🔄 個別の「もっと見る」または「リロード」処理
     const fetchPhotos = async (reset = false) => {
         if (!user) return;
