@@ -1426,13 +1426,7 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                                 </button>
                             </div>
                             <datalist id="lens-candidates">
-                                {(() => {
-                                    const combined = [...(exifSuggestions.lensModels || []), ...lensHistory];
-                                    return combined.filter((value, index, self) => {
-                                        const normalized = value.toLowerCase();
-                                        return self.findIndex(item => item.toLowerCase() === normalized) === index;
-                                    });
-                                })().map((l, i) => <option key={i} value={l} />)}
+                                {(exifSuggestions.lensModels || []).map((l, i) => <option key={i} value={l} />)}
                             </datalist>
                             <div className="flex justify-between items-center mt-1">
                                 {lensHistory.length > 0 && (
