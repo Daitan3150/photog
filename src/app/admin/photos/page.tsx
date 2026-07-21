@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/admin/AuthProvider';
 import { getPhotos, deletePhoto, bulkDeletePhotos, bulkUpdateCategory, refreshPhotoMetadata } from '@/lib/actions/photos';
 import { getCategories, Category } from '@/lib/actions/categories';
+import { Photo } from '@/types/photo';
 import { Trash2, ExternalLink, CheckSquare, Square, X, Check, Tag, Edit, Loader2, User } from 'lucide-react';
 import Image from 'next/image';
 import BulkEditModal from '@/components/admin/BulkEditModal';
@@ -27,7 +28,7 @@ const formatDate = (dateString: string | null | undefined, fallback = '') => {
 export default function PhotosPage() {
     const { user } = useAuth();
     const router = useRouter();
-    const [photos, setPhotos] = useState<any[]>([]);
+    const [photos, setPhotos] = useState<Photo[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true); // 初期ロード状態
     const [error, setError] = useState<string | null>(null);
@@ -41,6 +42,33 @@ export default function PhotosPage() {
     const [hasMore, setHasMore] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+    const pageLimit = 30;
+
+    const categoryLookup = useMemo(() => {
+        const map = new Map<string, string>();
+        categories.forEach(cat => map.set(cat.id, cat.name));
+        return map;
+    }, [categories]);
+
+    const getCategoryName = useCallback((categoryId: string | null) => {
+        if (!categoryId) return null;
+        if (categoryId === 'archived') return '🗑️ 削除済みユーザーの投稿';
+        return categoryLookup.get(categoryId) || categoryId;
+    }, [categoryLookup]);
+
+    const { uncategorized, groupedByCategory, categoryNames } = useMemo(() => {
+        const uncategorized = photos.filter(p => !p.categoryId || String(p.categoryId).trim() === '');
+        const categorized = photos.filter(p => p.categoryId && String(p.categoryId).trim() !== '');
+        const groupedByCategory: Record<string, Photo[]> = {};
+        categorized.forEach(p => {
+            const catName = getCategoryName(p.categoryId) || p.categoryId;
+            if (!groupedByCategory[catName]) groupedByCategory[catName] = [];
+            groupedByCategory[catName].push(p);
+        });
+        const categoryNames = Object.keys(groupedByCategory).sort();
+        return { uncategorized, groupedByCategory, categoryNames };
+    }, [photos, getCategoryName]);
 
     // 🔄 初期データの一括取得（最適化された Effect）
     useEffect(() => {
@@ -60,7 +88,7 @@ export default function PhotosPage() {
                 console.log('[PhotosPage] ID Token obtained. Fetching data...');
 
                 // カテゴリ取得 (失敗しても写真は表示できるようにする)
-                let catData = [];
+                let catData: Category[] = [];
                 try {
                     const catResult = await getCategories();
                     if (catResult && catResult.success) {
@@ -69,13 +97,13 @@ export default function PhotosPage() {
                     } else {
                         console.warn('[PhotosPage] Categories fetch failed:', catResult?.error);
                     }
-                } catch (catErr: any) {
-                    console.error('[PhotosPage] Category fetch error (skipping):', catErr.message);
+                } catch (catErr: unknown) {
+                    console.error('[PhotosPage] Category fetch error (skipping):', catErr);
                 }
 
                 // 写真取得
                 try {
-                    const photoResult = await getPhotos(token, { limit: 100 });
+                    const photoResult = await getPhotos(token, { limit: pageLimit });
                     if (isMounted) {
                         if (photoResult && photoResult.photos) {
                             setPhotos(photoResult.photos);
@@ -86,14 +114,14 @@ export default function PhotosPage() {
                             setPhotos([]);
                         }
                     }
-                } catch (photoErr: any) {
-                    console.error('[PhotosPage] Photo fetch error:', photoErr.message);
+                } catch (photoErr: unknown) {
+                    console.error('[PhotosPage] Photo fetch error:', photoErr);
                     if (isMounted) {
                         setPhotos([]);
                         setError('写真の取得中にエラーが発生しました。');
                     }
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('[PhotosPage] Initialization error:', err);
                 if (isMounted) {
                     setPhotos([]);
@@ -137,7 +165,7 @@ export default function PhotosPage() {
     }, [categories, expandedCategories]);
 
     // 🔄 個別の「もっと見る」または「リロード」処理
-    const fetchPhotos = async (reset = false) => {
+    const fetchPhotos = async (reset = false, limit = pageLimit) => {
         if (!user) return;
 
         try {
@@ -147,7 +175,7 @@ export default function PhotosPage() {
             const token = await user.getIdToken();
             const currentCursor = reset ? undefined : (nextCursor || undefined);
 
-            const result = await getPhotos(token, { limit: 100, cursor: currentCursor });
+            const result = await getPhotos(token, { limit, cursor: currentCursor });
 
             if (result && result.photos) {
                 if (reset) {
@@ -172,7 +200,7 @@ export default function PhotosPage() {
     };
 
     const handleLoadMore = () => {
-        if (!loadingMore) fetchPhotos(false);
+        if (!loadingMore) fetchPhotos(false, pageLimit);
     };
 
     // リストの完全リロード（一括操作後など）
@@ -182,32 +210,35 @@ export default function PhotosPage() {
         fetchPhotos(true);
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = useCallback(async (id: string) => {
         if (!confirm('本当にこの写真を削除しますか？この操作は取り消せません。')) return;
         if (!user) return;
 
-        // Optimistic UI update
-        const prevPhotos = [...photos];
-        setPhotos(photos.filter(p => p.id !== id));
+        const prevPhotos = photos;
+        setPhotos(prev => prev.filter(p => p.id !== id));
 
         const token = await user.getIdToken();
         const result = await deletePhoto(id, token);
         if (!result.success) {
             alert('削除に失敗しました: ' + result.error);
-            setPhotos(prevPhotos); // Revert
+            setPhotos(prevPhotos);
         }
-    };
+    }, [photos, user]);
 
-    const toggleSelection = (id: string) => {
-        const newSelection = new Set(selectedIds);
-        if (newSelection.has(id)) {
-            newSelection.delete(id);
-        } else {
-            newSelection.add(id);
-        }
-        setSelectedIds(newSelection);
-        if (newSelection.size > 0) setIsSelectionMode(true);
-    };
+    const toggleSelection = useCallback((id: string) => {
+        setSelectedIds(prev => {
+            const newSelection = new Set(prev);
+            if (newSelection.has(id)) {
+                newSelection.delete(id);
+            } else {
+                newSelection.add(id);
+            }
+            if (newSelection.size > 0) {
+                setIsSelectionMode(true);
+            }
+            return newSelection;
+        });
+    }, []);
 
     const handleSelectAll = () => {
         if (selectedIds.size === photos.length) {
@@ -280,13 +311,6 @@ export default function PhotosPage() {
         setIsExifSyncing(false);
     };
 
-    // カテゴリー名を ID から取得
-    const getCategoryName = (categoryId: string | null) => {
-        if (!categoryId) return null;
-        if (categoryId === 'archived') return '🗑️ 削除済みユーザーの投稿';
-        return categories.find(c => c.id === categoryId)?.name || categoryId;
-    };
-
     const toggleCategorySection = (catName: string) => {
         // アコーディオン動作: 既に開いているものは閉じる、閉じているものは開いてそれ以外を閉じる
         setExpandedCategories(prev => {
@@ -301,6 +325,132 @@ export default function PhotosPage() {
             return next;
         });
     };
+
+    const renderPhotoCard = useCallback((photo: Photo) => {
+        const isSelected = selectedIds.has(photo.id);
+        const catName = getCategoryName(photo.categoryId);
+        return (
+            <div
+                key={photo.id}
+                onClick={() => {
+                    if (isSelectionMode) {
+                        toggleSelection(photo.id);
+                    } else {
+                        router.push(`/admin/photos/${photo.id}`);
+                    }
+                }}
+                className={`bg-white rounded-xl shadow-sm overflow-hidden border transition-all cursor-pointer group relative ${isSelected ? 'ring-2 ring-blue-500 border-transparent' : 'border-gray-100 hover:shadow-md'
+                    } ${photo.categoryId === 'archived' ? 'opacity-80 grayscale-[0.3]' : ''}`}
+            >
+                {isSelectionMode && (
+                    <div className={`absolute top-3 left-3 z-10 p-1 rounded-md transition-colors ${isSelected ? 'bg-blue-500 text-white' : 'bg-white/80 text-gray-400 border border-gray-200'
+                        }`}>
+                        {isSelected ? <Check className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                    </div>
+                )}
+
+                {catName && (
+                    <div className="absolute top-3 right-3 z-10">
+                        <span className="bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
+                            {catName}
+                        </span>
+                    </div>
+                )}
+
+                <div className="relative aspect-[3/2] bg-gray-100">
+                    <Image
+                        loader={cloudinaryLoader}
+                        src={photo.url}
+                        alt={photo.title || 'Untitled'}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                    {!isSelectionMode && (
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                            {photo.snsUrl && (
+                                <a
+                                    href={photo.snsUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-3 bg-white/90 backdrop-blur-sm shadow-xl rounded-full text-blue-500 hover:text-blue-600 hover:scale-110 transition-all"
+                                    onClick={(e) => e.stopPropagation()}
+                                    title="SNSリンクを開く"
+                                >
+                                    <ExternalLink className="w-5 h-5" />
+                                </a>
+                            )}
+                            <div className="p-3 bg-white/90 backdrop-blur-sm shadow-xl rounded-full text-gray-700 hover:text-blue-600 hover:scale-110 transition-all font-bold flex items-center gap-2">
+                                <Edit className="w-5 h-5" />
+                                <span className="text-sm">編集</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <div className="p-4">
+                    <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-bold text-lg truncate flex-1" title={photo.title || photo.characterName || '見出し未設定'}>
+                            {photo.title ? photo.title : photo.characterName ? <span className="text-gray-600 font-medium italic">{photo.characterName} <span className="text-xs text-gray-400 font-normal ml-1">(キャラクター名)</span></span> : <span className="text-gray-300 font-normal italic">見出し未設定</span>}
+                        </h3>
+                    </div>
+                    <div className="flex justify-between items-end">
+                        <div className="text-sm text-gray-600 flex flex-col gap-1.5 flex-1">
+                            <div className="flex items-center gap-2">
+                                <div className="relative w-6 h-6 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0">
+                                    {photo.uploaderPhotoURL ? (
+                                        <img
+                                            src={photo.uploaderPhotoURL}
+                                            alt={photo.uploaderName}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-gray-300">
+                                            {(photo.uploaderName || 'A').charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">Post by</span>
+                                    <span className="text-xs font-bold truncate text-gray-800" title={`Creator: ${photo.uploaderName}`}>
+                                        {photo.uploaderName || 'Member'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="pl-8">
+                                <p className="font-medium text-pink-600 text-sm truncate">{photo.subjectName || <span className="opacity-0">-</span>}</p>
+                                <p className="text-[10px] text-gray-400">{photo.location || <span className="opacity-0">-</span>}</p>
+                            </div>
+                        </div>
+                        <div className="text-right text-xs text-gray-400 font-mono space-y-0.5">
+                            {photo.shotAt && (
+                                <p title="撮影日">📷 {formatDate(photo.shotAt)}</p>
+                            )}
+                            {photo.createdAt && (
+                                <p title="追加日" className="text-gray-300">
+                                    ＋{formatDate(photo.createdAt)}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                    {!isSelectionMode && (
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(photo.id);
+                                }}
+                                className="text-xs flex items-center gap-1.5 text-gray-400 hover:text-red-600 transition-colors px-2 py-1 rounded hover:bg-red-50"
+                                title="写真を削除"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                削除
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }, [handleDelete, isSelectionMode, router, selectedIds, toggleSelection, getCategoryName]);
 
     return (
         <div className="pb-32">
@@ -348,145 +498,7 @@ export default function PhotosPage() {
                     <p className="text-xl mb-4">写真が見つかりません。</p>
                     <p>「新規写真の投稿」ボタンから写真を追加してください。</p>
                 </div>
-            ) : (() => {
-                // カテゴリーごとにグループ化
-                const uncategorized = photos.filter(p => !p.categoryId || String(p.categoryId).trim() === '');
-                const categorized = photos.filter(p => p.categoryId && String(p.categoryId).trim() !== '');
-                const groupedByCategory: Record<string, any[]> = {};
-                categorized.forEach(p => {
-                    const catName = getCategoryName(p.categoryId) || p.categoryId;
-                    if (!groupedByCategory[catName]) groupedByCategory[catName] = [];
-                    groupedByCategory[catName].push(p);
-                });
-                const categoryNames = Object.keys(groupedByCategory).sort();
-
-                const renderPhotoCard = (photo: any) => {
-                    const isSelected = selectedIds.has(photo.id);
-                    const catName = getCategoryName(photo.categoryId);
-                    return (
-                        <div
-                            key={photo.id}
-                            onClick={() => {
-                                if (isSelectionMode) {
-                                    toggleSelection(photo.id);
-                                } else {
-                                    router.push(`/admin/photos/${photo.id}`);
-                                }
-                            }}
-                            className={`bg-white rounded-xl shadow-sm overflow-hidden border transition-all cursor-pointer group relative ${isSelected ? 'ring-2 ring-blue-500 border-transparent' : 'border-gray-100 hover:shadow-md'
-                                } ${photo.categoryId === 'archived' ? 'opacity-80 grayscale-[0.3]' : ''}`}
-                        >
-                            {isSelectionMode && (
-                                <div className={`absolute top-3 left-3 z-10 p-1 rounded-md transition-colors ${isSelected ? 'bg-blue-500 text-white' : 'bg-white/80 text-gray-400 border border-gray-200'
-                                    }`}>
-                                    {isSelected ? <Check className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                                </div>
-                            )}
-
-                            {catName && (
-                                <div className="absolute top-3 right-3 z-10">
-                                    <span className="bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
-                                        {catName}
-                                    </span>
-                                </div>
-                            )}
-
-                            <div className="relative aspect-[3/2] bg-gray-100">
-                                <Image
-                                    loader={cloudinaryLoader}
-                                    src={photo.url}
-                                    alt={photo.title || 'Untitled'}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                />
-                                {!isSelectionMode && (
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                        {photo.snsUrl && (
-                                            <a
-                                                href={photo.snsUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="p-3 bg-white/90 backdrop-blur-sm shadow-xl rounded-full text-blue-500 hover:text-blue-600 hover:scale-110 transition-all"
-                                                onClick={(e) => e.stopPropagation()}
-                                                title="SNSリンクを開く"
-                                            >
-                                                <ExternalLink className="w-5 h-5" />
-                                            </a>
-                                        )}
-                                        <div className="p-3 bg-white/90 backdrop-blur-sm shadow-xl rounded-full text-gray-700 hover:text-blue-600 hover:scale-110 transition-all font-bold flex items-center gap-2">
-                                            <Edit className="w-5 h-5" />
-                                            <span className="text-sm">編集</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="p-4">
-                                <div className="flex justify-between items-start mb-1">
-                                    <h3 className="font-bold text-lg truncate flex-1" title={photo.title || photo.characterName || '見出し未設定'}>
-                                        {photo.title ? photo.title : photo.characterName ? <span className="text-gray-600 font-medium italic">{photo.characterName} <span className="text-xs text-gray-400 font-normal ml-1">(キャラクター名)</span></span> : <span className="text-gray-300 font-normal italic">見出し未設定</span>}
-                                    </h3>
-                                </div>
-                                <div className="flex justify-between items-end">
-                                    <div className="text-sm text-gray-600 flex flex-col gap-1.5 flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <div className="relative w-6 h-6 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0">
-                                                {photo.uploaderPhotoURL ? (
-                                                    <img
-                                                        src={photo.uploaderPhotoURL}
-                                                        alt={photo.uploaderName}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-gray-300">
-                                                        {(photo.uploaderName || 'A').charAt(0).toUpperCase()}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex flex-col min-w-0">
-                                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">Post by</span>
-                                                <span className="text-xs font-bold truncate text-gray-800" title={`Creator: ${photo.uploaderName}`}>
-                                                    {photo.uploaderName || 'Member'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="pl-8">
-                                            <p className="font-medium text-pink-600 text-sm truncate">{photo.subjectName || <span className="opacity-0">-</span>}</p>
-                                            <p className="text-[10px] text-gray-400">{photo.location || <span className="opacity-0">-</span>}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right text-xs text-gray-400 font-mono space-y-0.5">
-                                        {photo.shotAt && (
-                                            <p title="撮影日">📷 {formatDate(photo.shotAt)}</p>
-                                        )}
-                                        {photo.createdAt && (
-                                            <p title="追加日" className="text-gray-300">
-                                                ＋{formatDate(photo.createdAt)}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                {!isSelectionMode && (
-                                    <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDelete(photo.id);
-                                            }}
-                                            className="text-xs flex items-center gap-1.5 text-gray-400 hover:text-red-600 transition-colors px-2 py-1 rounded hover:bg-red-50"
-                                            title="写真を削除"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                            削除
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                };
-
-                return (
+            ) : (
                     <>
                         {isSelectionMode && (
                             <div className="mb-4 flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-100">
@@ -559,12 +571,12 @@ export default function PhotosPage() {
 
                                 if (catName === 'ARCHIVED') {
                                     // Group photos by deletedUserName (or uploaderName as fallback)
-                                    const groupedByUser = photosInCategory.reduce((acc: any, photo: any) => {
+                                    const groupedByUser = photosInCategory.reduce((acc: Record<string, Photo[]>, photo: Photo) => {
                                         const userName = photo.deletedUserName || photo.uploaderName || 'Unknown User';
                                         if (!acc[userName]) acc[userName] = [];
                                         acc[userName].push(photo);
                                         return acc;
-                                    }, {});
+                                    }, {} as Record<string, Photo[]>);
 
                                     return (
                                         <div key={catName} className="mb-8" id={`section-${catName}`}>
@@ -585,7 +597,7 @@ export default function PhotosPage() {
 
                                             {expandedCategories[catName] ? (
                                                 <div className="space-y-6 pl-2">
-                                                    {Object.entries(groupedByUser).map(([userName, userPhotos]: [string, any]) => (
+                                                    {Object.entries(groupedByUser).map(([userName, userPhotos]) => (
                                                         <div key={userName} className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100 relative shadow-sm">
                                                             <div className="absolute top-6 left-0 w-1 h-8 bg-gray-300 rounded-r-md" />
                                                             <h3 className="text-base font-bold text-gray-700 mb-4 flex items-center gap-2 pl-4">
@@ -653,8 +665,7 @@ export default function PhotosPage() {
                             )
                         }
                     </>
-                );
-            })()}
+                )}
 
             {/* Floating Action Bar（選択中に表示） */}
             {
