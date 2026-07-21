@@ -114,15 +114,26 @@ export default function PhotosPage() {
         };
     }, [user]);
 
-    // 初期表示: どれも展開されていなければデフォルトで 'cosplay' カテゴリを開く
+    // 初期表示: ローカルに保存された最後に開いていたカテゴリがあればそれを復元、なければ 'cosplay' を開く
     useEffect(() => {
         if (categories.length === 0) return;
         if (Object.keys(expandedCategories).length > 0) return; // 既に操作済みなら変更しない
 
+        try {
+            if (typeof window !== 'undefined') {
+                const stored = localStorage.getItem('admin_photos_expanded');
+                if (stored) {
+                    setExpandedCategories({ [stored]: true });
+                    return;
+                }
+            }
+        } catch { /* ignore */ }
+
         const defaultCatId = 'cosplay';
         const matched = categories.find(c => c.id === defaultCatId);
         const displayName = matched ? matched.name : defaultCatId;
-        setExpandedCategories(prev => ({ ...prev, [displayName]: true }));
+        try { if (typeof window !== 'undefined') localStorage.setItem('admin_photos_expanded', displayName); } catch {}
+        setExpandedCategories({ [displayName]: true });
     }, [categories, expandedCategories]);
 
     // 🔄 個別の「もっと見る」または「リロード」処理
@@ -277,10 +288,18 @@ export default function PhotosPage() {
     };
 
     const toggleCategorySection = (catName: string) => {
-        setExpandedCategories(prev => ({
-            ...prev,
-            [catName]: !prev[catName],
-        }));
+        // アコーディオン動作: 既に開いているものは閉じる、閉じているものは開いてそれ以外を閉じる
+        setExpandedCategories(prev => {
+            const isOpen = !!prev[catName];
+            const next = isOpen ? {} : { [catName]: true };
+            try {
+                if (typeof window !== 'undefined') {
+                    if (isOpen) localStorage.removeItem('admin_photos_expanded');
+                    else localStorage.setItem('admin_photos_expanded', catName);
+                }
+            } catch { /* ignore */ }
+            return next;
+        });
     };
 
     return (
