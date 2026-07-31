@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   description: "Gallery of recent works and featured collections.",
 };
 
+// Revalidate every 1 hour (ISR)
+export const revalidate = 3600;
+
 export default async function Home() {
   const photos = await getRecentPhotos(6);
   const settings = await getSiteSettings();

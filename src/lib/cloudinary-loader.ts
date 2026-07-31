@@ -7,7 +7,12 @@ export default function cloudinaryLoader({ src, width, quality }: ImageLoaderPro
         return src || '';
     }
 
-    const params = ['f_auto', 'q_auto', `w_${width}`];
+    // 🎯 画像変換クレジット削減: 指定された幅を標準ブレイクポイントに丸める
+    // 任意サイズごとの重複変換を抑制し、CDNキャッシュヒット率を大幅向上
+    const BUCKETS = [320, 640, 960, 1200, 1600, 2000];
+    const targetWidth = BUCKETS.find(b => b >= width) || BUCKETS[BUCKETS.length - 1];
+
+    const params = ['f_auto', 'q_auto', `w_${targetWidth}`];
 
     // Allow overriding quality if explicitly provided, otherwise default to auto
     if (quality) {

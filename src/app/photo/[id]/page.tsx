@@ -16,6 +16,9 @@ interface Props {
     params: Promise<{ id: string }>;
 }
 
+// Revalidate every 24 hours (ISR)
+export const revalidate = 86400;
+
 export async function generateMetadata(
     props: { params: Promise<{ id: string }>; searchParams: Promise<{ fp?: string }> },
     parent: ResolvingMetadata
