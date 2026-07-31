@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/admin/AuthProvider';
-import { getCameras, saveCamera, updateCamera, deleteCamera } from '@/lib/actions/cameras';
+import { getCameras, saveCamera, updateCamera, deleteCamera, mergeCameras } from '@/lib/actions/cameras';
 import { Camera, CameraFormData } from '@/types/camera';
 import { CAMERA_TYPE_LABELS, CameraType } from '@/lib/photos/inferCameraType';
-import { Plus, Edit2, Trash2, X, AlertTriangle, Check, Camera as CameraIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, AlertTriangle, Check, Camera as CameraIcon, GitMerge, Ban } from 'lucide-react';
 
 export default function AdminCamerasPage() {
     const { user, role } = useAuth();
@@ -14,6 +14,14 @@ export default function AdminCamerasPage() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCamera, setEditingCamera] = useState<Camera | null>(null);
+
+    // カメラ統合用ステート
+    const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+    const [sourceCameraForMerge, setSourceCameraForMerge] = useState<Camera | null>(null);
+    const [targetCameraIdForMerge, setTargetCameraIdForMerge] = useState<string>('');
+    const [isMerging, setIsMerging] = useState(false);
+    const [mergeError, setMergeError] = useState('');
+
     const [formData, setFormData] = useState<CameraFormData>({
         make: '',
         name: '',
@@ -153,6 +161,71 @@ export default function AdminCamerasPage() {
         }
     };
 
+    // 🚫 検出キャンセル（未登録カメラの削除/破棄）
+    const handleCancelDetection = async (e: React.MouseEvent, camera: Camera) => {
+        e.stopPropagation();
+        if (!confirm(`未登録カメラ「${camera.name}」の検出をキャンセルして削除しますか？`)) return;
+
+        try {
+            const token = await user?.getIdToken();
+            if (!token) {
+                alert('認証エラー: 再ログインしてください。');
+                return;
+            }
+            const result = await deleteCamera(camera.id as string, token);
+            if (result.success) {
+                await fetchCameras();
+            } else {
+                alert(result.error || 'キャンセルの処理中にエラーが発生しました。');
+            }
+        } catch (err) {
+            alert('キャンセルの処理中にエラーが発生しました。');
+        }
+    };
+
+    // 🔀 カメラ統合モーダルを開く
+    const handleOpenMergeModal = (e: React.MouseEvent, camera: Camera) => {
+        e.stopPropagation();
+        setSourceCameraForMerge(camera);
+        setTargetCameraIdForMerge(registeredCameras[0]?.id || '');
+        setMergeError('');
+        setIsMergeModalOpen(true);
+    };
+
+    // 🔀 カメラ統合の実行
+    const handleMergeSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!sourceCameraForMerge?.id || !targetCameraIdForMerge) {
+            setMergeError('統合先のカメラを選択してください。');
+            return;
+        }
+
+        setIsMerging(true);
+        setMergeError('');
+
+        try {
+            const token = await user?.getIdToken();
+            if (!token) {
+                setMergeError('認証エラー: 再ログインしてください。');
+                setIsMerging(false);
+                return;
+            }
+
+            const result = await mergeCameras(sourceCameraForMerge.id, targetCameraIdForMerge, token);
+            if (result.success) {
+                await fetchCameras();
+                setIsMergeModalOpen(false);
+                setSourceCameraForMerge(null);
+            } else {
+                setMergeError(result.error || '統合中にエラーが発生しました。');
+            }
+        } catch (err: any) {
+            setMergeError(err.message || 'エラーが発生しました。');
+        } finally {
+            setIsMerging(false);
+        }
+    };
+
     if (!user) return null;
 
     return (
@@ -200,16 +273,45 @@ export default function AdminCamerasPage() {
                                 {unregisteredCameras.map(camera => (
                                     <div 
                                         key={camera.id}
-                                        onClick={() => handleOpenModal(camera)}
-                                        className="flex items-center justify-between p-4 bg-white border border-amber-200/40 rounded-2xl hover:border-amber-500/60 hover:shadow-md cursor-pointer transition-all group"
+                                        className="flex items-center justify-between p-4 bg-white border border-amber-200/40 rounded-2xl shadow-sm transition-all group"
                                     >
-                                        <div className="min-w-0">
+                                        <div 
+                                            onClick={() => handleOpenModal(camera)}
+                                            className="min-w-0 flex-grow cursor-pointer pr-2"
+                                            title="情報補正して正式登録"
+                                        >
                                             <span className="text-[10px] uppercase tracking-wider text-amber-600 font-bold bg-amber-100/50 px-2 py-0.5 rounded-md">{camera.make || 'メーカー不明'}</span>
-                                            <h4 className="text-sm font-bold text-slate-800 mt-1 truncate">{camera.name}</h4>
+                                            <h4 className="text-sm font-bold text-slate-800 mt-1 truncate group-hover:text-amber-700">{camera.name}</h4>
                                         </div>
-                                        <button className="flex items-center gap-1 text-xs font-bold text-amber-600 group-hover:text-amber-700 transition-colors">
-                                            今すぐ登録 <ChevronRight size={14} />
-                                        </button>
+                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                            {registeredCameras.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleOpenMergeModal(e, camera)}
+                                                    className="flex items-center gap-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-xl transition-all"
+                                                    title="既存の登録済みカメラに統合"
+                                                >
+                                                    <GitMerge size={13} />
+                                                    統合
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleOpenModal(camera)}
+                                                className="flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-100/70 hover:bg-amber-200/80 px-2.5 py-1.5 rounded-xl transition-all"
+                                                title="マスタへ登録"
+                                            >
+                                                登録
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleCancelDetection(e, camera)}
+                                                className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                                title="検出をキャンセルして削除"
+                                            >
+                                                <Ban size={15} />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -406,6 +508,90 @@ export default function AdminCamerasPage() {
                                         <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
                                     ) : (
                                         editingCamera ? (editingCamera.isRegistered ? '変更を保存する' : '登録を完了する') : '新しく追加する'
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {/* カメラ統合モーダル */}
+            {isMergeModalOpen && sourceCameraForMerge && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl space-y-6 relative overflow-hidden">
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 bg-slate-100 text-slate-800 rounded-2xl">
+                                    <GitMerge size={22} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-900">カメラの統合 (マージ)</h2>
+                                    <p className="text-xs text-gray-400 mt-0.5">紐づいている写真を既存登録済みカメラに差し替えます</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsMergeModalOpen(false)}
+                                className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-all"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {mergeError && (
+                            <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs font-bold flex items-center gap-2">
+                                <AlertTriangle size={16} />
+                                {mergeError}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleMergeSubmit} className="space-y-6">
+                            <div className="p-4 bg-amber-50/70 border border-amber-100 rounded-2xl text-amber-900 space-y-1">
+                                <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">統合元 (未登録)</span>
+                                <h4 className="text-base font-bold">{sourceCameraForMerge.make} {sourceCameraForMerge.name}</h4>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-400 ml-1">
+                                    統合先の登録済みカメラを選択 (必須)
+                                </label>
+                                <select
+                                    value={targetCameraIdForMerge}
+                                    onChange={(e) => setTargetCameraIdForMerge(e.target.value)}
+                                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-slate-800 focus:bg-white outline-none transition-all text-sm font-medium"
+                                    required
+                                >
+                                    {registeredCameras.map((camera) => (
+                                        <option key={camera.id} value={camera.id}>
+                                            {camera.make} - {camera.name} ({camera.sensorSize || 'サイズ未設定'})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <p className="text-xs text-gray-500 bg-gray-50 p-4 rounded-2xl leading-relaxed">
+                                💡 統合を実行すると、未登録型番「{sourceCameraForMerge.name}」が紐づいていた全写真のカメラが、選択した正式カメラへ一括で付け替えられ、未登録型番は自動で削除されます。
+                            </p>
+
+                            <div className="pt-2 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsMergeModalOpen(false)}
+                                    className="flex-1 py-4 rounded-2xl text-slate-500 font-bold border-2 border-slate-50 hover:bg-slate-50 transition-all text-xs"
+                                >
+                                    キャンセル
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isMerging}
+                                    className="flex-2 bg-slate-900 text-white py-4 rounded-2xl hover:bg-slate-800 transition-all font-bold shadow-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isMerging ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <>
+                                            <GitMerge size={18} />
+                                            統合を実行する
+                                        </>
                                     )}
                                 </button>
                             </div>

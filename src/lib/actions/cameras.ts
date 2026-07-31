@@ -186,3 +186,67 @@ export async function ensureCameraExists(modelName: string, makeName: string = '
         return { success: false, error: error.message };
     }
 }
+
+/**
+ * 🔀 未登録カメラを既存の正式登録済みカメラに統合する
+ * @param sourceCameraId 統合元（未登録）カメラのID
+ * @param targetCameraId 統合先（正式登録済み）カメラのID
+ * @param idToken 管理者トークン
+ */
+export async function mergeCameras(
+    sourceCameraId: string,
+    targetCameraId: string,
+    idToken: string
+): Promise<{ success: boolean; updatedCount?: number; error?: string }> {
+    try {
+        if (!sourceCameraId || !targetCameraId || sourceCameraId === targetCameraId) {
+            return { success: false, error: 'Invalid camera IDs' };
+        }
+
+        const { getAdminAuth, getAdminFirestore } = await import('@/lib/firebaseAdmin');
+        const auth = getAdminAuth();
+        await auth.verifyIdToken(idToken);
+
+        const db = getAdminFirestore();
+
+        // 統合先カメラの存在確認
+        const targetDoc = await db.collection('cameras').doc(targetCameraId).get();
+        if (!targetDoc.exists) {
+            return { success: false, error: 'Target camera not found' };
+        }
+        const targetCamera = targetDoc.data();
+
+        // 統合元の写真を取得
+        const photosSnapshot = await db.collection('photos').where('cameraId', '==', sourceCameraId).get();
+
+        const batch = db.batch();
+        let count = 0;
+
+        photosSnapshot.docs.forEach((doc) => {
+            batch.update(doc.ref, {
+                cameraId: targetCameraId,
+                cameraType: targetCamera?.type || null,
+                updatedAt: new Date(),
+            });
+            count++;
+        });
+
+        // 統合元の未登録カメラデータを削除
+        const sourceRef = db.collection('cameras').doc(sourceCameraId);
+        batch.delete(sourceRef);
+
+        await batch.commit();
+        await clearCachedData('cameras_list');
+
+        revalidatePath('/admin/cameras');
+        revalidatePath('/admin/photos/new');
+        revalidatePath('/admin/photos/[id]');
+        revalidatePath('/portfolio');
+
+        return { success: true, updatedCount: count };
+    } catch (error: any) {
+        console.error('Error merging cameras:', error);
+        return { success: false, error: error.message };
+    }
+}
+
