@@ -128,9 +128,16 @@ export async function deleteCamera(id: string, idToken: string): Promise<{ succe
 export async function ensureCameraExists(modelName: string, makeName: string = ''): Promise<{ success: boolean; camera?: Camera; error?: string }> {
     try {
         const trimmedName = modelName?.trim();
-        if (!trimmedName) {
-            return { success: false, error: 'Camera model name is empty' };
+        if (!trimmedName || trimmedName.length < 2 || trimmedName.length > 80) {
+            return { success: false, error: 'Invalid camera model name length' };
         }
+
+        // 不適切な文字列（パースエラー残骸など）を除外
+        const junkPatterns = ['undefined', 'null', '[object object]', 'unknown'];
+        if (junkPatterns.includes(trimmedName.toLowerCase())) {
+            return { success: false, error: 'Invalid camera model name string' };
+        }
+
 
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();

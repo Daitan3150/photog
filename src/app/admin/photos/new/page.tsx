@@ -11,7 +11,7 @@ import CloudinaryScript from '@/components/admin/CloudinaryScript';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import exifr from 'exifr';
-import { formatShutterSpeed, validateShutterSpeed, STANDARD_APERTURES, getMinApertureFromLens } from '@/lib/utils/exif';
+import { formatShutterSpeed, validateShutterSpeed, STANDARD_APERTURES, getMinApertureFromLens, parseExifDate } from '@/lib/utils/exif';
 import { motion } from 'framer-motion';
 import SmartDatePicker from '@/components/admin/SmartDatePicker';
 import LeafletMap from '@/components/common/LeafletMap';
@@ -840,11 +840,10 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
                         finalShotAt = shotAt;
                     } else {
                         // 2. 共通入力が空なら、写真自体のEXIFから取得を試みる
-                        const rawDate = (file.exif?.DateTimeOriginal || file.exif?.DateTime || clientExif?.DateTimeOriginal) as string | Date | undefined;
-                        if (rawDate instanceof Date) {
-                            finalShotAt = rawDate.toISOString().split('T')[0];
-                        } else if (rawDate && typeof rawDate === 'string' && /^\d{4}[:\-]\d{2}[:\-]\d{2}/.test(rawDate)) {
-                            finalShotAt = rawDate.substring(0, 10).replace(/:/g, '-');
+                        const rawDate = file.exif?.DateTimeOriginal || file.exif?.DateTime || clientExif?.DateTimeOriginal;
+                        const parsed = parseExifDate(rawDate);
+                        if (parsed) {
+                            finalShotAt = parsed.toISOString().split('T')[0];
                         } else {
                             // 3. どちらもなければ今日の日付（追加日）
                             finalShotAt = new Date().toISOString().split('T')[0];

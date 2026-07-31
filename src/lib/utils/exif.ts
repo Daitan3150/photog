@@ -80,3 +80,46 @@ export function getMinApertureFromLens(lensModel: string | null | undefined): nu
     return 0.95; // 判別できない場合はデフォルト
 }
 
+/**
+ * 📅 EXIF の日付（YYYY:MM:DD HH:MM:SS や Date オブジェクト、ISO文字列）を安全に Date にパースする
+ * 
+ * @param rawDate EXIFから取得した生の日付データ
+ * @returns 有効な Date オブジェクト、パース不可時は null
+ */
+export function parseExifDate(rawDate: any): Date | null {
+    if (!rawDate) return null;
+
+    if (rawDate instanceof Date) {
+        return isNaN(rawDate.getTime()) ? null : rawDate;
+    }
+
+    if (typeof rawDate === 'number') {
+        const d = new Date(rawDate);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    if (typeof rawDate !== 'string') return null;
+
+    const str = rawDate.trim();
+    if (!str) return null;
+
+    // 1. "YYYY:MM:DD HH:MM:SS" または "YYYY:MM:DD" フォーマットをハイフン区切りに置換
+    // 例: "2026:07:31 20:00:00" -> "2026-07-31T20:00:00"
+    let normalized = str;
+    const exifDateMatch = str.match(/^(\d{4}):(\d{2}):(\d{2})(?:\s+(\d{2}):(\d{2}):(\d{2}))?/);
+    if (exifDateMatch) {
+        const [, year, month, day, hour = '12', minute = '00', second = '00'] = exifDateMatch;
+        normalized = `${year}-${month}-${day}T${hour}:${minute}:${second}.000Z`;
+    } else if (str.includes(' ') && !str.includes('T')) {
+        normalized = str.replace(' ', 'T');
+    }
+
+    const d = new Date(normalized);
+    if (!isNaN(d.getTime())) return d;
+
+    // ハイフン単純置換での再試行
+    const fallback = new Date(str.replace(/:/g, '-'));
+    return isNaN(fallback.getTime()) ? null : fallback;
+}
+
+

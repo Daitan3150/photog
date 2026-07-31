@@ -23,6 +23,7 @@ import { ensureStudioExists } from './studios';
 import { ensureCameraExists } from './cameras'; // [NEW]
 import { revalidatePath } from 'next/cache';
 import { buildFullAddress } from '../utils/address';
+import { parseExifDate } from '../utils/exif';
 import { type CameraType } from '../photos/inferCameraType';
 
 export async function reconcilePhotoCameraMetadata(photoIds: string[], idToken: string): Promise<{ success: boolean; count?: number; error?: string }> {
@@ -290,15 +291,13 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             addressCity: data.addressCity || null,
             latitude,
             longitude,
-            shotAt: (data.shotAt && !isNaN(new Date(String(data.shotAt).replace(/:/g, '-')).getTime()))
-                ? new Date(String(data.shotAt).replace(/:/g, '-'))
-                : null,
+            shotAt: parseExifDate(data.shotAt),
             snsUrl: data.snsUrl || null,
             categoryId: data.categoryId || null,
             displayMode: data.displayMode || 'title',
             focalPoint: data.focalPoint || null,
             shareOgImageUrl: data.shareOgImageUrl || null,
-            exif: flattenExifForFirestore(data.exif) || null,
+            ...(flattenExifForFirestore(data.exif) ? { exif: flattenExifForFirestore(data.exif) } : {}),
             tags: data.tags || [],
             shootLocationType: data.shootLocationType || 'location',
             shootLocationId,
@@ -437,9 +436,7 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
 
             const photoRef = db.collection('photos').doc();
             photoIds.push(photoRef.id);
-            const shotAtDate = (data.shotAt && !isNaN(new Date(String(data.shotAt).replace(/:/g, '-')).getTime()))
-                ? (String(data.shotAt).includes('T') ? new Date(data.shotAt) : new Date(`${data.shotAt}T12:00:00.000Z`))
-                : null;
+            const shotAtDate = parseExifDate(data.shotAt);
 
             batch.set(photoRef, {
                 uploaderId,
@@ -464,7 +461,7 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 displayMode: data.displayMode || 'title',
                 focalPoint: data.focalPoint || null,
                 shareOgImageUrl: data.shareOgImageUrl || null,
-                exif: flattenExifForFirestore(data.exif) || null,
+                ...(flattenExifForFirestore(data.exif) ? { exif: flattenExifForFirestore(data.exif) } : {}),
                 tags: data.tags || [],
                 shootLocationType,
                 shootLocationId,
@@ -948,28 +945,22 @@ export async function refreshPhotoMetadata(photoId: string, idToken: string): Pr
         let shotAt = photoData.shotAt; // Keep existing if parse failed
         if (metadata.DateTimeOriginal || metadata.DateTimeDigitized || metadata.DateTime) {
             const rawDate = metadata.DateTimeOriginal || metadata.DateTimeDigitized || metadata.DateTime;
-            // Basic parsing for "YYYY:MM:DD HH:MM:SS" or standard ISO
             if (rawDate) {
-                // Try to parse "YYYY:MM:DD HH:MM:SS"
-                if (/^\d{4}:\d{2}:\d{2}/.test(rawDate)) {
-                    const parts = rawDate.split(/[:\s]/);
-                    if (parts.length >= 6) {
-                        // Note: Month is 0-indexed in JS Date
-                        const d = new Date(parts[0], parseInt(parts[1]) - 1, parts[2], parts[3], parts[4], parts[5]);
-                        if (!isNaN(d.getTime())) shotAt = d;
-                    }
-                } else {
-                    const d = new Date(rawDate);
-                    if (!isNaN(d.getTime())) shotAt = d;
-                }
+                const parsedDate = parseExifDate(rawDate);
+                if (parsedDate) shotAt = parsedDate;
             }
         }
 
-        await photoRef.update({
-            exif: flattenExifForFirestore(exifUpdates) || null,
+        const flattenedExif = flattenExifForFirestore(exifUpdates);
+        const updateObj: Record<string, any> = {
             shotAt: shotAt,
             updatedAt: new Date()
-        });
+        };
+        if (flattenedExif) {
+            updateObj.exif = flattenedExif;
+        }
+
+        await photoRef.update(updateObj);
 
         revalidatePath('/');
         revalidatePath('/portfolio');
@@ -1431,16 +1422,13 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
             });
         }
         if (data.shotAt !== undefined) {
-            if (data.shotAt && String(data.shotAt).length > 0) {
-                const parsed = new Date(data.shotAt);
-                updates.shotAt = !isNaN(parsed.getTime()) ? parsed : null;
-            } else {
-                updates.shotAt = null;
-            }
+            updates.shotAt = parseExifDate(data.shotAt);
         }
         if (data.exif !== undefined) {
-            // Use flattenExifForFirestore to ensure only primitive values are stored
-            updates.exif = flattenExifForFirestore(data.exif) || null;
+            const flattened = flattenExifForFirestore(data.exif);
+            if (flattened) {
+                updates.exif = flattened;
+            }
         }
         if (data.exifRequest !== undefined) updates.exifRequest = data.exifRequest;
         if (data.tags !== undefined) updates.tags = data.tags;
