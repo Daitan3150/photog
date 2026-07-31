@@ -12,7 +12,7 @@ export async function searchCoordinatesAction(locationName: string) {
 
 // Removed top-level admin/firebaseAdmin imports to prevent client-side leak
 import { PhotoFormData, Photo as PhotoType } from '@/types/photo';
-import { serializeData } from '../utils/serialization';
+import { serializeData, flattenExifForFirestore } from '../utils/serialization';
 import { buildLensDatalistOptions } from '../utils/lensSuggestions';
 import { getCoordinates } from '../utils/location';
 import { getCachedData, setCachedData, clearCachedData } from '../worker-cache';
@@ -298,7 +298,7 @@ export async function savePhoto(data: PhotoFormData, idToken: string): Promise<S
             displayMode: data.displayMode || 'title',
             focalPoint: data.focalPoint || null,
             shareOgImageUrl: data.shareOgImageUrl || null,
-            exif: serializeData(data.exif),
+            exif: flattenExifForFirestore(data.exif) || null,
             tags: data.tags || [],
             shootLocationType: data.shootLocationType || 'location',
             shootLocationId,
@@ -464,7 +464,7 @@ export async function savePhotosBulk(dataList: PhotoFormData[], idToken: string)
                 displayMode: data.displayMode || 'title',
                 focalPoint: data.focalPoint || null,
                 shareOgImageUrl: data.shareOgImageUrl || null,
-                exif: serializeData(data.exif),
+                exif: flattenExifForFirestore(data.exif) || null,
                 tags: data.tags || [],
                 shootLocationType,
                 shootLocationId,
@@ -966,7 +966,7 @@ export async function refreshPhotoMetadata(photoId: string, idToken: string): Pr
         }
 
         await photoRef.update({
-            exif: exifUpdates,
+            exif: flattenExifForFirestore(exifUpdates) || null,
             shotAt: shotAt,
             updatedAt: new Date()
         });
@@ -1439,8 +1439,8 @@ export async function updatePhoto(photoId: string, data: Partial<PhotoFormData>,
             }
         }
         if (data.exif !== undefined) {
-            // Use deep serialization to clean up undefined values, Timestamps, and nested objects
-            updates.exif = serializeData(data.exif);
+            // Use flattenExifForFirestore to ensure only primitive values are stored
+            updates.exif = flattenExifForFirestore(data.exif) || null;
         }
         if (data.exifRequest !== undefined) updates.exifRequest = data.exifRequest;
         if (data.tags !== undefined) updates.tags = data.tags;

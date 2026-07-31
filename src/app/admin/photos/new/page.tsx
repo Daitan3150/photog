@@ -818,7 +818,19 @@ const [catResult, subResult, studiosData, locationsData] = await Promise.all([
             const dataList = uploadedFiles.map(file => {
                 // ✅ 最終的なデータ構築: Cloudinary EXIF と Client EXIF をマージ
                 const clientExif = fileExifMap.get(file.fileHash || '') || {};
-                const mergedExif = { ...clientExif, ...(file.exif || {}) };
+                const rawMergedExif = { ...clientExif, ...(file.exif || {}) };
+
+                // ✅ Firestore保存可能なプリミティブ値のみ保持（Uint8Array/ネストオブジェクト除外）
+                const mergedExif: Record<string, string | number | boolean> = {};
+                for (const [key, val] of Object.entries(rawMergedExif)) {
+                    if (val === null || val === undefined) continue;
+                    if (val instanceof Date) {
+                        mergedExif[key] = val.toISOString();
+                    } else if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+                        mergedExif[key] = val;
+                    }
+                    // Uint8Array, ArrayBuffer, nested objects are intentionally skipped
+                }
 
                 // ✅ 撮影日の決定ロジック
                 let finalShotAt = '';
