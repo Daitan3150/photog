@@ -9,8 +9,11 @@ const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'daitan10618@icloud.c
 /**
  * メールアドレスのヒント取得（セキュリティのため完全なメールアドレスの推測を防ぎます）
  */
-export async function getEmailHint(_partialEmail: string) {
-    return { success: false, error: 'セキュリティ上の理由により、メールアドレスのヒント機能は無効化されています。' };
+export async function getEmailHint(_partialEmail: string): Promise<{ success: boolean; hint?: string; error?: string }> {
+    return {
+        success: false,
+        error: 'セキュリティ保護のため、メールアドレスのヒント機能は現在無効化されています。管理者にお問い合わせください。'
+    };
 }
 
 /**
