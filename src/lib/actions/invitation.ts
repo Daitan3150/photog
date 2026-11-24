@@ -15,8 +15,11 @@ interface CreateInvitationResult {
 // Authorized Super Admin Emails
 const SUPER_ADMIN_EMAILS = ['daitan10618@icloud.com', 'daitan10618@gmail.com', 'new.sasuke.sakura@gmail.com'];
 
-export async function createInvitationCode(): Promise<CreateInvitationResult> {
+export async function createInvitationCode(idToken: string): Promise<CreateInvitationResult> {
     try {
+        const { verifyAdminSession } = await import('@/lib/server-auth');
+        await verifyAdminSession(idToken);
+
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
         // Generate a random 8-character alphanumeric code
@@ -35,8 +38,11 @@ export async function createInvitationCode(): Promise<CreateInvitationResult> {
     }
 }
 
-export async function getInvitationCodes() {
+export async function getInvitationCodes(idToken: string) {
     try {
+        const { verifyAdminSession } = await import('@/lib/server-auth');
+        await verifyAdminSession(idToken);
+
         const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const db = getAdminFirestore();
         const snapshot = await db.collection('invitation_codes')

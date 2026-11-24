@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { adminResetUserPassword } from '@/lib/actions/users';
+import { auth } from '@/lib/firebase';
 
 export default function ResetPasswordForm({ userId, userEmail }: { userId: string, userEmail: string }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -21,7 +22,12 @@ export default function ResetPasswordForm({ userId, userEmail }: { userId: strin
 
         setLoading(true);
         try {
-            const result = await adminResetUserPassword(userId, password);
+            const idToken = await auth.currentUser?.getIdToken();
+            if (!idToken) {
+                setError('ログインセッションが無効です。再ログインしてください。');
+                return;
+            }
+            const result = await adminResetUserPassword(userId, password, idToken);
             if (result.success) {
                 setMessage('パスワードを正常に変更しました。');
                 setPassword('');

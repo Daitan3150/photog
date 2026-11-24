@@ -1,35 +1,21 @@
 'use server';
 
-import { getAdminAuth, getAdminFirestore } from '@/lib/firebaseAdmin';
+import { getAdminAuth } from '@/lib/firebaseAdmin';
 import { Resend } from 'resend';
-
 
 const SUPER_ADMIN_EMAILS = ['daitan10618@icloud.com', 'daitan10618@gmail.com', 'new.sasuke.sakura@gmail.com'];
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'daitan10618@icloud.com';
 
 /**
- * 忘れ去られたメールアドレス（ID）のヒントを、登録されている予備メール（もしあれば）に送信するか、
- * 部分的なヒントとして返します。
+ * メールアドレスのヒント取得（セキュリティのため完全なメールアドレスの推測を防ぎます）
  */
-export async function getEmailHint(partialEmail: string) {
-    try {
-        // セキュリティのため、完全な一致ではなく部分的なチェックや、
-        // 既知のスーパーアドミンとの照合を行います。
-        const matchedEmail = SUPER_ADMIN_EMAILS.find(e => e.includes(partialEmail) && partialEmail.length >= 3);
-        if (matchedEmail) {
-            const parts = matchedEmail.split('@');
-            const hint = `${parts[0].substring(0, 3)}***@${parts[1]}`;
-            return { success: true, hint };
-        }
-        return { success: false, error: '一致するユーザーが見つかりませんでした。' };
-    } catch (e: any) {
-        return { success: false, error: e.message };
-    }
+export async function getEmailHint(_partialEmail: string) {
+    return { success: false, error: 'セキュリティ上の理由により、メールアドレスのヒント機能は無効化されています。' };
 }
 
 /**
- * パスワードリセットメールをサーバーサイドから送信します。
- * クライアントサイドSDKの制約（リファラー制限など）を回避できます。
+ * パスワード再設定メールをサーバーサイドから送信します。
+ * ユーザー列挙攻撃を防ぐため、ユーザーが存在しない場合でも一貫したレスポンスを返します。
  */
 export async function requestPasswordResetServer(email: string) {
     try {
@@ -40,13 +26,13 @@ export async function requestPasswordResetServer(email: string) {
             await auth.getUserByEmail(email);
         } catch (e: any) {
             if (e.code === 'auth/user-not-found') {
-                return { success: false, error: 'このメールアドレスは登録されていません。' };
+                // セキュリティ対策（ユーザー列挙防止）: 存在しない場合でも成功扱いとして同一メッセージを返す
+                return { success: true, method: 'email' };
             }
             throw e;
         }
 
         // リセットリンクを生成 (Firebase Admin SDK)
-        // 注意: プロジェクト設定で「アクションURL」が正しく設定されている必要があります。
         const resetLink = await auth.generatePasswordResetLink(email, {
             url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://next-portfolio-lime-one.vercel.app'}/admin/login`,
         });
@@ -56,7 +42,7 @@ export async function requestPasswordResetServer(email: string) {
         if (apiKey && apiKey.startsWith('re_')) {
             const resend = new Resend(apiKey);
             const { error } = await resend.emails.send({
-                from: 'onboarding@resend.dev',
+                from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
                 to: email,
                 subject: '【Portfolio】パスワード再設定のご案内',
                 html: `
@@ -77,71 +63,56 @@ export async function requestPasswordResetServer(email: string) {
             if (error) throw new Error(error.message);
             return { success: true, method: 'email' };
         } else {
-            // Resend API Keyがない場合はデバッグ用にリンクを返す（開発環境または緊急用）
-            // 実際の本番環境ではセキュリティ上リンクをそのまま返すべきではありませんが、
-            // ユーザーが「対策を作っておいて」と言っているので、APIキーがない場合のフォールバックとして
-            // ヒントを提供します。
-            console.log('Password Reset Link (Fallback):', resetLink);
+            console.warn('[Password Reset] RESEND_API_KEY is not configured.');
             return {
                 success: true,
                 method: 'debug',
-                message: 'API Keyが設定されていないため、管理パネルのコンソール、または代替の連絡手段を確認してください。'
+                message: 'メール送信設定を確認してください。'
             };
         }
     } catch (e: any) {
         console.error('Password Reset Error:', e);
-        return { success: false, error: e.message };
+        return { success: false, error: 'パスワード再設定処理中にエラーが発生しました。' };
     }
 }
 
 /**
  * 緊急ログイン用サーバーアクション。
- * クライアントサイドでの認証がブロックされる場合（リファラー制限など）、
- * サーバー側で認証を行い、カスタムトークンを発行します。
+ * 環境変数 EMERGENCY_ADMIN_KEY が明示的に設定されている場合のみ動作します。
+ * ソースコード上に固定パスワードは保持しません。
  */
-export async function emergencySignIn(email: string, password: string) {
+export async function emergencySignIn(email: string, secretKey: string) {
     try {
-        console.log(`[EmergencySignIn] Attempting login for: ${email}`);
+        console.log(`[EmergencySignIn] Attempting emergency login for: ${email}`);
 
-        const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(email) || email === SUPER_ADMIN_EMAIL;
-        if (isSuperAdmin && password === 'daiki725412') {
-            const { getAdminAuth } = await import('@/lib/firebaseAdmin');
-            const auth = getAdminAuth();
-
-            let user;
-            try {
-                user = await auth.getUserByEmail(email);
-            } catch (e: any) {
-                if (e.code === 'auth/user-not-found') {
-                    console.log('[EmergencySignIn] User not found, creating emergency admin user...');
-                    // ユーザーがいない場合は作成を試みる
-                    user = await auth.createUser({
-                        email: email,
-                        password: password,
-                        emailVerified: true
-                    });
-
-                    // Firestoreにも追加
-                    const { getAdminFirestore } = await import('@/lib/firebaseAdmin');
-                    const db = getAdminFirestore();
-                    await db.collection('users').doc(user.uid).set({
-                        email: email,
-                        role: 'admin',
-                        createdAt: new Date().toISOString()
-                    });
-                } else {
-                    throw e;
-                }
-            }
-
-            const customToken = await auth.createCustomToken(user.uid);
-            return { success: true, token: customToken };
+        const emergencyKey = process.env.EMERGENCY_ADMIN_KEY;
+        if (!emergencyKey || emergencyKey.length < 16) {
+            console.error('[EmergencySignIn] EMERGENCY_ADMIN_KEY is not configured or too short.');
+            return { success: false, error: '緊急ログイン機能は無効化されています。' };
         }
 
-        return { success: false, error: '認証情報が一致しません。' };
+        const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(email) || email === SUPER_ADMIN_EMAIL;
+        if (!isSuperAdmin || secretKey !== emergencyKey) {
+            return { success: false, error: '認証情報が一致しません。' };
+        }
+
+        const { getAdminAuth } = await import('@/lib/firebaseAdmin');
+        const auth = getAdminAuth();
+
+        let user;
+        try {
+            user = await auth.getUserByEmail(email);
+        } catch (e: any) {
+            if (e.code === 'auth/user-not-found') {
+                return { success: false, error: '対象の管理者アカウントが見つかりません。' };
+            }
+            throw e;
+        }
+
+        const customToken = await auth.createCustomToken(user.uid);
+        return { success: true, token: customToken };
     } catch (e: any) {
         console.error('Emergency Sign-in Error Detail:', e);
-        // エラーコードをフロントに返す
-        return { success: false, error: `サーバーエラー: ${e.code || e.message}` };
+        return { success: false, error: 'サーバーエラーが発生しました。' };
     }
 }

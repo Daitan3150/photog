@@ -28,24 +28,46 @@ function AdminLoginContent() {
     const [newPassword, setNewPassword] = useState('');
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [failedAttempts, setFailedAttempts] = useState(0);
+    const [lockoutTime, setLockoutTime] = useState<number | null>(null);
 
     const router = useRouter();
     const searchParams = useSearchParams();
     const registered = searchParams.get('registered');
 
-
+    const isLocked = lockoutTime !== null && Date.now() < lockoutTime;
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (isLocked) {
+            const remainingSeconds = Math.ceil((lockoutTime! - Date.now()) / 1000);
+            setError(`試行回数が上限を超えました。${remainingSeconds}秒後に再度お試しください。`);
+            return;
+        }
+
         setLoading(true);
         setError(null);
         setIsEmergencyAvailable(false);
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             await getUserRole(userCredential.user.uid);
+            setFailedAttempts(0);
+            setLockoutTime(null);
             router.push('/admin');
         } catch (err: any) {
             console.error(err);
+            const nextAttempts = failedAttempts + 1;
+            setFailedAttempts(nextAttempts);
+
+            if (nextAttempts >= 5) {
+                const lockUntil = Date.now() + 60 * 1000; // 60秒ロック
+                setLockoutTime(lockUntil);
+                setError('ログイン試行回数が多すぎます。アカウント保護のため60秒間制限されます。');
+                setLoading(false);
+                return;
+            }
+
             const errorCode = err.code || '';
             const errorMessage = err.message || '';
 
@@ -54,7 +76,7 @@ function AdminLoginContent() {
                 setError(`設定エラーが発生しました (${errorCode})。ドメイン制限か、Firebaseコンソールでの有効化が必要です。`);
                 setIsEmergencyAvailable(true);
             } else if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential') {
-                setError('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
+                setError(`ログインに失敗しました。メールアドレスとパスワードを確認してください。（残り試行可能回数: ${5 - nextAttempts}回）`);
             } else {
                 setError(`エラー: ${err.shortMessage || errorCode || errorMessage || 'ログインに失敗しました。'}`);
             }
@@ -202,11 +224,13 @@ function AdminLoginContent() {
                             <button
                                 id="sign-in-button"
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || isLocked}
                                 className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-lg shadow-blue-200 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-70 flex items-center justify-center uppercase tracking-wider mb-6"
                             >
                                 {loading ? (
                                     <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                                ) : isLocked ? (
+                                    'ロック中（しばらくお待ちください）'
                                 ) : (
                                     'Sign In'
                                 )}

@@ -99,27 +99,37 @@ service cloud.firestore {
                    && (!request.resource.data.keys().hasAny(['description']) || request.resource.data.description.size() < 500);
     }
     
-    // Users collection (if needed in future)
+    // Users collection
     match /users/{userId} {
       // Read: Owner or Super Admin
       allow read: if isOwner(userId) || isSuperAdmin();
       
-      // Create: User can only create their own document
+      // Create: User can only create their own document (cannot set role to 'admin')
       allow create: if request.auth != null
                     && userId == request.auth.uid
                     && request.resource.data.size() < 50
+                    // Protect role: only super admin can create with 'admin' role
+                    && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role != 'admin' || isSuperAdmin())
                     // Timestamp validation
                     && request.time > request.resource.data.createdAt.toMillis() - duration.value(5, 'm').seconds() * 1000
                     && request.time < request.resource.data.createdAt.toMillis() + duration.value(5, 'm').seconds() * 1000;
       
-      // Update: Owner or Super Admin
+      // Update: Owner or Super Admin (Owner CANNOT change their role)
       allow update: if (isOwner(userId) || isSuperAdmin())
                     && request.resource.data.size() < 50
+                    // Protect role from privilege escalation: only super admin can modify role
+                    && (!('role' in request.resource.data.diff(resource.data).affectedKeys()) || isSuperAdmin())
                     // Protect createdAt from modification
                     && request.resource.data.createdAt == resource.data.createdAt;
       
       // Delete: Super Admin only
       allow delete: if isSuperAdmin();
+    }
+
+    // Invitation codes collection (Protected: modified only via Server Admin SDK)
+    match /invitation_codes/{codeId} {
+      allow read: if isSuperAdmin();
+      allow write: if false; // Only Admin SDK (Server Actions) can write
     }
     
     // Request logs collection (for audit trail, if implemented)

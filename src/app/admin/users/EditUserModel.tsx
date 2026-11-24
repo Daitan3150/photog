@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { adminUpdateUserProfile } from '@/lib/actions/users';
+import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { Edit2, Eye, EyeOff, X } from 'lucide-react';
 import PartialDateInput from '@/components/admin/PartialDateInput';
@@ -55,6 +56,13 @@ export default function EditUserModel({ user, onSaved }: EditUserModelProps) {
         setLoading(true);
 
         try {
+            const idToken = await auth.currentUser?.getIdToken();
+            if (!idToken) {
+                setError('ログインセッションが無効です。再ログインしてください。');
+                setLoading(false);
+                return;
+            }
+
             const birthdayStr = birthYear && birthMonth && birthDay ? `${birthYear}-${birthMonth}-${birthDay}` : '';
             const deceasedDateStr = deceasedChecked && deceasedYear && deceasedMonth && deceasedDay ? `${deceasedYear}-${deceasedMonth}-${deceasedDay}` : '';
 
@@ -73,7 +81,7 @@ export default function EditUserModel({ user, onSaved }: EditUserModelProps) {
                 deceasedYear: deceasedChecked ? deceasedYear : '',
                 deceasedMonth: deceasedChecked ? deceasedMonth : '',
                 deceasedDay: deceasedChecked ? deceasedDay : '',
-            });
+            }, idToken);
 
             if (result.success) {
                 setMessage('プロフィールを正常に更新しました。');

@@ -26,16 +26,20 @@ export default function InvitePage() {
     const { user } = useAuth();
 
     useEffect(() => {
-        loadInvitations();
-    }, []);
+        if (user) {
+            loadInvitations();
+        }
+    }, [user]);
 
     const loadInvitations = async () => {
-        const codes = await getInvitationCodes();
+        if (!user) return;
+        const idToken = await user.getIdToken();
+        const codes = await getInvitationCodes(idToken);
         setInvitations(codes);
     };
 
     const handleGenerate = async () => {
-        if (isIssuing) return;
+        if (isIssuing || !user) return;
 
         setIsIssuing(true);
         setLoading(true);
@@ -47,7 +51,8 @@ export default function InvitePage() {
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 200);
 
-        const result = await createInvitationCode();
+        const idToken = await user.getIdToken();
+        const result = await createInvitationCode(idToken);
         if (result.success) {
             setLastIssuedCode(result.code);
             await loadInvitations();

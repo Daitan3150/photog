@@ -219,9 +219,13 @@ export async function updateMyProfile(data: { displayName?: string; photoURL?: s
 
 /**
  * 管理者が指定したユーザーのパスワードを強制変更するためのサーバーアクション。
+ * 管理者セッショントークン (idToken) による認可チェックが必須です。
  */
-export async function adminResetUserPassword(uid: string, newPassword: string) {
+export async function adminResetUserPassword(uid: string, newPassword: string, idToken: string) {
     try {
+        const { verifyAdminSession } = await import('@/lib/server-auth');
+        await verifyAdminSession(idToken);
+
         const { getAdminAuth } = await import('@/lib/firebaseAdmin');
         const auth = getAdminAuth();
 
@@ -247,13 +251,14 @@ export async function adminResetUserPassword(uid: string, newPassword: string) {
         console.error('Admin password reset error:', e);
         return {
             success: false,
-            error: e.code || 'パスワード変更処理中にエラーが発生しました。'
+            error: e.message || 'パスワード変更処理中にエラーが発生しました。'
         };
     }
 }
 
 /**
  * 管理者が指定したユーザーのプロフィール（本名、生年月日、没年月日、表示名）を更新するためのサーバーアクション。
+ * 管理者セッショントークン (idToken) による認可チェックが必須です。
  */
 export async function adminUpdateUserProfile(
     uid: string,
@@ -274,9 +279,13 @@ export async function adminUpdateUserProfile(
         deceasedYear?: string;
         deceasedMonth?: string;
         deceasedDay?: string;
-    }
+    },
+    idToken: string
 ): Promise<{ success: boolean; error?: string }> {
     try {
+        const { verifyAdminSession } = await import('@/lib/server-auth');
+        await verifyAdminSession(idToken);
+
         const { getAdminAuth, getAdminFirestore } = await import('@/lib/firebaseAdmin');
         const auth = getAdminAuth();
         const db = getAdminFirestore();
